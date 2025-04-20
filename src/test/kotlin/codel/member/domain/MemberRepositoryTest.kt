@@ -33,7 +33,7 @@ class MemberRepositoryTest(
     @Test
     fun saveProfileTest() {
         val updateMember = memberSignup.updateProfile(profile)
-        memberRepository.saveMember(updateMember)
+        memberRepository.updateMember(updateMember)
         val findMember = memberRepository.findMember(updateMember.oauthType, updateMember.oauthId)
 
         assertAll(
@@ -52,7 +52,7 @@ class MemberRepositoryTest(
                 oauthId = "seok",
             )
         seokMember.updateProfile(profile)
-        assertThatThrownBy { memberRepository.saveMember(seokMember) }
+        assertThatThrownBy { memberRepository.updateMember(seokMember) }
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessage("해당 id 멤버 없음")
     }
@@ -66,7 +66,7 @@ class MemberRepositoryTest(
                 oauthId = "seok",
             )
         seokMember.updateProfile(profile)
-        assertThatThrownBy { memberRepository.saveMember(seokMember) }
+        assertThatThrownBy { memberRepository.updateMember(seokMember) }
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessage("id가 없는 멤버 입니다.")
     }

@@ -49,7 +49,7 @@ class MemberService(
                 introduce = request.introduce,
             )
         val updateMember = member.updateProfile(profile)
-        memberRepository.saveMember(updateMember)
+        memberRepository.updateMember(updateMember)
     }
 
     fun findMember(
@@ -64,7 +64,7 @@ class MemberService(
     ) {
         val codeImage = uploadCodeImage(files)
         val updateMember = member.updateCodeImage(codeImage)
-        memberRepository.saveMember(updateMember)
+        memberRepository.updateMember(updateMember)
     }
 
     private fun uploadCodeImage(files: List<MultipartFile>): CodeImage = CodeImage(files.map { file -> imageUploader.uploadFile(file) })
@@ -76,7 +76,7 @@ class MemberService(
     ) {
         val faceImage = uploadFaceImage(files)
         val updateMember = member.updateFaceImage(faceImage)
-        memberRepository.saveMember(updateMember)
+        memberRepository.updateMember(updateMember)
     }
 
     private fun uploadFaceImage(files: List<MultipartFile>): FaceImage = FaceImage(files.map { file -> imageUploader.uploadFile(file) })
@@ -86,6 +86,6 @@ class MemberService(
         fcmToken: String,
     ) {
         val updateMember = member.updateFcmToken(fcmToken)
-        memberRepository.saveMember(updateMember)
+        memberRepository.updateMember(updateMember)
     }
 }
