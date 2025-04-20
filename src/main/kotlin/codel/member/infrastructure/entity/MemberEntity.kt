@@ -50,10 +50,6 @@ class MemberEntity(
             faceImage = profileEntity?.getFaceImage()?.let { FaceImage(it) },
         )
 
-    fun changeMemberStatus(status: MemberStatus) {
-        this.memberStatus = status
-    }
-
     fun updateEntity(
         member: Member,
         profileEntity: ProfileEntity?,
