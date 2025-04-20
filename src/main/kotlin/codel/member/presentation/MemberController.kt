@@ -58,4 +58,13 @@ class MemberController(
         memberService.saveFaceImage(member, files)
         return ResponseEntity.ok().build()
     }
+
+    @PostMapping("/v1/member/fcmtoken")
+    override fun saveFcmToken(
+        @LoginMember member: Member,
+        @RequestBody fcmToken: String,
+    ): ResponseEntity<Unit> {
+        memberService.saveFcmToken(member, fcmToken)
+        return ResponseEntity.ok().build()
+    }
 }
