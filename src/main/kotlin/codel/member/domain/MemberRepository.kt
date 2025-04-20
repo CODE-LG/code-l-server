@@ -38,7 +38,7 @@ class MemberRepository(
 
     fun saveMember(member: Member) {
         val memberId = member.id ?: throw IllegalArgumentException("id가 없는 멤버 입니다.")
-        val memberEntity = memberJpaRepository.findByIdOrNull(memberId) ?: throw IllegalArgumentException("해당 id 멤버 없음")
+        val memberEntity = memberJpaRepository.findByIdOrNull(memberId) ?: throw IllegalArgumentException("해당 id 멤버가 존재하지 않습니다.")
         val profileEntity = member.profile?.let { profileJpaRepository.save(ProfileEntity.toEntity(member.profile)) }
 
         memberEntity.updateEntity(member, profileEntity)
