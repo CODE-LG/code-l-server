@@ -2,11 +2,11 @@ package codel.member.business
 
 import codel.config.TestFixture
 import codel.member.domain.ImageUploader
+import codel.member.domain.Member
 import codel.member.domain.MemberRepository
 import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
-import codel.member.presentation.request.MemberLoginRequest
-import codel.member.presentation.request.ProfileSavedRequest
+import codel.member.domain.Profile
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.DisplayName
@@ -28,13 +28,12 @@ class MemberServiceTest(
     @DisplayName("첫 로그인을 한 멤버의 상태는 SignUp 이다.")
     @Test
     fun loginMemberSuccessTest() {
-        val memberLoginRequest =
-            MemberLoginRequest(
+        val member =
+            Member(
                 oauthType = OauthType.KAKAO,
                 oauthId = "hogee",
             )
-
-        val memberStatus = memberService.loginMember(memberLoginRequest).memberStatus
+        val memberStatus = memberService.loginMember(member)
 
         assertThat(memberStatus).isEqualTo(MemberStatus.SIGNUP)
     }
@@ -42,8 +41,8 @@ class MemberServiceTest(
     @DisplayName("프로필을 저장에 성공한 후 멤버 상태는 CODE_SURVEY 이다.")
     @Test
     fun saveProfileSuccessTest() {
-        val profileSavedRequest =
-            ProfileSavedRequest(
+        val profile =
+            Profile(
                 codeName = "seok",
                 age = 28,
                 job = "백엔드 개발자",
@@ -56,7 +55,7 @@ class MemberServiceTest(
                 mbti = "isfj",
                 introduce = "잘부탁드립니다!",
             )
-        memberService.saveProfile(memberSignup, profileSavedRequest)
+        memberService.saveProfile(memberSignup, profile)
 
         val findMember =
             memberService.findMember(

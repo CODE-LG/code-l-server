@@ -48,10 +48,13 @@ dependencies {
     // monitoring
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("io.micrometer:micrometer-registry-prometheus")
-    implementation("com.github.loki4j:loki-logback-appender:1.4.0")
+
+    // fcm
+    implementation("com.google.firebase:firebase-admin:9.2.0")
 
     // logging
     implementation("io.github.oshai:kotlin-logging-jvm:5.1.1")
+    implementation("com.github.loki4j:loki-logback-appender:1.4.0")
 }
 
 kotlin {

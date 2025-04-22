@@ -1,9 +1,9 @@
-package codel.auth.exception
+package codel.notification.exception
 
 import codel.config.exception.CodelException
 import org.springframework.http.HttpStatus
 
-class AuthException(
+class NotificationException(
     status: HttpStatus,
     message: String,
 ) : CodelException(status, message)

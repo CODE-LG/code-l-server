@@ -24,12 +24,12 @@ class MemberController(
     override fun loginMember(
         @RequestBody request: MemberLoginRequest,
     ): ResponseEntity<MemberLoginResponse> {
-        val memberSavedResponse = memberService.loginMember(request)
+        val memberStatus = memberService.loginMember(request.toMember())
         val token = authService.provideToken(request)
         return ResponseEntity
             .ok()
             .header("Authorization", "Bearer $token")
-            .body(memberSavedResponse)
+            .body(MemberLoginResponse(memberStatus))
     }
 
     @PostMapping("/v1/member/profile")
@@ -37,7 +37,7 @@ class MemberController(
         @LoginMember member: Member,
         @RequestBody request: ProfileSavedRequest,
     ): ResponseEntity<Unit> {
-        memberService.saveProfile(member, request)
+        memberService.saveProfile(member, request.toProfile())
         return ResponseEntity.ok().build()
     }
 
@@ -56,6 +56,15 @@ class MemberController(
         @RequestPart files: List<MultipartFile>,
     ): ResponseEntity<Unit> {
         memberService.saveFaceImage(member, files)
+        return ResponseEntity.ok().build()
+    }
+
+    @PostMapping("/v1/member/fcmtoken")
+    override fun saveFcmToken(
+        @LoginMember member: Member,
+        @RequestBody fcmToken: String,
+    ): ResponseEntity<Unit> {
+        memberService.saveFcmToken(member, fcmToken)
         return ResponseEntity.ok().build()
     }
 }

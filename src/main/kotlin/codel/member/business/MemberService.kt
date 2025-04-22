@@ -5,11 +5,9 @@ import codel.member.domain.FaceImage
 import codel.member.domain.ImageUploader
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
+import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import codel.member.domain.Profile
-import codel.member.presentation.request.MemberLoginRequest
-import codel.member.presentation.request.ProfileSavedRequest
-import codel.member.presentation.response.MemberLoginResponse
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -19,37 +17,18 @@ class MemberService(
     private val memberRepository: MemberRepository,
     private val imageUploader: ImageUploader,
 ) {
-    fun loginMember(request: MemberLoginRequest): MemberLoginResponse {
-        val member =
-            Member(
-                oauthType = request.oauthType,
-                oauthId = request.oauthId,
-            )
+    fun loginMember(member: Member): MemberStatus {
         val loginMember = memberRepository.loginMember(member)
 
-        return MemberLoginResponse(loginMember.memberStatus)
+        return loginMember.memberStatus
     }
 
     fun saveProfile(
         member: Member,
-        request: ProfileSavedRequest,
+        profile: Profile,
     ) {
-        val profile =
-            Profile(
-                codeName = request.codeName,
-                age = request.age,
-                job = request.job,
-                alcohol = request.alcohol,
-                smoke = request.smoke,
-                hobby = request.hobby,
-                style = request.style,
-                bigCity = request.bigCity,
-                smallCity = request.smallCity,
-                mbti = request.mbti,
-                introduce = request.introduce,
-            )
-
-        memberRepository.saveProfile(member, profile)
+        val updateMember = member.updateProfile(profile)
+        memberRepository.updateMember(updateMember)
     }
 
     fun findMember(
@@ -63,7 +42,8 @@ class MemberService(
         files: List<MultipartFile>,
     ) {
         val codeImage = uploadCodeImage(files)
-        memberRepository.saveCodeImage(member, codeImage)
+        val updateMember = member.updateCodeImage(codeImage)
+        memberRepository.updateMember(updateMember)
     }
 
     private fun uploadCodeImage(files: List<MultipartFile>): CodeImage = CodeImage(files.map { file -> imageUploader.uploadFile(file) })
@@ -74,8 +54,17 @@ class MemberService(
         files: List<MultipartFile>,
     ) {
         val faceImage = uploadFaceImage(files)
-        memberRepository.saveFaceImage(member, faceImage)
+        val updateMember = member.updateFaceImage(faceImage)
+        memberRepository.updateMember(updateMember)
     }
 
     private fun uploadFaceImage(files: List<MultipartFile>): FaceImage = FaceImage(files.map { file -> imageUploader.uploadFile(file) })
+
+    fun saveFcmToken(
+        member: Member,
+        fcmToken: String,
+    ) {
+        val updateMember = member.updateFcmToken(fcmToken)
+        memberRepository.updateMember(updateMember)
+    }
 }

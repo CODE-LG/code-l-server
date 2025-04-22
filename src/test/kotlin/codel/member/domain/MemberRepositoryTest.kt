@@ -1,6 +1,7 @@
 package codel.member.domain
 
 import codel.config.TestFixture
+import codel.member.exception.MemberException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName
@@ -32,8 +33,9 @@ class MemberRepositoryTest(
     @DisplayName("프로필을 저장하면 memberStatus 가 CODE_SURVEY 로 바뀐다.")
     @Test
     fun saveProfileTest() {
-        memberRepository.saveProfile(memberSignup, profile)
-        val findMember = memberRepository.findMember(memberSignup.oauthType, memberSignup.oauthId)
+        val updateMember = memberSignup.updateProfile(profile)
+        memberRepository.updateMember(updateMember)
+        val findMember = memberRepository.findMember(updateMember.oauthType, updateMember.oauthId)
 
         assertAll(
             { assertThat(findMember).isNotNull },
@@ -50,9 +52,10 @@ class MemberRepositoryTest(
                 oauthType = OauthType.APPLE,
                 oauthId = "seok",
             )
-        assertThatThrownBy { memberRepository.saveProfile(seokMember, profile) }
-            .isInstanceOf(IllegalArgumentException::class.java)
-            .hasMessage("멤버가 존재하지 않습니다.")
+        seokMember.updateProfile(profile)
+        assertThatThrownBy { memberRepository.updateMember(seokMember) }
+            .isInstanceOf(MemberException::class.java)
+            .hasMessage("해당 id 멤버가 존재하지 않습니다.")
     }
 
     @DisplayName("바꾸고자 하는 멤버 아이디가 없으면 예외를 반환한다.")
@@ -63,8 +66,9 @@ class MemberRepositoryTest(
                 oauthType = OauthType.APPLE,
                 oauthId = "seok",
             )
-        assertThatThrownBy { memberRepository.saveProfile(seokMember, profile) }
-            .isInstanceOf(IllegalArgumentException::class.java)
-            .hasMessage("member id가 비어있습니다.")
+        seokMember.updateProfile(profile)
+        assertThatThrownBy { memberRepository.updateMember(seokMember) }
+            .isInstanceOf(MemberException::class.java)
+            .hasMessage("id가 없는 멤버 입니다.")
     }
 }

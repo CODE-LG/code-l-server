@@ -25,6 +25,7 @@ class MemberEntity(
     private var id: Long? = null,
     @OneToOne
     var profileEntity: ProfileEntity? = null,
+    var fcmToken: String? = null,
     var oauthType: OauthType,
     var oauthId: String,
     var memberStatus: MemberStatus,
@@ -49,19 +50,22 @@ class MemberEntity(
             faceImage = profileEntity?.getFaceImage()?.let { FaceImage(it) },
         )
 
-    fun saveProfileEntity(profileEntity: ProfileEntity) {
-        this.profileEntity = profileEntity
-    }
-
-    fun updateCodeImage(codeImage: CodeImage) {
-        profileEntity!!.updateCodeImage(codeImage)
-    }
-
-    fun updateFaceImage(faceImage: FaceImage) {
-        profileEntity!!.updateFaceImage(faceImage)
-    }
-
-    fun changeMemberStatus(status: MemberStatus) {
-        this.memberStatus = status
+    fun updateEntity(
+        member: Member,
+        profileEntity: ProfileEntity?,
+    ) {
+        profileEntity?.let {
+            this.profileEntity = profileEntity
+        }
+        member.codeImage?.let {
+            this.profileEntity?.updateCodeImage(it)
+        }
+        member.faceImage?.let {
+            this.profileEntity?.updateFaceImage(it)
+        }
+        member.fcmToken?.let {
+            this.fcmToken = it
+        }
+        this.memberStatus = member.memberStatus
     }
 }

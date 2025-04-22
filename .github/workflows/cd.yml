@@ -51,6 +51,12 @@ jobs:
               enable:
                 all: true
           EOF
+          
+      - name: Restore firebase-adminsdk.json
+        run: |
+          echo "$FIREBASE_CONFIG_JSON" > ./src/main/resources/code-l-b109b-firebase-adminsdk-fbsvc-8c4eb2e6f2.json
+        env:
+          FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
 
       - name: Generate logback-spring.xml
         run: |

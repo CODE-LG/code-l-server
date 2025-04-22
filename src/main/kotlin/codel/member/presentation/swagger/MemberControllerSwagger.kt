@@ -66,4 +66,17 @@ interface MemberControllerSwagger {
         @LoginMember member: Member,
         @RequestPart files: List<MultipartFile>,
     ): ResponseEntity<Unit>
+
+    @Operation(summary = "사용자별 fcm 토큰 받기", description = "사용자의 디바이스 별 fcm 토큰을 저장합니다.")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "fcm 토큰 저장됨"),
+            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
+        ],
+    )
+    fun saveFcmToken(
+        @LoginMember member: Member,
+        @RequestBody fcmToken: String,
+    ): ResponseEntity<Unit>
 }
