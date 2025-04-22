@@ -1,6 +1,7 @@
 package codel.member.domain
 
 import codel.config.TestFixture
+import codel.member.exception.MemberException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName
@@ -53,7 +54,7 @@ class MemberRepositoryTest(
             )
         seokMember.updateProfile(profile)
         assertThatThrownBy { memberRepository.updateMember(seokMember) }
-            .isInstanceOf(IllegalArgumentException::class.java)
+            .isInstanceOf(MemberException::class.java)
             .hasMessage("해당 id 멤버가 존재하지 않습니다.")
     }
 
@@ -67,7 +68,7 @@ class MemberRepositoryTest(
             )
         seokMember.updateProfile(profile)
         assertThatThrownBy { memberRepository.updateMember(seokMember) }
-            .isInstanceOf(IllegalArgumentException::class.java)
+            .isInstanceOf(MemberException::class.java)
             .hasMessage("id가 없는 멤버 입니다.")
     }
 }
