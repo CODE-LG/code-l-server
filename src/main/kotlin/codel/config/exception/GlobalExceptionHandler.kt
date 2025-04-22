@@ -39,7 +39,7 @@ class GlobalExceptionHandler {
                 message = e.message ?: "예상치 못한 오류가 발생했습니다.",
                 stackTrace = e.stackTraceToString(),
             )
-        return ResponseEntity.status(500).body(response)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).body(response)
     }
 
     data class ErrorResponse(
