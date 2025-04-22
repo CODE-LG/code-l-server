@@ -1,9 +1,9 @@
 package codel.auth.exception
 
+import codel.config.exception.CodelException
 import org.springframework.http.HttpStatus
 
 class AuthException(
-    val statusCode: HttpStatus,
-    override val message: String,
-    override val cause: Throwable? = null,
-) : RuntimeException(message, cause)
+    status: HttpStatus,
+    message: String,
+) : CodelException(status, message)

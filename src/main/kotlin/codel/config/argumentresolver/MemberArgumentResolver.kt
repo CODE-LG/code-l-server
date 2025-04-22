@@ -1,10 +1,12 @@
 package codel.config.argumentresolver
 
+import codel.auth.exception.AuthException
 import codel.member.business.MemberService
 import codel.member.domain.Member
 import codel.member.domain.OauthType
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.core.MethodParameter
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.support.WebDataBinderFactory
 import org.springframework.web.context.request.NativeWebRequest
@@ -27,14 +29,14 @@ class MemberArgumentResolver(
     ): Any? {
         val httpServletRequest =
             webRequest.getNativeRequest(HttpServletRequest::class.java)
-                ?: throw IllegalStateException("HttpServletRequest를 가져올 수 없습니다.")
+                ?: throw AuthException(HttpStatus.UNAUTHORIZED, "HttpServletRequest를 가져올 수 없습니다.")
 
         val oauthId =
             httpServletRequest.getAttribute("oauthId") as? String
-                ?: throw IllegalArgumentException("oauthId가 요청이 없습니다.")
+                ?: throw AuthException(HttpStatus.UNAUTHORIZED, "oauthId가 요청이 없습니다.")
         val oauthType =
             httpServletRequest.getAttribute("oauthType") as? OauthType
-                ?: throw IllegalArgumentException("oauthType이 요청이 없습니다.")
+                ?: throw AuthException(HttpStatus.UNAUTHORIZED, "oauthType이 요청이 없습니다.")
 
         return memberService.findMember(oauthType, oauthId)
     }
