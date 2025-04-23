@@ -51,11 +51,14 @@ dependencies {
     implementation("io.micrometer:micrometer-registry-prometheus")
 
     // fcm
-    implementation("com.google.firebase:firebase-admin:9.2.0")
+    implementation("com.google.firebase:firebase-admin:9.4.3")
 
     // logging
     implementation("io.github.oshai:kotlin-logging-jvm:5.1.1")
     implementation("com.github.loki4j:loki-logback-appender:1.4.0")
+
+    // web
+    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 }
 
 kotlin {
