@@ -50,6 +50,19 @@ jobs:
             metrics:
               enable:
                 all: true
+          spring:
+            datasource:
+              driver-class-name: com.mysql.cj.jdbc.Driver
+              url: jdbc:mysql://codel-db.cbu0ugiswpor.ap-northeast-2.rds.amazonaws.com:3306/codel
+              username: ${{ secrets.DEV_RDS_USER_NAME }}
+              password: ${{ secrets.DEV_RDS_USER_PASSWORD }}
+          
+            jpa:
+              open-in-view: false
+              hibernate:
+                ddl-auto: create
+              show-sql: true
+              database-platform: org.hibernate.dialect.MySQL8Dialect
           EOF
 
       - name: Restore firebase-adminsdk.json
