@@ -1,5 +1,6 @@
 package codel.member.domain
 
+import codel.member.exception.MemberException
 import org.junit.jupiter.api.Assertions.assertAll
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -17,12 +18,12 @@ class FaceImageTest {
                 }
             },
             {
-                assertThrows(IllegalArgumentException::class.java) {
+                assertThrows(MemberException::class.java) {
                     FaceImage(listOf("url1", "url2"))
                 }
             },
             {
-                assertThrows(IllegalArgumentException::class.java) {
+                assertThrows(MemberException::class.java) {
                     FaceImage(listOf("url1", "url2", "url3", "url4"))
                 }
             },
