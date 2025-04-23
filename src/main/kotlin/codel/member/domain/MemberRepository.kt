@@ -50,9 +50,19 @@ class MemberRepository(
     fun updateMember(member: Member) {
         val memberId = member.id ?: throw MemberException(HttpStatus.BAD_REQUEST, "id가 없는 멤버 입니다.")
         val memberEntity =
-            memberJpaRepository.findByIdOrNull(memberId) ?: throw MemberException(HttpStatus.BAD_REQUEST, "해당 id 멤버가 존재하지 않습니다.")
+            memberJpaRepository.findByIdOrNull(memberId) ?: throw MemberException(
+                HttpStatus.BAD_REQUEST,
+                "해당 id 멤버가 존재하지 않습니다.",
+            )
         val profileEntity = member.profile?.let { profileJpaRepository.save(ProfileEntity.toEntity(member.profile)) }
 
         memberEntity.updateEntity(member, profileEntity)
+    }
+
+    @Transactional(readOnly = true)
+    fun findPendingMembers(): List<Member> {
+        val memberEntities = memberJpaRepository.findByMemberStatus(MemberStatus.PENDING)
+
+        return memberEntities.map { memberEntity -> memberEntity.toDomain() }
     }
 }

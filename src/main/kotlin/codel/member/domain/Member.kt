@@ -57,4 +57,16 @@ class Member(
             memberStatus = this.memberStatus,
             fcmToken = fcmToken,
         )
+
+    fun updateMemberStatus(memberStatus: MemberStatus): Member =
+        Member(
+            id = this.id,
+            profile = this.profile,
+            oauthType = this.oauthType,
+            oauthId = this.oauthId,
+            codeImage = this.codeImage,
+            faceImage = this.faceImage,
+            memberStatus = memberStatus,
+            fcmToken = this.fcmToken,
+        )
 }

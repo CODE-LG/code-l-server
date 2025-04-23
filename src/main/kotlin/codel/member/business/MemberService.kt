@@ -68,4 +68,14 @@ class MemberService(
         val updateMember = member.updateFcmToken(fcmToken)
         memberRepository.updateMember(updateMember)
     }
+
+    fun findPendingMembers(): List<Member> = memberRepository.findPendingMembers()
+
+    fun updateMemberStatus(
+        member: Member,
+        memberStatus: MemberStatus,
+    ) {
+        val updateMember = member.updateMemberStatus(memberStatus)
+        memberRepository.updateMember(updateMember)
+    }
 }

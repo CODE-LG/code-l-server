@@ -5,5 +5,6 @@ enum class MemberStatus {
     CODE_SURVEY,
     CODE_PROFILE_IMAGE,
     PENDING,
+    REJECT,
     DONE,
 }
