@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>codel 관리자 로그인</title>
+</head>
+<body style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f9f9f9; margin: 0;">
+<div style="text-align: center;">
+    <img src="/image/codel-image.png" alt="code:l logo" style="width: 300px; margin-bottom: 30px;"/>
+
+    <form method="post" action="/admin/login"
+          style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
+        <input type="password" name="password" placeholder="관리자 비밀번호"
+               style="padding: 10px 15px; font-size: 16px; border: 1px solid #ccc; border-radius: 6px; width: 250px;"/>
+        <button type="submit"
+                style="padding: 10px 15px; font-size: 16px; background-color: #ff5e94; color: white; border: none; border-radius: 6px; width: 250px; cursor: pointer;">
+            로그인
+        </button>
+        <p style="font-size: 12px; color: #888;">관리자만 접근할 수 있습니다.</p>
+    </form>
+</div>
+</body>
+</html>
