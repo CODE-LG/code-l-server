@@ -58,7 +58,7 @@ class AdminController(
 
     @GetMapping("/v1/admin/home")
     fun home(model: Model): String {
-        val members = adminService.findPendingMemberFaceImage()
+        val members = adminService.findPendingMembers()
 
         model.addAttribute("members", members)
 
@@ -74,7 +74,7 @@ class AdminController(
                 oauthType = request.targetOauthType,
                 oauthId = request.targetOauthId,
             )
-        adminService.validateFaceImage(member, request.validateCode)
+        adminService.reviewMemberProfile(member, request.validateCode)
 
         return "redirect:/v1/admin/home"
     }

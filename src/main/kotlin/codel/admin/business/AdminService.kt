@@ -5,13 +5,15 @@ import codel.admin.domain.ValidateCode
 import codel.member.business.MemberService
 import codel.member.domain.Member
 import codel.member.domain.MemberStatus
+import codel.notification.business.NotificationService
+import codel.notification.domain.Notification
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 
 @Service
 class AdminService(
     private val memberService: MemberService,
+    private val notificationService: NotificationService,
     @Value("\${security.admin.password}")
     private val answerPassword: String,
 ) {
@@ -28,10 +30,9 @@ class AdminService(
         memberService.loginMember(member)
     }
 
-    fun findPendingMemberFaceImage(): List<Member> = memberService.findPendingMembers()
+    fun findPendingMembers(): List<Member> = memberService.findPendingMembers()
 
-    @Transactional
-    fun validateFaceImage(
+    fun reviewMemberProfile(
         target: Member,
         request: ValidateCode,
     ) {
@@ -48,5 +49,19 @@ class AdminService(
             }
 
         memberService.updateMemberStatus(member, memberStatus)
+        sendNotification(member)
+    }
+
+    private fun sendNotification(member: Member) {
+        member.fcmToken?.let { fcmToken ->
+            notificationService.sendPushNotification(
+                notification =
+                    Notification(
+                        token = fcmToken,
+                        title = "심사가 완료되었습니다.",
+                        body = "code:L 프로필 심사가 완료되었습니다.",
+                    ),
+            )
+        }
     }
 }
