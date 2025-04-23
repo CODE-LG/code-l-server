@@ -1,7 +1,9 @@
 package codel.admin.domain
 
+import codel.admin.exception.AdminException
 import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
+import org.springframework.http.HttpStatus
 
 class Admin(
     val password: String,
@@ -11,7 +13,7 @@ class Admin(
 ) {
     fun validatePassword(targetPassword: String) {
         if (password != targetPassword) {
-            throw IllegalArgumentException("패스워드가 일치하지 않습니다.")
+            throw AdminException(HttpStatus.UNAUTHORIZED, "패스워드가 일치하지 않습니다.")
         }
     }
 }
