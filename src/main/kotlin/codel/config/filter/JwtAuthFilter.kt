@@ -4,10 +4,12 @@ import codel.auth.TokenProvider
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
 
 @Component
+@Order(1)
 class JwtAuthFilter(
     private val tokenProvider: TokenProvider,
 ) : OncePerRequestFilter() {
@@ -43,8 +45,10 @@ class JwtAuthFilter(
         }
         val oauthId = tokenProvider.extractOauthId(token)
         val oauthType = tokenProvider.extractOauthType(token)
+        val memberId = tokenProvider.extractMemberId(token)
         request.setAttribute("oauthId", oauthId)
         request.setAttribute("oauthType", oauthType)
+        request.setAttribute("memberId", memberId)
 
         filterChain.doFilter(request, response)
     }

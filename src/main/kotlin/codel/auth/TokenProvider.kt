@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import java.security.Key
-import java.util.*
+import java.util.Date
 
 @Component
 class TokenProvider(
@@ -71,4 +71,6 @@ class TokenProvider(
     fun extractOauthId(token: String): String = getPayload(token)[SOCIAL_LOGIN_ID_CLAIM_KEY].toString()
 
     fun extractOauthType(token: String): OauthType = OauthType.valueOf(getPayload(token)[OAUTH_TYPE].toString())
+
+    fun extractMemberId(token: String): String = getPayload(token)[MEMBER_ID_CLAIM_KEY].toString()
 }
