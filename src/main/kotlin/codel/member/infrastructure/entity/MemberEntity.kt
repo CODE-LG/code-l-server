@@ -25,6 +25,8 @@ class MemberEntity(
     private var id: Long? = null,
     @OneToOne
     var profileEntity: ProfileEntity? = null,
+    @OneToOne
+    var rejectReasonEntity: RejectReasonEntity? = null,
     var fcmToken: String? = null,
     var oauthType: OauthType,
     var oauthId: String,
@@ -43,6 +45,7 @@ class MemberEntity(
         Member(
             id = this.id,
             profile = this.profileEntity?.toDomain(),
+            rejectReason = this.rejectReasonEntity?.reason,
             oauthType = this.oauthType,
             oauthId = this.oauthId,
             memberStatus = this.memberStatus,
@@ -53,9 +56,13 @@ class MemberEntity(
     fun updateEntity(
         member: Member,
         profileEntity: ProfileEntity?,
+        rejectReasonEntity: RejectReasonEntity?,
     ) {
         profileEntity?.let {
             this.profileEntity = profileEntity
+        }
+        rejectReasonEntity?.let {
+            this.rejectReasonEntity = rejectReasonEntity
         }
         member.codeImage?.let {
             this.profileEntity?.updateCodeImage(it)

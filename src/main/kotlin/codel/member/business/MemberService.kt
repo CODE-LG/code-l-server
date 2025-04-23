@@ -71,11 +71,26 @@ class MemberService(
 
     fun findPendingMembers(): List<Member> = memberRepository.findPendingMembers()
 
-    fun updateMemberStatus(
-        member: Member,
-        memberStatus: MemberStatus,
-    ) {
-        val updateMember = member.updateMemberStatus(memberStatus)
+    fun approveMember(memberId: Long): Member {
+        val member = memberRepository.findMember(memberId)
+
+        val updateMember = member.updateMemberStatus(MemberStatus.DONE)
         memberRepository.updateMember(updateMember)
+        return updateMember
+    }
+
+    @Transactional
+    fun rejectMember(
+        memberId: Long,
+        reason: String,
+    ): Member {
+        val member = memberRepository.findMember(memberId)
+
+        val updateMember =
+            member
+                .updateMemberStatus(MemberStatus.REJECT)
+                .updateRejectReason(reason)
+        memberRepository.updateMember(updateMember)
+        return updateMember
     }
 }

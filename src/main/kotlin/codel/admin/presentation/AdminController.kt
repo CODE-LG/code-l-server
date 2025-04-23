@@ -3,15 +3,14 @@ package codel.admin.presentation
 import codel.admin.business.AdminService
 import codel.admin.domain.Admin
 import codel.admin.presentation.request.AdminLoginRequest
-import codel.admin.presentation.request.ValidateRequest
 import codel.auth.business.AuthService
-import codel.member.domain.Member
 import codel.member.presentation.request.MemberLoginRequest
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 
@@ -59,22 +58,26 @@ class AdminController(
     @GetMapping("/v1/admin/home")
     fun home(model: Model): String {
         val members = adminService.findPendingMembers()
-
         model.addAttribute("members", members)
 
         return "home"
     }
 
-    @PostMapping("/v1/admin/validation/faceimage")
-    fun validateFaceImage(
-        @RequestBody request: ValidateRequest,
+    @PostMapping("/v1/admin/approval/{targetId}")
+    fun approveMember(
+        @PathVariable targetId: Long,
     ): String {
-        val member =
-            Member(
-                oauthType = request.targetOauthType,
-                oauthId = request.targetOauthId,
-            )
-        adminService.reviewMemberProfile(member, request.validateCode)
+        adminService.approveMemberProfile(targetId)
+
+        return "redirect:/v1/admin/home"
+    }
+
+    @PostMapping("/v1/admin/reject/{targetId}")
+    fun rejectMember(
+        @PathVariable targetId: Long,
+        @RequestBody rejectReason: String,
+    ): String {
+        adminService.rejectMemberProfile(targetId, rejectReason)
 
         return "redirect:/v1/admin/home"
     }

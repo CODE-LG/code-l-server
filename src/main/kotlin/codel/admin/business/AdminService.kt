@@ -1,10 +1,8 @@
 package codel.admin.business
 
 import codel.admin.domain.Admin
-import codel.admin.domain.ValidateCode
 import codel.member.business.MemberService
 import codel.member.domain.Member
-import codel.member.domain.MemberStatus
 import codel.notification.business.NotificationService
 import codel.notification.domain.Notification
 import org.springframework.beans.factory.annotation.Value
@@ -32,24 +30,17 @@ class AdminService(
 
     fun findPendingMembers(): List<Member> = memberService.findPendingMembers()
 
-    fun reviewMemberProfile(
-        target: Member,
-        request: ValidateCode,
+    fun approveMemberProfile(targetId: Long) {
+        val approvedMember = memberService.approveMember(targetId)
+        sendNotification(approvedMember)
+    }
+
+    fun rejectMemberProfile(
+        targetId: Long,
+        reason: String,
     ) {
-        val member =
-            memberService.findMember(
-                oauthType = target.oauthType,
-                oauthId = target.oauthId,
-            )
-
-        val memberStatus =
-            when (request) {
-                ValidateCode.APPROVE -> MemberStatus.DONE
-                ValidateCode.REJECT -> MemberStatus.REJECT
-            }
-
-        memberService.updateMemberStatus(member, memberStatus)
-        sendNotification(member)
+        val rejectedMember = memberService.rejectMember(targetId, reason)
+        sendNotification(rejectedMember)
     }
 
     private fun sendNotification(member: Member) {
