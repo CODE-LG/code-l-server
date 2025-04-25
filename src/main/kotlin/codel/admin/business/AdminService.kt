@@ -30,16 +30,18 @@ class AdminService(
 
     fun findPendingMembers(): List<Member> = memberService.findPendingMembers()
 
-    fun approveMemberProfile(targetId: Long) {
-        val approvedMember = memberService.approveMember(targetId)
+    fun findMember(memberId: Long): Member = memberService.findMember(memberId)
+
+    fun approveMemberProfile(memberId: Long) {
+        val approvedMember = memberService.approveMember(memberId)
         sendNotification(approvedMember)
     }
 
     fun rejectMemberProfile(
-        targetId: Long,
+        memberId: Long,
         reason: String,
     ) {
-        val rejectedMember = memberService.rejectMember(targetId, reason)
+        val rejectedMember = memberService.rejectMember(memberId, reason)
         sendNotification(rejectedMember)
     }
 
