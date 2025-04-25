@@ -65,6 +65,8 @@ jobs:
                 ddl-auto: create
               show-sql: true
               database-platform: org.hibernate.dialect.MySQL8Dialect
+          springdoc:
+            override-with-generic-response: false
           EOF
 
       - name: Restore firebase-adminsdk.json
