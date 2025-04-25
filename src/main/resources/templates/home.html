@@ -2,71 +2,46 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>회원 승인 페이지</title>
+    <title>관리자 페이지</title>
+    <link rel="icon" type="image/png" th:href="@{/image/favicon.png}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="p-5 bg-light container">
-<h1 class="mb-4">회원 목록</h1>
-<table class="table table-hover table-bordered text-nowrap bg-white">
-    <thead class="table-light">
-    <tr>
-        <th>ID</th>
-        <th>이메일</th>
-        <th>이름</th>
-        <th>상태</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="member : ${members}" class="member-row"
-        th:onclick="|showModal('${member}')|">
-        <td th:text="${member.id}">1</td>
-        <td th:text="${member.email}">email@example.com</td>
-        <td th:text="${member.profile.codeName}">홍길동</td>
-        <td th:text="${member.memberStatus}">ACTIVE</td>
-    </tr>
-    </tbody>
-</table>
-
-<!-- Bootstrap Modal -->
-<div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="memberModalLabel">회원 상세 정보</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
-            </div>
-            <div class="modal-body">
-                <p><strong>ID:</strong> <span id="modalId"></span></p>
-                <p><strong>이메일:</strong> <span id="modalEmail"></span></p>
-                <p><strong>이름:</strong> <span id="modalName"></span></p>
-                <p><strong>상태:</strong> <span id="modalStatus"></span></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-            </div>
+<div class="card p-4">
+    <div class="card-header bg-white">
+        <h1 class="mb-4">회원 목록</h1>
+    </div>
+    <div class="card-body p-0">
+        <div style="min-height: 300px;">
+            <table class="table table-hover table-bordered text-nowrap bg-white mb-0"
+                   style="min-height: 80px;">
+                <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>oauth 타입</th>
+                    <th>oauthId</th>
+                    <th>이름</th>
+                    <th>상태</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="member : ${members}" class="member-row"
+                    th:onclick="'location.href=\'/v1/admin/member/' + ${member.id} + '\';'" style="cursor: pointer;"
+                    th:data-id="${member.id}"
+                    th:data-oauthType="${member.oauthType}"
+                    th:data-oauthId="${member.oauthId}"
+                    th:data-name="${member.profile.codeName}"
+                    th:data-status="${member.memberStatus}">
+                    <td th:text="${member.id}"></td>
+                    <td th:text="${member.oauthType}"></td>
+                    <td th:text="${member.oauthId}"></td>
+                    <td th:text="${member.profile.codeName}"></td>
+                    <td th:text="${member.memberStatus}"></td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    function showModal(member) {
-        document.getElementById("modalId").textContent = member.id;
-        document.getElementById("modalEmail").textContent = member.email;
-        document.getElementById("modalName").textContent = member.name;
-        document.getElementById("modalStatus").textContent = member.status;
-        new bootstrap.Modal(document.getElementById('memberModal')).show();
-    }
-
-    document.querySelectorAll(".member-row").forEach(row => {
-        row.addEventListener("click", () => {
-            showModal(
-                row.dataset.id,
-                row.dataset.email,
-                row.dataset.name,
-                row.dataset.status
-            );
-        });
-    });
-</script>
 </body>
 </html>

@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>codel 관리자 로그인</title>
+    <link rel="icon" type="image/png" th:href="@{/image/favicon.png}">
 </head>
 <body style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f9f9f9; margin: 0;">
 <div style="text-align: center;">
     <img src="/image/codel-image.png" alt="code:l logo" style="width: 300px; margin-bottom: 30px;"/>
 
-    <form method="post" action="/admin/login"
+    <p th:if="${error}" th:text="${error}" style="color: red; font-size: 14px; margin-bottom: 10px;"></p>
+    <form th:action="@{/v1/admin/login}" method="post"
           style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
         <input type="password" name="password" placeholder="관리자 비밀번호"
                style="padding: 10px 15px; font-size: 16px; border: 1px solid #ccc; border-radius: 6px; width: 250px;"/>
@@ -20,4 +22,7 @@
     </form>
 </div>
 </body>
+<script>
+    
+</script>
 </html>
