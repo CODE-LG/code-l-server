@@ -8,6 +8,7 @@ import codel.member.presentation.request.MemberLoginRequest
 import codel.member.presentation.request.ProfileSavedRequest
 import codel.member.presentation.response.MemberLoginResponse
 import codel.member.presentation.swagger.MemberControllerSwagger
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -41,7 +42,11 @@ class MemberController(
         return ResponseEntity.ok().build()
     }
 
-    @PostMapping("/v1/member/codeimage")
+    @PostMapping(
+        "/v1/member/codeimage",
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
+        produces = [MediaType.APPLICATION_JSON_VALUE],
+    )
     override fun saveCodeImage(
         @LoginMember member: Member,
         @RequestPart files: List<MultipartFile>,
@@ -50,7 +55,11 @@ class MemberController(
         return ResponseEntity.ok().build()
     }
 
-    @PostMapping("/v1/member/faceimage")
+    @PostMapping(
+        "/v1/member/faceimage",
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
+        produces = [MediaType.APPLICATION_JSON_VALUE],
+    )
     override fun saveFaceImage(
         @LoginMember member: Member,
         @RequestPart files: List<MultipartFile>,
