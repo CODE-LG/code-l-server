@@ -71,6 +71,19 @@ class ProfileEntity(
             introduce = this.introduce,
         )
 
+    fun updateProfile(profile: Profile) {
+        this.codeName = profile.codeName
+        this.age = profile.age
+        this.job = profile.job
+        this.smoke = profile.smoke
+        this.hobby = serializeAttribute(profile.hobby)
+        this.style = serializeAttribute(profile.style)
+        this.bigCity = profile.bigCity
+        this.smallCity = profile.smallCity
+        this.mbti = profile.mbti
+        this.introduce = profile.introduce
+    }
+
     fun updateCodeImage(codeImage: CodeImage) {
         this.codeImage = serializeAttribute(codeImage.urls)
     }

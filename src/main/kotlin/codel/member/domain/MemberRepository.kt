@@ -3,7 +3,7 @@ package codel.member.domain
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
-import codel.member.infrastructure.RejectReasonRepository
+import codel.member.infrastructure.RejectReasonJpaRepository
 import codel.member.infrastructure.entity.MemberEntity
 import codel.member.infrastructure.entity.ProfileEntity
 import codel.member.infrastructure.entity.RejectReasonEntity
@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional
 class MemberRepository(
     private val memberJpaRepository: MemberJpaRepository,
     private val profileJpaRepository: ProfileJpaRepository,
-    private val rejectReasonRepository: RejectReasonRepository,
+    private val rejectReasonJpaRepository: RejectReasonJpaRepository,
 ) {
     fun loginMember(member: Member): Member {
         if (memberJpaRepository.existsByOauthTypeAndOauthId(member.oauthType, member.oauthId)) {
@@ -50,11 +50,33 @@ class MemberRepository(
     fun updateMember(member: Member) {
         val memberId = member.id ?: throw MemberException(HttpStatus.BAD_REQUEST, "id가 없는 멤버 입니다.")
         val memberEntity = findMemberEntityByMemberId(memberId)
-        val profileEntity = member.profile?.let { profileJpaRepository.save(ProfileEntity.toEntity(member.profile)) }
-        val rejectReasonEntity =
-            member.rejectReason?.let { rejectReasonRepository.save(RejectReasonEntity(reason = it)) }
+        if (memberEntity.profileEntity == null) {
+            saveProfileEntity(memberEntity, member.profile)
+        }
 
-        memberEntity.updateEntity(member, profileEntity, rejectReasonEntity)
+        if (memberEntity.rejectReasonEntity == null) {
+            saveRejectReasonEntity(memberEntity, member.rejectReason)
+        }
+
+        memberEntity.updateEntity(member)
+    }
+
+    private fun saveProfileEntity(
+        memberEntity: MemberEntity,
+        profile: Profile?,
+    ) {
+        profile ?: return
+        val savedProfileEntity = profileJpaRepository.save(ProfileEntity.toEntity(profile))
+        memberEntity.profileEntity = savedProfileEntity
+    }
+
+    private fun saveRejectReasonEntity(
+        memberEntity: MemberEntity,
+        rejectReason: String?,
+    ) {
+        rejectReason ?: return
+        val savedRejectReasonEntity = rejectReasonJpaRepository.save(RejectReasonEntity(reason = rejectReason))
+        memberEntity.rejectReasonEntity = savedRejectReasonEntity
     }
 
     @Transactional(readOnly = true)

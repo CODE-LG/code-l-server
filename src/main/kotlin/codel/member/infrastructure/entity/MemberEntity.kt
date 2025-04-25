@@ -53,26 +53,15 @@ class MemberEntity(
             faceImage = profileEntity?.getFaceImage()?.let { FaceImage(it) },
         )
 
-    fun updateEntity(
-        member: Member,
-        profileEntity: ProfileEntity?,
-        rejectReasonEntity: RejectReasonEntity?,
-    ) {
-        profileEntity?.let {
-            this.profileEntity = profileEntity
+    fun updateEntity(member: Member) {
+        profileEntity?.let { profileEntity ->
+            member.profile?.let { profileEntity.updateProfile(it) }
+            member.codeImage?.let { profileEntity.updateCodeImage(it) }
+            member.faceImage?.let { profileEntity.updateFaceImage(it) }
         }
-        rejectReasonEntity?.let {
-            this.rejectReasonEntity = rejectReasonEntity
-        }
-        member.codeImage?.let {
-            this.profileEntity?.updateCodeImage(it)
-        }
-        member.faceImage?.let {
-            this.profileEntity?.updateFaceImage(it)
-        }
-        member.fcmToken?.let {
-            this.fcmToken = it
-        }
+        member.rejectReason?.let { this.rejectReasonEntity?.reason = it }
+        member.fcmToken?.let { this.fcmToken = it }
+
         this.memberStatus = member.memberStatus
     }
 }
