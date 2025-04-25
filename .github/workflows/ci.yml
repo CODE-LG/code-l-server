@@ -32,7 +32,8 @@ jobs:
               token:
                 expire-length: ${{ secrets.JWT_EXPIRE_LENGTH }}
                 secret-key: ${{ secrets.JWT_SECRET_KEY }}
-          
+            admin:
+              password: ${{ secrets.ADMIN_PASSWORD }}
           cloud:
             aws:
               region:
