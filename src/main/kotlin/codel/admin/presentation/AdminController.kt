@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -21,15 +22,21 @@ class AdminController(
     private val authService: AuthService,
 ) {
     @GetMapping("/v1/admin/login")
-    fun login(): String = "login"
+    fun login(): String = "/login"
 
     @PostMapping("/v1/admin/login")
     fun login(
-        @RequestBody adminLoginRequest: AdminLoginRequest,
+        @ModelAttribute adminLoginRequest: AdminLoginRequest,
         response: HttpServletResponse,
+        model: Model,
     ): String {
         val admin = Admin(adminLoginRequest.password)
-        adminService.loginAdmin(admin)
+        try {
+            adminService.loginAdmin(admin)
+        } catch (e: AdminException) {
+            model.addAttribute("error", e.message)
+            return "/login"
+        }
 
         val token =
             authService.provideToken(
