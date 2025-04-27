@@ -4,8 +4,6 @@ import codel.admin.business.AdminService
 import codel.admin.domain.Admin
 import codel.admin.exception.AdminException
 import codel.admin.presentation.request.AdminLoginRequest
-import codel.auth.business.AuthService
-import codel.member.presentation.request.MemberLoginRequest
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Controller
@@ -19,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestParam
 @Controller
 class AdminController(
     private val adminService: AdminService,
-    private val authService: AuthService,
 ) {
     @GetMapping("/v1/admin/login")
     fun login(): String = "/login"
@@ -31,24 +28,15 @@ class AdminController(
         model: Model,
     ): String {
         val admin = Admin(adminLoginRequest.password)
-        try {
-            adminService.loginAdmin(admin)
+
+        return try {
+            val token = adminService.loginAdmin(admin)
+            addCookie(token, response)
+            "redirect:/v1/admin/home"
         } catch (e: AdminException) {
             model.addAttribute("error", e.message)
-            return "/login"
+            "/login"
         }
-
-        val token =
-            authService.provideToken(
-                MemberLoginRequest(
-                    oauthType = admin.oauthType,
-                    oauthId = admin.oauthId,
-                ),
-            )
-
-        addCookie(token, response)
-
-        return "redirect:/v1/admin/home"
     }
 
     private fun addCookie(

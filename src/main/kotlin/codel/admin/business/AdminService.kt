@@ -1,8 +1,10 @@
 package codel.admin.business
 
 import codel.admin.domain.Admin
+import codel.auth.business.AuthService
 import codel.member.business.MemberService
 import codel.member.domain.Member
+import codel.member.presentation.request.MemberLoginRequest
 import codel.notification.business.NotificationService
 import codel.notification.domain.Notification
 import org.springframework.beans.factory.annotation.Value
@@ -11,11 +13,12 @@ import org.springframework.stereotype.Service
 @Service
 class AdminService(
     private val memberService: MemberService,
+    private val authService: AuthService,
     private val notificationService: NotificationService,
     @Value("\${security.admin.password}")
     private val answerPassword: String,
 ) {
-    fun loginAdmin(admin: Admin) {
+    fun loginAdmin(admin: Admin): String {
         admin.validatePassword(answerPassword)
 
         val member =
@@ -26,6 +29,13 @@ class AdminService(
             )
 
         memberService.loginMember(member)
+
+        return authService.provideToken(
+            MemberLoginRequest(
+                oauthType = admin.oauthType,
+                oauthId = admin.oauthId,
+            ),
+        )
     }
 
     fun findPendingMembers(): List<Member> = memberService.findPendingMembers()
