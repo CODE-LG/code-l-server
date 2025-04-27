@@ -64,4 +64,8 @@ class MemberEntity(
 
         this.memberStatus = member.memberStatus
     }
+
+    fun saveProfileEntity(profileEntity: ProfileEntity) {
+        this.profileEntity = profileEntity
+    }
 }

@@ -73,7 +73,7 @@ class MemberRepository(
     ) {
         profile ?: return
         val savedProfileEntity = profileJpaRepository.save(ProfileEntity.toEntity(profile))
-        memberEntity.profileEntity = savedProfileEntity
+        memberEntity.saveProfileEntity(savedProfileEntity)
     }
 
     private fun saveRejectReasonEntity(
