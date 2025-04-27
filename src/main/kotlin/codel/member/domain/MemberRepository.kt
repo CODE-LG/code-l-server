@@ -48,16 +48,10 @@ class MemberRepository(
     }
 
     fun updateMember(member: Member) {
-        val memberId = member.id ?: throw MemberException(HttpStatus.BAD_REQUEST, "id가 없는 멤버 입니다.")
-        val memberEntity = findMemberEntityByMemberId(memberId)
+        val memberEntity = findMemberEntityByMemberId(member.getIdOrThrow())
         if (memberEntity.profileEntity == null) {
             saveProfileEntity(memberEntity, member.profile)
         }
-
-        if (memberEntity.rejectReasonEntity == null) {
-            saveRejectReasonEntity(memberEntity, member.rejectReason)
-        }
-
         memberEntity.updateEntity(member)
     }
 
@@ -76,13 +70,13 @@ class MemberRepository(
         memberEntity.saveProfileEntity(savedProfileEntity)
     }
 
-    private fun saveRejectReasonEntity(
-        memberEntity: MemberEntity,
-        rejectReason: String?,
+    fun saveRejectReason(
+        member: Member,
+        rejectReason: String,
     ) {
-        rejectReason ?: return
-        val savedRejectReasonEntity = rejectReasonJpaRepository.save(RejectReasonEntity(reason = rejectReason))
-        memberEntity.rejectReasonEntity = savedRejectReasonEntity
+        val memberEntity = findMemberEntityByMemberId(member.getIdOrThrow())
+        val rejectReasonEntity = RejectReasonEntity.toEntity(memberEntity, rejectReason)
+        rejectReasonJpaRepository.save(rejectReasonEntity)
     }
 
     @Transactional(readOnly = true)
@@ -91,4 +85,20 @@ class MemberRepository(
 
         return memberEntities.map { memberEntity -> memberEntity.toDomain() }
     }
+
+    @Transactional(readOnly = true)
+    fun findRejectReason(member: Member): String {
+        member.validateRejectedOrThrow()
+        val memberEntity = findMemberEntityByMemberId(member.getIdOrThrow())
+        val rejectReasonEntity = findByMemberEntityOrThrow(memberEntity)
+
+        return rejectReasonEntity.reason
+    }
+
+    private fun findByMemberEntityOrThrow(memberEntity: MemberEntity): RejectReasonEntity =
+        rejectReasonJpaRepository.findByMemberEntity(memberEntity)
+            ?: throw MemberException(
+                HttpStatus.BAD_REQUEST,
+                "거절 사유가 존재하지 않는 멤버입니다.",
+            )
 }

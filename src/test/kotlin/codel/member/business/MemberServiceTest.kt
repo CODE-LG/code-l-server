@@ -135,10 +135,11 @@ class MemberServiceTest(
         val rejectReason = "페이스 이미지에 얼굴이 제대로 확인되지 않습니다."
 
         val rejectedMember = memberService.rejectMember(memberPending.id!!, rejectReason)
+        val savedRejectReason = memberService.findRejectReason(rejectedMember)
 
         assertAll(
             { assertThat(rejectedMember.memberStatus).isEqualTo(MemberStatus.REJECT) },
-            { assertThat(rejectedMember.rejectReason).isEqualTo(rejectReason) },
+            { assertThat(savedRejectReason).isEqualTo(rejectReason) },
         )
     }
 }

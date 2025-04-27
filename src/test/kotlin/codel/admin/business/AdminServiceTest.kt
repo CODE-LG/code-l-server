@@ -65,10 +65,11 @@ class AdminServiceTest(
         adminService.rejectMemberProfile(memberPending.id!!, rejectReason)
 
         val findMember = memberService.findMember(memberId = memberPending.id!!)
+        val savedRejectReason = memberService.findRejectReason(findMember)
 
         assertAll(
             { assertThat(findMember.memberStatus).isEqualTo(MemberStatus.REJECT) },
-            { assertThat(findMember.rejectReason).isEqualTo(rejectReason) },
+            { assertThat(savedRejectReason).isEqualTo(rejectReason) },
         )
     }
 }

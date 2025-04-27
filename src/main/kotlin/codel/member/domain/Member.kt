@@ -1,9 +1,11 @@
 package codel.member.domain
 
+import codel.member.exception.MemberException
+import org.springframework.http.HttpStatus
+
 class Member(
     val id: Long? = null,
     val profile: Profile? = null,
-    val rejectReason: String? = null,
     val oauthType: OauthType,
     val oauthId: String,
     val codeImage: CodeImage? = null,
@@ -15,7 +17,6 @@ class Member(
         Member(
             id = this.id,
             profile = profile,
-            rejectReason = this.rejectReason,
             oauthType = this.oauthType,
             oauthId = this.oauthId,
             codeImage = this.codeImage,
@@ -28,7 +29,6 @@ class Member(
         Member(
             id = this.id,
             profile = this.profile,
-            rejectReason = this.rejectReason,
             oauthType = this.oauthType,
             oauthId = this.oauthId,
             codeImage = codeImage,
@@ -41,7 +41,6 @@ class Member(
         Member(
             id = this.id,
             profile = this.profile,
-            rejectReason = this.rejectReason,
             oauthType = this.oauthType,
             oauthId = this.oauthId,
             codeImage = this.codeImage,
@@ -54,7 +53,6 @@ class Member(
         Member(
             id = this.id,
             profile = this.profile,
-            rejectReason = this.rejectReason,
             oauthType = this.oauthType,
             oauthId = this.oauthId,
             codeImage = this.codeImage,
@@ -67,7 +65,6 @@ class Member(
         Member(
             id = this.id,
             profile = this.profile,
-            rejectReason = this.rejectReason,
             oauthType = this.oauthType,
             oauthId = this.oauthId,
             codeImage = this.codeImage,
@@ -76,16 +73,10 @@ class Member(
             fcmToken = this.fcmToken,
         )
 
-    fun updateRejectReason(rejectReason: String): Member =
-        Member(
-            id = this.id,
-            profile = this.profile,
-            rejectReason = rejectReason,
-            oauthType = this.oauthType,
-            oauthId = this.oauthId,
-            codeImage = this.codeImage,
-            faceImage = this.faceImage,
-            memberStatus = memberStatus,
-            fcmToken = this.fcmToken,
-        )
+    fun getIdOrThrow(): Long = id ?: throw MemberException(HttpStatus.BAD_REQUEST, "id가 없는 멤버 입니다.")
+
+    fun validateRejectedOrThrow() {
+        takeIf { memberStatus == MemberStatus.REJECT }
+            ?: throw MemberException(HttpStatus.BAD_REQUEST, "심사 거절된 멤버가 아닙니다.")
+    }
 }

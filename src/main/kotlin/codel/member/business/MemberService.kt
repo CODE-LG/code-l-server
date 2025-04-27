@@ -86,11 +86,12 @@ class MemberService(
     ): Member {
         val member = memberRepository.findMember(memberId)
 
-        val updateMember =
-            member
-                .updateMemberStatus(MemberStatus.REJECT)
-                .updateRejectReason(reason)
+        memberRepository.saveRejectReason(member, reason)
+        val updateMember = member.updateMemberStatus(MemberStatus.REJECT)
         memberRepository.updateMember(updateMember)
+
         return updateMember
     }
+
+    fun findRejectReason(member: Member): String = memberRepository.findRejectReason(member)
 }
