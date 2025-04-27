@@ -43,11 +43,7 @@ class JwtAuthFilter(
             response.writer.write("""{"message": "인증되지 않은 사용자입니다."}""")
             return
         }
-        val oauthId = tokenProvider.extractOauthId(token)
-        val oauthType = tokenProvider.extractOauthType(token)
         val memberId = tokenProvider.extractMemberId(token)
-        request.setAttribute("oauthId", oauthId)
-        request.setAttribute("oauthType", oauthType)
         request.setAttribute("memberId", memberId)
 
         filterChain.doFilter(request, response)

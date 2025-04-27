@@ -36,6 +36,8 @@ class MemberService(
         oauthId: String,
     ): Member = memberRepository.findMember(oauthType, oauthId)
 
+    fun findMember(memberId: Long): Member = memberRepository.findMember(memberId)
+
     @Transactional
     fun saveCodeImage(
         member: Member,
