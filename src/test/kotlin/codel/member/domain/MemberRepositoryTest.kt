@@ -55,7 +55,7 @@ class MemberRepositoryTest(
         seokMember.updateProfile(profile)
         assertThatThrownBy { memberRepository.updateMember(seokMember) }
             .isInstanceOf(MemberException::class.java)
-            .hasMessage("해당 id 멤버가 존재하지 않습니다.")
+            .hasMessage("해당 id에 일치하는 멤버가 없습니다.")
     }
 
     @DisplayName("바꾸고자 하는 멤버 아이디가 없으면 예외를 반환한다.")

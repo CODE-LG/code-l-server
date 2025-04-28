@@ -6,6 +6,7 @@ import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
+import codel.member.infrastructure.RejectReasonJpaRepository
 import codel.member.infrastructure.entity.MemberEntity
 import codel.member.infrastructure.entity.ProfileEntity
 import org.junit.jupiter.api.BeforeEach
@@ -31,9 +32,15 @@ class TestFixture {
     @Autowired
     lateinit var memberJpaRepository: MemberJpaRepository
 
+    @Autowired
+    lateinit var rejectReasonJpaRepository: RejectReasonJpaRepository
+
     @BeforeEach
     fun setUp() {
+        rejectReasonJpaRepository.deleteAll()
         memberJpaRepository.deleteAll()
+        profileJpaRepository.deleteAll()
+
         memberSignup = saveMemberSignup()
         memberCodeSurvey = saveMemberCodeSurvey()
         memberCodeProfileImage = saveMemberCodeProfileImage()

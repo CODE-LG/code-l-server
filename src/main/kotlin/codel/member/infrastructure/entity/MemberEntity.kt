@@ -50,22 +50,18 @@ class MemberEntity(
             faceImage = profileEntity?.getFaceImage()?.let { FaceImage(it) },
         )
 
-    fun updateEntity(
-        member: Member,
-        profileEntity: ProfileEntity?,
-    ) {
-        profileEntity?.let {
-            this.profileEntity = profileEntity
+    fun updateEntity(member: Member) {
+        profileEntity?.let { profileEntity ->
+            member.profile?.let { profileEntity.updateProfile(it) }
+            member.codeImage?.let { profileEntity.updateCodeImage(it) }
+            member.faceImage?.let { profileEntity.updateFaceImage(it) }
         }
-        member.codeImage?.let {
-            this.profileEntity?.updateCodeImage(it)
-        }
-        member.faceImage?.let {
-            this.profileEntity?.updateFaceImage(it)
-        }
-        member.fcmToken?.let {
-            this.fcmToken = it
-        }
+        member.fcmToken?.let { this.fcmToken = it }
+
         this.memberStatus = member.memberStatus
+    }
+
+    fun saveProfileEntity(profileEntity: ProfileEntity) {
+        this.profileEntity = profileEntity
     }
 }

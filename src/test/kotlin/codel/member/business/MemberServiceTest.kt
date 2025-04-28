@@ -11,6 +11,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertAll
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
@@ -118,5 +119,27 @@ class MemberServiceTest(
         val savedMember = memberEntity.toDomain()
         assertThat(savedMember.codeImage).isNotNull
         assertThat(savedMember.memberStatus).isEqualTo(MemberStatus.PENDING)
+    }
+
+    @DisplayName("사용자의 프로필을 승인하면 사용자의 상태가 DONE 으로 바뀐다.")
+    @Test
+    fun approveMemberTest() {
+        val approvedMember = memberService.approveMember(memberPending.id!!)
+
+        assertThat(approvedMember.memberStatus).isEqualTo(MemberStatus.DONE)
+    }
+
+    @DisplayName("사용자의 프로필을 거절하면 사용자의 상태가 REJECT 로 바뀐다.")
+    @Test
+    fun rejectMemberTest() {
+        val rejectReason = "페이스 이미지에 얼굴이 제대로 확인되지 않습니다."
+
+        val rejectedMember = memberService.rejectMember(memberPending.id!!, rejectReason)
+        val savedRejectReason = memberService.findRejectReason(rejectedMember)
+
+        assertAll(
+            { assertThat(rejectedMember.memberStatus).isEqualTo(MemberStatus.REJECT) },
+            { assertThat(savedRejectReason).isEqualTo(rejectReason) },
+        )
     }
 }

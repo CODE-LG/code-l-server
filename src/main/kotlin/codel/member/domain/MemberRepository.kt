@@ -3,8 +3,10 @@ package codel.member.domain
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
+import codel.member.infrastructure.RejectReasonJpaRepository
 import codel.member.infrastructure.entity.MemberEntity
 import codel.member.infrastructure.entity.ProfileEntity
+import codel.member.infrastructure.entity.RejectReasonEntity
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional
 class MemberRepository(
     private val memberJpaRepository: MemberJpaRepository,
     private val profileJpaRepository: ProfileJpaRepository,
+    private val rejectReasonJpaRepository: RejectReasonJpaRepository,
 ) {
     fun loginMember(member: Member): Member {
         if (memberJpaRepository.existsByOauthTypeAndOauthId(member.oauthType, member.oauthId)) {
@@ -40,19 +43,62 @@ class MemberRepository(
 
     @Transactional(readOnly = true)
     fun findMember(memberId: Long): Member {
-        val memberEntity =
-            memberJpaRepository
-                .findById(memberId)
-                .orElseThrow { throw MemberException(HttpStatus.BAD_REQUEST, "회원이 존재하지 않습니다.") }
+        val memberEntity = findMemberEntityByMemberId(memberId)
         return memberEntity.toDomain()
     }
 
-    fun updateMember(member: Member) {
-        val memberId = member.id ?: throw MemberException(HttpStatus.BAD_REQUEST, "id가 없는 멤버 입니다.")
-        val memberEntity =
-            memberJpaRepository.findByIdOrNull(memberId) ?: throw MemberException(HttpStatus.BAD_REQUEST, "해당 id 멤버가 존재하지 않습니다.")
-        val profileEntity = member.profile?.let { profileJpaRepository.save(ProfileEntity.toEntity(member.profile)) }
+    private fun findMemberEntityByMemberId(memberId: Long) =
+        memberJpaRepository.findByIdOrNull(memberId) ?: throw MemberException(
+            HttpStatus.BAD_REQUEST,
+            "해당 id에 일치하는 멤버가 없습니다.",
+        )
 
-        memberEntity.updateEntity(member, profileEntity)
+    fun updateMember(member: Member) {
+        val memberEntity = findMemberEntityByMemberId(member.getIdOrThrow())
+        if (memberEntity.profileEntity == null) {
+            saveProfileEntity(memberEntity, member.profile)
+        }
+        memberEntity.updateEntity(member)
     }
+
+    private fun saveProfileEntity(
+        memberEntity: MemberEntity,
+        profile: Profile?,
+    ) {
+        profile ?: return
+        val savedProfileEntity = profileJpaRepository.save(ProfileEntity.toEntity(profile))
+        memberEntity.saveProfileEntity(savedProfileEntity)
+    }
+
+    fun saveRejectReason(
+        member: Member,
+        rejectReason: String,
+    ) {
+        val memberEntity = findMemberEntityByMemberId(member.getIdOrThrow())
+        val rejectReasonEntity = RejectReasonEntity.toEntity(memberEntity, rejectReason)
+        rejectReasonJpaRepository.save(rejectReasonEntity)
+    }
+
+    @Transactional(readOnly = true)
+    fun findPendingMembers(): List<Member> {
+        val memberEntities = memberJpaRepository.findByMemberStatus(MemberStatus.PENDING)
+
+        return memberEntities.map { memberEntity -> memberEntity.toDomain() }
+    }
+
+    @Transactional(readOnly = true)
+    fun findRejectReason(member: Member): String {
+        member.validateRejectedOrThrow()
+        val memberEntity = findMemberEntityByMemberId(member.getIdOrThrow())
+        val rejectReasonEntity = findByMemberEntityOrThrow(memberEntity)
+
+        return rejectReasonEntity.reason
+    }
+
+    private fun findByMemberEntityOrThrow(memberEntity: MemberEntity): RejectReasonEntity =
+        rejectReasonJpaRepository.findByMemberEntity(memberEntity)
+            ?: throw MemberException(
+                HttpStatus.BAD_REQUEST,
+                "거절 사유가 존재하지 않는 멤버입니다.",
+            )
 }

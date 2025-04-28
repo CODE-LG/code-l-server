@@ -5,6 +5,7 @@ import codel.member.domain.FaceImage
 import codel.member.domain.ImageUploader
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
+import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import codel.member.domain.Profile
 import org.springframework.stereotype.Service
@@ -68,4 +69,30 @@ class MemberService(
         val updateMember = member.updateFcmToken(fcmToken)
         memberRepository.updateMember(updateMember)
     }
+
+    fun findPendingMembers(): List<Member> = memberRepository.findPendingMembers()
+
+    fun approveMember(memberId: Long): Member {
+        val member = memberRepository.findMember(memberId)
+
+        val updateMember = member.updateMemberStatus(MemberStatus.DONE)
+        memberRepository.updateMember(updateMember)
+        return updateMember
+    }
+
+    @Transactional
+    fun rejectMember(
+        memberId: Long,
+        reason: String,
+    ): Member {
+        val member = memberRepository.findMember(memberId)
+
+        memberRepository.saveRejectReason(member, reason)
+        val updateMember = member.updateMemberStatus(MemberStatus.REJECT)
+        memberRepository.updateMember(updateMember)
+
+        return updateMember
+    }
+
+    fun findRejectReason(member: Member): String = memberRepository.findRejectReason(member)
 }

@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout source code
@@ -32,7 +32,8 @@ jobs:
               token:
                 expire-length: ${{ secrets.JWT_EXPIRE_LENGTH }}
                 secret-key: ${{ secrets.JWT_SECRET_KEY }}
-          
+            admin:
+              password: ${{ secrets.ADMIN_PASSWORD }}
           cloud:
             aws:
               region:
@@ -50,6 +51,21 @@ jobs:
             metrics:
               enable:
                 all: true
+          spring:
+            datasource:
+              driver-class-name: com.mysql.cj.jdbc.Driver
+              url: jdbc:mysql://codel-db.cbu0ugiswpor.ap-northeast-2.rds.amazonaws.com:3306/codel
+              username: ${{ secrets.DEV_RDS_USER_NAME }}
+              password: ${{ secrets.DEV_RDS_USER_PASSWORD }}
+          
+            jpa:
+              open-in-view: false
+              hibernate:
+                ddl-auto: create
+              show-sql: true
+              database-platform: org.hibernate.dialect.MySQL8Dialect
+          springdoc:
+            override-with-generic-response: false
           EOF
 
       - name: Restore firebase-adminsdk.json

@@ -1,5 +1,6 @@
 package codel.member.infrastructure
 
+import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import codel.member.infrastructure.entity.MemberEntity
 import org.springframework.data.jpa.repository.JpaRepository
@@ -16,4 +17,6 @@ interface MemberJpaRepository : JpaRepository<MemberEntity, Long> {
         oauthType: OauthType,
         oauthId: String,
     ): MemberEntity
+
+    fun findByMemberStatus(memberStatus: MemberStatus): List<MemberEntity>
 }

@@ -17,10 +17,13 @@ class JwtAuthFilter(
         private val EXCLUDE_URIS =
             listOf(
                 "/v1/member/login",
+                "/v1/admin/login",
                 "/v1/health",
                 "/swagger-ui/",
                 "/v3/api-docs",
                 "/actuator/",
+                "/image/",
+                "/favicon.ico",
             )
     }
 
@@ -54,7 +57,13 @@ class JwtAuthFilter(
         return if (bearer != null && bearer.startsWith("Bearer ")) {
             bearer.substring(7)
         } else {
-            null
+            findTokenInCookie(request)
         }
+    }
+
+    private fun findTokenInCookie(request: HttpServletRequest): String? {
+        val cookies = request.cookies
+        val accessToken = cookies?.firstOrNull { it.name == "access_token" }
+        return accessToken?.value
     }
 }

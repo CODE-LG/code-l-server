@@ -3,6 +3,7 @@ package codel.member.infrastructure.entity
 import codel.member.domain.CodeImage
 import codel.member.domain.FaceImage
 import codel.member.domain.Profile
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -24,7 +25,9 @@ class ProfileEntity(
     var smallCity: String,
     var mbti: String,
     var introduce: String,
+    @Column(length = 1000)
     var codeImage: String? = null, // 복수
+    @Column(length = 1000)
     var faceImage: String? = null, // 복수
 ) {
     companion object {
@@ -67,6 +70,19 @@ class ProfileEntity(
             mbti = this.mbti,
             introduce = this.introduce,
         )
+
+    fun updateProfile(profile: Profile) {
+        this.codeName = profile.codeName
+        this.age = profile.age
+        this.job = profile.job
+        this.smoke = profile.smoke
+        this.hobby = serializeAttribute(profile.hobby)
+        this.style = serializeAttribute(profile.style)
+        this.bigCity = profile.bigCity
+        this.smallCity = profile.smallCity
+        this.mbti = profile.mbti
+        this.introduce = profile.introduce
+    }
 
     fun updateCodeImage(codeImage: CodeImage) {
         this.codeImage = serializeAttribute(codeImage.urls)
