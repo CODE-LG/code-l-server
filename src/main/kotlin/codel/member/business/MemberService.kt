@@ -5,6 +5,7 @@ import codel.member.domain.FaceImage
 import codel.member.domain.ImageUploader
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
+import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import codel.member.domain.Profile
 import org.springframework.stereotype.Service

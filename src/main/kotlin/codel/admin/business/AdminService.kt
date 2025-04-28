@@ -4,7 +4,6 @@ import codel.admin.domain.Admin
 import codel.auth.business.AuthService
 import codel.member.business.MemberService
 import codel.member.domain.Member
-import codel.member.presentation.request.MemberLoginRequest
 import codel.notification.business.NotificationService
 import codel.notification.domain.Notification
 import org.springframework.beans.factory.annotation.Value
@@ -30,12 +29,7 @@ class AdminService(
 
         memberService.loginMember(member)
 
-        return authService.provideToken(
-            MemberLoginRequest(
-                oauthType = admin.oauthType,
-                oauthId = admin.oauthId,
-            ),
-        )
+        return authService.provideToken(member)
     }
 
     fun findPendingMembers(): List<Member> = memberService.findPendingMembers()
