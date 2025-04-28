@@ -68,6 +68,32 @@ jobs:
             override-with-generic-response: false
           EOF
 
+      - name: Generate application.yml for test
+        run: |
+          mkdir -p src/test/resources
+          cat <<EOF > src/test/resources/application.yml
+          spring:
+            datasource:
+              driver-class-name: org.h2.Driver
+              url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+              username: sa
+              password:
+      
+            jpa:
+              hibernate:
+                ddl-auto: create-drop
+              show-sql: true
+              properties:
+                hibernate:
+                  format_sql: true
+              database-platform: org.hibernate.dialect.H2Dialect
+      
+          logging:
+            level:
+              org.hibernate.SQL: debug
+              org.hibernate.type.descriptor.sql.BasicBinder: trace
+          EOF
+
       - name: Restore firebase-adminsdk.json
         run: |
           echo "$FIREBASE_CONFIG_JSON" > ./src/main/resources/code-l-b109b-firebase-adminsdk-fbsvc-8c4eb2e6f2.json
