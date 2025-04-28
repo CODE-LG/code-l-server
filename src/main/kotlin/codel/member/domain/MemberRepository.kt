@@ -47,6 +47,12 @@ class MemberRepository(
         return memberEntity.toDomain()
     }
 
+    private fun findMemberEntityByMemberId(memberId: Long) =
+        memberJpaRepository.findByIdOrNull(memberId) ?: throw MemberException(
+            HttpStatus.BAD_REQUEST,
+            "해당 id에 일치하는 멤버가 없습니다.",
+        )
+
     fun updateMember(member: Member) {
         val memberEntity = findMemberEntityByMemberId(member.getIdOrThrow())
         if (memberEntity.profileEntity == null) {
@@ -54,12 +60,6 @@ class MemberRepository(
         }
         memberEntity.updateEntity(member)
     }
-
-    private fun findMemberEntityByMemberId(memberId: Long) =
-        memberJpaRepository.findByIdOrNull(memberId) ?: throw MemberException(
-            HttpStatus.BAD_REQUEST,
-            "해당 id에 일치하는 멤버가 없습니다.",
-        )
 
     private fun saveProfileEntity(
         memberEntity: MemberEntity,
