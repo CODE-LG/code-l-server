@@ -79,7 +79,7 @@ jobs:
             jwt:
               token:
                 expire-length: 3600000
-                secret-key: dummy-secret-key
+                secret-key: dummy-secret-key-should-be-long-enough-123456
             admin:
               password: dummy-admin-password
           
