@@ -1,7 +1,7 @@
 package codel.config
 
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.extension.BeforeEachCallback
+import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.springframework.beans.factory.NoSuchBeanDefinitionException
 import org.springframework.context.ApplicationContext
@@ -11,9 +11,9 @@ import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.transaction.annotation.Transactional
 
 class DataCleanerExtension :
-    BeforeEachCallback,
+    AfterEachCallback,
     Loggable {
-    override fun beforeEach(extensionContext: ExtensionContext) {
+    override fun afterEach(extensionContext: ExtensionContext) {
         val applicationContext = SpringExtension.getApplicationContext(extensionContext)
 
         validateTransactionalAnnotationExists(extensionContext)
