@@ -38,6 +38,15 @@ class MemberRepository(
         return memberEntity.toDomain()
     }
 
+    @Transactional(readOnly = true)
+    fun findMember(memberId: Long): Member {
+        val memberEntity =
+            memberJpaRepository
+                .findById(memberId)
+                .orElseThrow { throw MemberException(HttpStatus.BAD_REQUEST, "회원이 존재하지 않습니다.") }
+        return memberEntity.toDomain()
+    }
+
     fun updateMember(member: Member) {
         val memberId = member.id ?: throw MemberException(HttpStatus.BAD_REQUEST, "id가 없는 멤버 입니다.")
         val memberEntity =

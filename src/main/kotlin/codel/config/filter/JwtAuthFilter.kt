@@ -4,10 +4,12 @@ import codel.auth.TokenProvider
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
 
 @Component
+@Order(1)
 class JwtAuthFilter(
     private val tokenProvider: TokenProvider,
 ) : OncePerRequestFilter() {
@@ -41,10 +43,8 @@ class JwtAuthFilter(
             response.writer.write("""{"message": "인증되지 않은 사용자입니다."}""")
             return
         }
-        val oauthId = tokenProvider.extractOauthId(token)
-        val oauthType = tokenProvider.extractOauthType(token)
-        request.setAttribute("oauthId", oauthId)
-        request.setAttribute("oauthType", oauthType)
+        val memberId = tokenProvider.extractMemberId(token)
+        request.setAttribute("memberId", memberId)
 
         filterChain.doFilter(request, response)
     }

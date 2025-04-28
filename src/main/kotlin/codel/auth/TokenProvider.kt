@@ -2,7 +2,6 @@ package codel.auth
 
 import codel.auth.exception.AuthException
 import codel.member.domain.Member
-import codel.member.domain.OauthType
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
@@ -11,7 +10,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import java.security.Key
-import java.util.*
+import java.util.Date
 
 @Component
 class TokenProvider(
@@ -22,8 +21,6 @@ class TokenProvider(
 ) {
     companion object {
         private const val MEMBER_ID_CLAIM_KEY = "id"
-        private const val SOCIAL_LOGIN_ID_CLAIM_KEY = "oauthId"
-        private const val OAUTH_TYPE = "oauthType"
     }
 
     private val key: Key
@@ -36,8 +33,6 @@ class TokenProvider(
         return Jwts
             .builder()
             .claim(MEMBER_ID_CLAIM_KEY, member.id)
-            .claim(SOCIAL_LOGIN_ID_CLAIM_KEY, member.oauthId)
-            .claim(OAUTH_TYPE, member.oauthType)
             .setIssuedAt(now)
             .setExpiration(validity)
             .signWith(key, SignatureAlgorithm.HS256)
@@ -68,7 +63,5 @@ class TokenProvider(
         }
     }
 
-    fun extractOauthId(token: String): String = getPayload(token)[SOCIAL_LOGIN_ID_CLAIM_KEY].toString()
-
-    fun extractOauthType(token: String): OauthType = OauthType.valueOf(getPayload(token)[OAUTH_TYPE].toString())
+    fun extractMemberId(token: String): String = getPayload(token)[MEMBER_ID_CLAIM_KEY].toString()
 }

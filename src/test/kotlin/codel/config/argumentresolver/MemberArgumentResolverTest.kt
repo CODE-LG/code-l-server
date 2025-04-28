@@ -27,25 +27,25 @@ class MemberArgumentResolverTest {
     @DisplayName("ArgumentResolver는 Member 정보를 반환한다.")
     @Test
     fun resolveArgumentTest() {
+        val memberId = 1L
         val oauthId = "seok"
         val oauthType = OauthType.KAKAO
 
         val fakeMember =
             Member(
-                id = 1L,
+                id = memberId,
                 oauthId = oauthId,
                 oauthType = oauthType,
                 memberStatus = MemberStatus.SIGNUP,
             )
 
         val httpRequest = mock(HttpServletRequest::class.java)
-        `when`(httpRequest.getAttribute("oauthId")).thenReturn(oauthId)
-        `when`(httpRequest.getAttribute("oauthType")).thenReturn(oauthType)
+        `when`(httpRequest.getAttribute("memberId")).thenReturn(memberId.toString())
 
         val webRequest = mock(NativeWebRequest::class.java)
         `when`(webRequest.getNativeRequest(HttpServletRequest::class.java)).thenReturn(httpRequest)
 
-        `when`(memberService.findMember(oauthType, oauthId)).thenReturn(fakeMember)
+        `when`(memberService.findMember(memberId)).thenReturn(fakeMember)
 
         val result =
             resolver.resolveArgument(

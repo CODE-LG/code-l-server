@@ -33,9 +33,9 @@ class MemberServiceTest(
                 oauthType = OauthType.KAKAO,
                 oauthId = "hogee",
             )
-        val memberStatus = memberService.loginMember(member)
+        val loginMember = memberService.loginMember(member)
 
-        assertThat(memberStatus).isEqualTo(MemberStatus.SIGNUP)
+        assertThat(loginMember.memberStatus).isEqualTo(MemberStatus.SIGNUP)
     }
 
     @DisplayName("프로필을 저장에 성공한 후 멤버 상태는 CODE_SURVEY 이다.")

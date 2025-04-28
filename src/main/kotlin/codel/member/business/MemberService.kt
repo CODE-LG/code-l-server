@@ -5,7 +5,6 @@ import codel.member.domain.FaceImage
 import codel.member.domain.ImageUploader
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
-import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import codel.member.domain.Profile
 import org.springframework.stereotype.Service
@@ -17,10 +16,10 @@ class MemberService(
     private val memberRepository: MemberRepository,
     private val imageUploader: ImageUploader,
 ) {
-    fun loginMember(member: Member): MemberStatus {
+    fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
 
-        return loginMember.memberStatus
+        return loginMember
     }
 
     fun saveProfile(
@@ -35,6 +34,8 @@ class MemberService(
         oauthType: OauthType,
         oauthId: String,
     ): Member = memberRepository.findMember(oauthType, oauthId)
+
+    fun findMember(memberId: Long): Member = memberRepository.findMember(memberId)
 
     @Transactional
     fun saveCodeImage(
