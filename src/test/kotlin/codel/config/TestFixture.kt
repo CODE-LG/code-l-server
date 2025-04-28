@@ -10,10 +10,12 @@ import codel.member.infrastructure.RejectReasonJpaRepository
 import codel.member.infrastructure.entity.MemberEntity
 import codel.member.infrastructure.entity.ProfileEntity
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootTest
+@ExtendWith(DataCleanerExtension::class)
 class TestFixture {
     lateinit var memberSignup: Member
     lateinit var memberCodeSurvey: Member
@@ -37,10 +39,6 @@ class TestFixture {
 
     @BeforeEach
     fun setUp() {
-        rejectReasonJpaRepository.deleteAll()
-        memberJpaRepository.deleteAll()
-        profileJpaRepository.deleteAll()
-
         memberSignup = saveMemberSignup()
         memberCodeSurvey = saveMemberCodeSurvey()
         memberCodeProfileImage = saveMemberCodeProfileImage()
