@@ -19,7 +19,7 @@ class AdminController(
     private val adminService: AdminService,
 ) {
     @GetMapping("/v1/admin/login")
-    fun login(): String = "/login"
+    fun login(): String = "login"
 
     @PostMapping("/v1/admin/login")
     fun login(
@@ -35,7 +35,7 @@ class AdminController(
             "redirect:/v1/admin/home"
         } catch (e: AdminException) {
             model.addAttribute("error", e.message)
-            "/login"
+            "login"
         }
     }
 
@@ -55,7 +55,7 @@ class AdminController(
         val members = adminService.findPendingMembers()
         model.addAttribute("members", members)
 
-        return "/home"
+        return "home"
     }
 
     @GetMapping("/v1/admin/member/{memberId}")
@@ -66,7 +66,7 @@ class AdminController(
         val member = adminService.findMember(memberId)
         model.addAttribute("member", member)
 
-        return "/memberDetail"
+        return "memberDetail"
     }
 
     @PostMapping("/v1/admin/approval/{memberId}")
