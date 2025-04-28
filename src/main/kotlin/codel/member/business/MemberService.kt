@@ -8,6 +8,8 @@ import codel.member.domain.MemberRepository
 import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import codel.member.domain.Profile
+import codel.member.exception.MemberException
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -95,4 +97,9 @@ class MemberService(
     }
 
     fun findRejectReason(member: Member): String = memberRepository.findRejectReason(member)
+
+    fun findMemberProfile(member: Member): Member {
+        val memberId = member.id ?: throw MemberException(HttpStatus.BAD_REQUEST, "회원 ID가 존재하지 않습니다.")
+        return memberRepository.findMember(memberId)
+    }
 }

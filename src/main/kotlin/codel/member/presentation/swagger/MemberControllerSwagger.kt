@@ -5,6 +5,7 @@ import codel.member.domain.Member
 import codel.member.presentation.request.MemberLoginRequest
 import codel.member.presentation.request.ProfileSavedRequest
 import codel.member.presentation.response.MemberLoginResponse
+import codel.member.presentation.response.MemberProfileResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -79,4 +80,16 @@ interface MemberControllerSwagger {
         @LoginMember member: Member,
         @RequestBody fcmToken: String,
     ): ResponseEntity<Unit>
+
+    @Operation(summary = "작성된 사용자의 코드 프로필 확인", description = "작성된 사용자의 코드 프로필 정보를 받을 수 있습니다.")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "사용자 프로필을 성공적으로 가져옴"),
+            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
+        ],
+    )
+    fun findMemberProfile(
+        @LoginMember member: Member,
+    ): ResponseEntity<MemberProfileResponse>
 }
