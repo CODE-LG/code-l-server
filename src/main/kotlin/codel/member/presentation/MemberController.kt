@@ -24,12 +24,12 @@ class MemberController(
     override fun loginMember(
         @RequestBody request: MemberLoginRequest,
     ): ResponseEntity<MemberLoginResponse> {
-        val memberStatus = memberService.loginMember(request.toMember())
-        val token = authService.provideToken(request)
+        val member = memberService.loginMember(request.toMember())
+        val token = authService.provideToken(member)
         return ResponseEntity
             .ok()
             .header("Authorization", "Bearer $token")
-            .body(MemberLoginResponse(memberStatus))
+            .body(MemberLoginResponse(member.memberStatus))
     }
 
     @PostMapping("/v1/member/profile")
