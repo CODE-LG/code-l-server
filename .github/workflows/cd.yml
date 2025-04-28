@@ -85,11 +85,13 @@ jobs:
                     <url>http://52.79.233.93:3100/loki/api/v1/push</url>
                 </http>
                 <format>
-                    <labels>
-                        <label name="app" value="springboot" />
-                        <label name="env" value="dev" />
-                        <label name="level" pattern="%level" />
-                    </labels>
+                    <label>
+                        <pattern>
+                            app=springboot,
+                            env=dev,
+                            level=%level
+                        </pattern>
+                    </label>
                     <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger - memberId=%X{memberId} - %msg%n</pattern>
                 </format>
             </appender>
