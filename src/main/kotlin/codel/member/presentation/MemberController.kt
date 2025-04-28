@@ -7,9 +7,11 @@ import codel.member.domain.Member
 import codel.member.presentation.request.MemberLoginRequest
 import codel.member.presentation.request.ProfileSavedRequest
 import codel.member.presentation.response.MemberLoginResponse
+import codel.member.presentation.response.MemberProfileResponse
 import codel.member.presentation.swagger.MemberControllerSwagger
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestPart
@@ -75,5 +77,13 @@ class MemberController(
     ): ResponseEntity<Unit> {
         memberService.saveFcmToken(member, fcmToken)
         return ResponseEntity.ok().build()
+    }
+
+    @GetMapping("/v1/member/profile")
+    override fun findMemberProfile(
+        @LoginMember member: Member,
+    ): ResponseEntity<MemberProfileResponse> {
+        val findMember = memberService.findMemberProfile(member)
+        return ResponseEntity.ok(MemberProfileResponse.toResponse(findMember))
     }
 }

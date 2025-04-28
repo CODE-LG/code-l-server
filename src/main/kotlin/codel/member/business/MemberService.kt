@@ -95,4 +95,9 @@ class MemberService(
     }
 
     fun findRejectReason(member: Member): String = memberRepository.findRejectReason(member)
+
+    fun findMemberProfile(member: Member): Member {
+        val memberId = member.getIdOrThrow()
+        return memberRepository.findMember(memberId)
+    }
 }
