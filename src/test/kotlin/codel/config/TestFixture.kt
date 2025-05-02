@@ -54,6 +54,7 @@ class TestFixture {
                 oauthType = OauthType.KAKAO,
                 oauthId = "hogee1",
                 memberStatus = MemberStatus.SIGNUP,
+                email = "hogee@hogee",
             )
         val saveEntity = memberJpaRepository.save(memberEntity)
         return saveEntity.toDomain()
@@ -81,6 +82,7 @@ class TestFixture {
                 oauthType = OauthType.KAKAO,
                 oauthId = "hogee2",
                 memberStatus = MemberStatus.CODE_SURVEY,
+                email = "hogee@hogee",
             )
         val saveEntity = memberJpaRepository.save(memberEntity)
         return saveEntity.toDomain()
@@ -109,6 +111,7 @@ class TestFixture {
                 oauthType = OauthType.KAKAO,
                 oauthId = "hogee3",
                 memberStatus = MemberStatus.CODE_PROFILE_IMAGE,
+                email = "hogee@hogee",
             )
         val saveEntity = memberJpaRepository.save(memberEntity)
         return saveEntity.toDomain()
@@ -138,6 +141,7 @@ class TestFixture {
                 oauthType = OauthType.KAKAO,
                 oauthId = "hogee4",
                 memberStatus = MemberStatus.PENDING,
+                email = "hogee@hogee",
             )
         val saveEntity = memberJpaRepository.save(memberEntity)
         return saveEntity.toDomain()
@@ -167,6 +171,7 @@ class TestFixture {
                 oauthType = OauthType.KAKAO,
                 oauthId = "hogee5",
                 memberStatus = MemberStatus.DONE,
+                email = "hogee@hogee",
             )
         val saveEntity = memberJpaRepository.save(memberEntity)
         return saveEntity.toDomain()

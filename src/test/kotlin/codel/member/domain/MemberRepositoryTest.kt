@@ -51,6 +51,7 @@ class MemberRepositoryTest(
                 id = 100L,
                 oauthType = OauthType.APPLE,
                 oauthId = "seok",
+                email = "hogee@hogee",
             )
         seokMember.updateProfile(profile)
         assertThatThrownBy { memberRepository.updateMember(seokMember) }
@@ -65,6 +66,7 @@ class MemberRepositoryTest(
             Member(
                 oauthType = OauthType.APPLE,
                 oauthId = "seok",
+                email = "hogee@hogee",
             )
         seokMember.updateProfile(profile)
         assertThatThrownBy { memberRepository.updateMember(seokMember) }

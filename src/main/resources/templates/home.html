@@ -18,8 +18,7 @@
                 <thead class="table-light">
                 <tr>
                     <th>ID</th>
-                    <th>oauth 타입</th>
-                    <th>oauthId</th>
+                    <th>email</th>
                     <th>이름</th>
                     <th>상태</th>
                 </tr>
@@ -28,13 +27,11 @@
                 <tr th:each="member : ${members}" class="member-row"
                     th:onclick="'location.href=\'/v1/admin/member/' + ${member.id} + '\';'" style="cursor: pointer;"
                     th:data-id="${member.id}"
-                    th:data-oauthType="${member.oauthType}"
-                    th:data-oauthId="${member.oauthId}"
+                    th:data-email="${member.email}"
                     th:data-name="${member.profile.codeName}"
                     th:data-status="${member.memberStatus}">
                     <td th:text="${member.id}"></td>
-                    <td th:text="${member.oauthType}"></td>
-                    <td th:text="${member.oauthId}"></td>
+                    <td th:text="${member.email}"></td>
                     <td th:text="${member.profile.codeName}"></td>
                     <td th:text="${member.memberStatus}"></td>
                 </tr>

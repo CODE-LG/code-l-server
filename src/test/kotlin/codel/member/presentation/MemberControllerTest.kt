@@ -33,6 +33,7 @@ class MemberControllerTest : TestFixture() {
             mapOf(
                 "oauthType" to "APPLE",
                 "oauthId" to "hogee",
+                "email" to "hogee",
             )
         val expectedResponse = MemberLoginResponse(MemberStatus.SIGNUP)
 
@@ -70,6 +71,7 @@ class MemberControllerTest : TestFixture() {
             mapOf(
                 "oauthType" to "APPLE",
                 "oauthId" to "hogee",
+                "email" to "hogee",
             )
 
         given()
@@ -99,6 +101,7 @@ class MemberControllerTest : TestFixture() {
             mapOf(
                 "oauthType" to "APPLE",
                 "oauthId" to "hogee",
+                "email" to "hogee",
             )
 
         val response =
