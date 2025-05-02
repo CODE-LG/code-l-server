@@ -19,6 +19,7 @@ class MemberJpaRepositoryTest : TestFixture() {
                 oauthType = memberSignup.oauthType,
                 oauthId = memberSignup.oauthId,
                 memberStatus = MemberStatus.SIGNUP,
+                email = "hogee@hogee",
             )
         assertThrows(DataIntegrityViolationException::class.java) {
             memberJpaRepository.save(newEntity)

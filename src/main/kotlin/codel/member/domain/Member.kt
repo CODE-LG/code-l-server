@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus
 class Member(
     val id: Long? = null,
     val profile: Profile? = null,
+    val email: String,
     val oauthType: OauthType,
     val oauthId: String,
     val codeImage: CodeImage? = null,
@@ -23,6 +24,7 @@ class Member(
             faceImage = this.faceImage,
             memberStatus = MemberStatus.CODE_SURVEY,
             fcmToken = this.fcmToken,
+            email = this.email,
         )
 
     fun updateCodeImage(codeImage: CodeImage): Member =
@@ -35,6 +37,7 @@ class Member(
             faceImage = this.faceImage,
             memberStatus = MemberStatus.CODE_PROFILE_IMAGE,
             fcmToken = this.fcmToken,
+            email = this.email,
         )
 
     fun updateFaceImage(faceImage: FaceImage): Member =
@@ -47,6 +50,7 @@ class Member(
             faceImage = faceImage,
             memberStatus = MemberStatus.PENDING,
             fcmToken = this.fcmToken,
+            email = this.email,
         )
 
     fun updateFcmToken(fcmToken: String): Member =
@@ -59,6 +63,7 @@ class Member(
             faceImage = this.faceImage,
             memberStatus = this.memberStatus,
             fcmToken = fcmToken,
+            email = this.email,
         )
 
     fun updateMemberStatus(memberStatus: MemberStatus): Member =
@@ -71,6 +76,7 @@ class Member(
             faceImage = this.faceImage,
             memberStatus = memberStatus,
             fcmToken = this.fcmToken,
+            email = this.email,
         )
 
     fun getIdOrThrow(): Long = id ?: throw MemberException(HttpStatus.BAD_REQUEST, "id가 없는 멤버 입니다.")

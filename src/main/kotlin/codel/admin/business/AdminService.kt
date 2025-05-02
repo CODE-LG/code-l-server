@@ -25,6 +25,7 @@ class AdminService(
                 oauthType = admin.oauthType,
                 oauthId = admin.oauthId,
                 memberStatus = admin.memberStatus,
+                email = "hogee",
             )
 
         memberService.loginMember(member)

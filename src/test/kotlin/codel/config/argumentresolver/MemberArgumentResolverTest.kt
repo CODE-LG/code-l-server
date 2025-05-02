@@ -37,6 +37,7 @@ class MemberArgumentResolverTest {
                 oauthId = oauthId,
                 oauthType = oauthType,
                 memberStatus = MemberStatus.SIGNUP,
+                email = "hogee@hogee",
             )
 
         val httpRequest = mock(HttpServletRequest::class.java)

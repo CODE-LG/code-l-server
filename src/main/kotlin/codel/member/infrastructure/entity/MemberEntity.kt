@@ -23,6 +23,7 @@ class MemberEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private var id: Long? = null,
+    var email: String,
     @OneToOne
     var profileEntity: ProfileEntity? = null,
     var fcmToken: String? = null,
@@ -36,6 +37,7 @@ class MemberEntity(
                 oauthType = member.oauthType,
                 oauthId = member.oauthId,
                 memberStatus = member.memberStatus,
+                email = member.email,
             )
     }
 
@@ -46,6 +48,7 @@ class MemberEntity(
             oauthType = this.oauthType,
             oauthId = this.oauthId,
             memberStatus = this.memberStatus,
+            email = this.email,
             codeImage = profileEntity?.getCodeImage()?.let { CodeImage(it) },
             faceImage = profileEntity?.getFaceImage()?.let { FaceImage(it) },
         )

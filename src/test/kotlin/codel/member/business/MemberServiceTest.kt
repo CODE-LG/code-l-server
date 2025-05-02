@@ -33,6 +33,7 @@ class MemberServiceTest(
             Member(
                 oauthType = OauthType.KAKAO,
                 oauthId = "hogee",
+                email = "hogee@hogee",
             )
         val loginMember = memberService.loginMember(member)
 
