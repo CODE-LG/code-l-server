@@ -4,6 +4,7 @@ import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.chat.infrastructure.entity.ChatRoomEntity
 import codel.chat.infrastructure.entity.ChatRoomMemberEntity
+import codel.member.domain.Member
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.entity.MemberEntity
 import org.springframework.stereotype.Component
@@ -18,28 +19,28 @@ class ChatRoomRepository(
 ) {
     fun saveChatRoom(
         chatRoom: ChatRoom,
-        creatorId: Long,
-        partnerId: Long,
+        requester: Member,
+        partner: Member,
     ): ChatRoom {
         val chatRoomEntity = chatRoomJpaRepository.save(ChatRoomEntity.toEntity(chatRoom))
-        saveChatRoomMember(chatRoomEntity, findMemberById(creatorId))
-        saveChatRoomMember(chatRoomEntity, findMemberById(partnerId))
+
+        val requesterMemberEntity = findMemberEntity(requester)
+        val partnerMemberEntity = findMemberEntity(partner)
+
+        saveChatRoomMember(chatRoomEntity, requesterMemberEntity, partnerMemberEntity)
 
         return chatRoomEntity.toDomain()
     }
 
-    private fun findMemberById(creatorId: Long): MemberEntity =
-        memberJpaRepository
-            .findById(creatorId)
-            .orElseThrow { IllegalArgumentException("해당 ID의 사용자가 존재하지 않습니다. id=$creatorId") }
+    private fun findMemberEntity(member: Member) =
+        memberJpaRepository.findById(member.getIdOrThrow()).orElseThrow { IllegalArgumentException() }
 
     private fun saveChatRoomMember(
         chatRoomEntity: ChatRoomEntity,
-        memberEntity: MemberEntity,
-    ) = chatRoomMemberJpaRepository.save(
-        ChatRoomMemberEntity(
-            chatRoomEntity = chatRoomEntity,
-            memberEntity = memberEntity,
-        ),
-    )
+        requesterMemberEntity: MemberEntity,
+        partnerMemberEntity: MemberEntity,
+    ) {
+        chatRoomMemberJpaRepository.save(ChatRoomMemberEntity.toEntity(chatRoomEntity, requesterMemberEntity))
+        chatRoomMemberJpaRepository.save(ChatRoomMemberEntity.toEntity(chatRoomEntity, partnerMemberEntity))
+    }
 }

@@ -12,8 +12,21 @@ import jakarta.persistence.ManyToOne
 class ChatRoomMemberEntity(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     var chatRoomEntity: ChatRoomEntity,
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     var memberEntity: MemberEntity,
-)
+) {
+    companion object {
+        fun toEntity(
+            chatRoomEntity: ChatRoomEntity,
+            memberEntity: MemberEntity,
+        ): ChatRoomMemberEntity =
+            ChatRoomMemberEntity(
+                chatRoomEntity = chatRoomEntity,
+                memberEntity = memberEntity,
+            )
+    }
+
+    fun toMemberDomain() = memberEntity.toDomain()
+}
