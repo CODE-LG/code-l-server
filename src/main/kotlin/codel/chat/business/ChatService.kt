@@ -2,6 +2,7 @@ package codel.chat.business
 
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomRepository
+import codel.chat.presentation.dto.ChatRoomResponses
 import codel.chat.presentation.dto.CreateChatRoomResponse
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
@@ -25,5 +26,15 @@ class ChatService(
         val savedChatRoom = chatRoomRepository.saveChatRoom(chatRoom, requester, partner)
 
         return CreateChatRoomResponse.toResponse(savedChatRoom)
+    }
+
+    fun getChatRooms(requester: Member): ChatRoomResponses {
+        val chatRooms = chatRoomRepository.findChatRoomsByMember(requester)
+        val partnerByChatRoom: Map<ChatRoom, Member> =
+            chatRooms.associateWith { chatRoom ->
+                chatRoomRepository.findPartner(chatRoom, requester)
+            }
+
+        return ChatRoomResponses.of(partnerByChatRoom)
     }
 }

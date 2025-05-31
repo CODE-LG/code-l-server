@@ -43,4 +43,25 @@ class ChatRoomRepository(
         chatRoomMemberJpaRepository.save(ChatRoomMemberEntity.toEntity(chatRoomEntity, requesterMemberEntity))
         chatRoomMemberJpaRepository.save(ChatRoomMemberEntity.toEntity(chatRoomEntity, partnerMemberEntity))
     }
+
+    @Transactional(readOnly = true)
+    fun findChatRoomsByMember(member: Member): List<ChatRoom> {
+        val chatRoomEntities = chatRoomJpaRepository.findByMemberIdIn(member.getIdOrThrow())
+
+        return chatRoomEntities.map { chatRoomEntity -> chatRoomEntity.toDomain() }
+    }
+
+    @Transactional(readOnly = true)
+    fun findPartner(
+        chatRoom: ChatRoom,
+        requester: Member,
+    ): Member {
+        val chatRoomMemberEntity =
+            chatRoomMemberJpaRepository.findByChatRoomEntityIdAndMemberEntityIdNot(
+                chatRoom.getIdOrThrow(),
+                requester.getIdOrThrow(),
+            ) ?: throw IllegalArgumentException()
+
+        return chatRoomMemberEntity.toMemberDomain()
+    }
 }
