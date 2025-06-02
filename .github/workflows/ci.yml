@@ -131,28 +131,6 @@ jobs:
         env:
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
 
-      - name: Generate logback-spring.xml
-        run: |
-          mkdir -p src/main/resources
-          cat <<EOF > src/main/resources/logback-spring.xml
-          <configuration>
-            <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
-                <http>
-                    <url>http://52.79.233.93:3100/loki/api/v1/push</url>
-                </http>
-                <format>
-                    <label>app=springboot, env=dev</label>
-                    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-                </format>
-            </appender>
-          
-            <root level="INFO">
-                <appender-ref ref="LOKI"/>
-            </root>
-          </configuration>
-          EOF
-
-
       - name: Build with Gradle
         run: ./gradlew build
 
