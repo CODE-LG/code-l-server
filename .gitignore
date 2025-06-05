@@ -5,7 +5,7 @@ build/
 !**/src/test/**/build/
 src/main/resources/*.yml
 src/main/resources/*.json
-
+/opt/
 
 ### STS ###
 .apt_generated
