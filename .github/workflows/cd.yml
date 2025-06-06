@@ -158,6 +158,10 @@ jobs:
             else
               echo "✅ Docker already installed."
             fi
+            
+            echo "📁 Creating log directory..."
+            sudo mkdir -p /var/log/app
+            sudo chown $USER:$USER /var/log/app
 
             echo "🧼 Cleaning up old container..."
             sudo docker stop codel || true
@@ -167,7 +171,7 @@ jobs:
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
 
             echo "🚀 Starting container..."
-            sudo docker run -d --name codel -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
+            sudo docker run -d --name codel -p 8080:8080 -v /var/log/app:/var/log/app ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
 
             echo "📄 Tail log output:"
             sudo docker logs --tail=20 codel || true
