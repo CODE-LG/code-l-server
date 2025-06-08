@@ -14,7 +14,7 @@ class JwtAuthFilter(
     private val tokenProvider: TokenProvider,
 ) : OncePerRequestFilter() {
     companion object {
-        private val EXCLUDE_URIS =
+        val EXCLUDE_URIS =
             listOf(
                 "/v1/member/login",
                 "/v1/admin/login",
@@ -24,6 +24,8 @@ class JwtAuthFilter(
                 "/actuator/",
                 "/image/",
                 "/favicon.ico",
+                "/index.html",
+                "/ws",
             )
     }
 
