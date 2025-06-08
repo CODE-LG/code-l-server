@@ -12,7 +12,7 @@ import org.springframework.messaging.support.MessageHeaderAccessor
 import org.springframework.stereotype.Component
 
 @Component
-class WebSocketLoginMemberArgumentResolver(
+class WebSocketMemberArgumentResolver(
     private val memberService: MemberService,
 ) : HandlerMethodArgumentResolver {
     override fun supportsParameter(parameter: MethodParameter): Boolean =

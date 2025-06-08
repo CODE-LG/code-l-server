@@ -1,6 +1,6 @@
 package codel.config
 
-import codel.config.argumentresolver.WebSocketLoginMemberArgumentResolver
+import codel.config.argumentresolver.WebSocketMemberArgumentResolver
 import codel.config.interceptor.ChatRoomSubscriptionInterceptor
 import codel.config.interceptor.JwtConnectInterceptor
 import org.springframework.context.annotation.Configuration
@@ -16,10 +16,10 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 class WebSocketConfig(
     private val chatRoomSubscriptionInterceptor: ChatRoomSubscriptionInterceptor,
     private val jwtConnectInterceptor: JwtConnectInterceptor,
-    private val webSocketLoginMemberArgumentResolver: WebSocketLoginMemberArgumentResolver,
+    private val webSocketMemberArgumentResolver: WebSocketMemberArgumentResolver,
 ) : WebSocketMessageBrokerConfigurer {
     override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
-        resolvers.add(webSocketLoginMemberArgumentResolver)
+        resolvers.add(webSocketMemberArgumentResolver)
     }
 
     override fun configureClientInboundChannel(registration: ChannelRegistration) {
