@@ -1,13 +1,13 @@
-package codel.chat.presentation.dto
+package codel.chat.presentation.response
 
 import codel.chat.domain.ChatRoom
-import codel.member.domain.Member
+import codel.chat.domain.ChatRoomMember
 
-class ChatRoomResponses(
+data class ChatRoomResponses(
     val chatrooms: List<ChatRoomResponse>,
 ) {
     companion object {
-        fun of(partnerByChatRoom: Map<ChatRoom, Member>): ChatRoomResponses =
+        fun of(partnerByChatRoom: Map<ChatRoom, ChatRoomMember>): ChatRoomResponses =
             ChatRoomResponses(
                 chatrooms = partnerByChatRoom.map { entry -> ChatRoomResponse.of(entry.key, entry.value) },
             )

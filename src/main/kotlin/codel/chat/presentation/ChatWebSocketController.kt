@@ -1,6 +1,6 @@
 package codel.chat.presentation
 
-import codel.chat.presentation.dto.ChatRequest
+import codel.chat.presentation.request.ChatRequest
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import org.springframework.messaging.handler.annotation.DestinationVariable

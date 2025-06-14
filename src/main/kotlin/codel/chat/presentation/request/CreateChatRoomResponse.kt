@@ -1,8 +1,8 @@
-package codel.chat.presentation.dto
+package codel.chat.presentation.request
 
 import codel.chat.domain.ChatRoom
 
-class CreateChatRoomResponse(
+data class CreateChatRoomResponse(
     val chatRoomId: Long,
 ) {
     companion object {

@@ -1,13 +1,17 @@
 package codel.chat.infrastructure
 
-import codel.chat.infrastructure.entity.ChatRoomMemberEntity
+import codel.chat.domain.ChatRoom
+import codel.chat.domain.ChatRoomMember
+import codel.member.infrastructure.entity.MemberEntity
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMemberEntity, Long> {
-    fun findByChatRoomEntityIdAndMemberEntityIdNot(
-        chatRoomId: Long,
-        excludeMemberId: Long,
-    ): ChatRoomMemberEntity?
+interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMember, Long> {
+    fun findByMemberEntity(member: MemberEntity): List<ChatRoomMember>
+
+    fun findByChatRoomAndMemberEntityNot(
+        chatRoom: ChatRoom,
+        excludeMember: MemberEntity,
+    ): ChatRoomMember?
 }
