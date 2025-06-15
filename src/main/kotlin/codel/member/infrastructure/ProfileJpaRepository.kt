@@ -1,6 +1,6 @@
 package codel.member.infrastructure
 
-import codel.member.infrastructure.entity.ProfileEntity
+import codel.member.domain.Profile
 import org.springframework.data.jpa.repository.JpaRepository
 
-interface ProfileJpaRepository : JpaRepository<ProfileEntity, Long>
+interface ProfileJpaRepository : JpaRepository<Profile, Long>

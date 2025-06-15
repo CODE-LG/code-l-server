@@ -1,6 +1,7 @@
 package codel.member.presentation.request
 
 import codel.member.domain.Member
+import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 
 data class MemberLoginRequest(
@@ -13,5 +14,6 @@ data class MemberLoginRequest(
             oauthType = this.oauthType,
             oauthId = this.oauthId,
             email = this.email ?: "",
+            memberStatus = MemberStatus.SIGNUP,
         )
 }

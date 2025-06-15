@@ -15,18 +15,22 @@ data class ProfileSavedRequest(
     val mbti: String,
     val introduce: String,
 ) {
-    fun toProfile(): Profile =
-        Profile(
+    fun toProfile(): Profile {
+        val serializeHobby = Profile.serializeAttribute(hobby)
+        val serializeStyle = Profile.serializeAttribute(style)
+        return Profile(
             codeName = this.codeName,
             age = this.age,
             job = this.job,
             alcohol = this.alcohol,
             smoke = this.smoke,
-            hobby = this.hobby,
-            style = this.style,
+            hobby = serializeHobby,
+            style = serializeStyle,
             bigCity = this.bigCity,
             smallCity = this.smallCity,
             mbti = this.mbti,
             introduce = this.introduce,
         )
+    }
+
 }
