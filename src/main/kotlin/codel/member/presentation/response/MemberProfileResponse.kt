@@ -1,6 +1,9 @@
 package codel.member.presentation.response
 
 import codel.member.domain.Member
+import codel.member.domain.Profile
+import codel.member.exception.MemberException
+import org.springframework.http.HttpStatus.*
 
 data class MemberProfileResponse(
     val codeName: String,
@@ -21,22 +24,24 @@ data class MemberProfileResponse(
         fun toResponse(member: Member): MemberProfileResponse {
             val profile =
                 member.profile
-                    ?: throw IllegalArgumentException("회원 프로필이 존재하지 않습니다.")
+                    ?: throw MemberException(BAD_REQUEST, "회원 프로필이 존재하지 않습니다.")
 
+            val deserializeHobby = Profile.deserializeAttribute(profile.hobby)
+            val deserializeStyle = Profile.deserializeAttribute(profile.style)
             return MemberProfileResponse(
                 codeName = profile.codeName,
                 age = profile.age,
                 job = profile.job,
                 alcohol = profile.alcohol,
                 smoke = profile.smoke,
-                hobby = profile.hobby,
-                style = profile.style,
+                hobby = deserializeHobby,
+                style = deserializeStyle,
                 bigCity = profile.bigCity,
                 smallCity = profile.smallCity,
                 mbti = profile.mbti,
                 introduce = profile.introduce,
-                codeImages = member.codeImage?.urls ?: emptyList(),
-                faceImages = member.faceImage?.urls ?: emptyList(),
+                codeImages = profile.getCodeImage()?: emptyList(),
+                faceImages = profile.getFaceImage()?: emptyList(),
             )
         }
     }

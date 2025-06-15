@@ -1,13 +1,13 @@
 package codel.member.infrastructure
 
+import codel.member.domain.Member
 import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
-import codel.member.infrastructure.entity.MemberEntity
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface MemberJpaRepository : JpaRepository<MemberEntity, Long> {
+interface MemberJpaRepository : JpaRepository<Member, Long> {
     fun existsByOauthTypeAndOauthId(
         oauthType: OauthType,
         oauthId: String,
@@ -16,7 +16,7 @@ interface MemberJpaRepository : JpaRepository<MemberEntity, Long> {
     fun findByOauthTypeAndOauthId(
         oauthType: OauthType,
         oauthId: String,
-    ): MemberEntity
+    ): Member
 
-    fun findByMemberStatus(memberStatus: MemberStatus): List<MemberEntity>
+    fun findByMemberStatus(memberStatus: MemberStatus): List<Member>
 }

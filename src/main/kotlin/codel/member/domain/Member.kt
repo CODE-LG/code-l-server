@@ -1,83 +1,33 @@
 package codel.member.domain
 
 import codel.member.exception.MemberException
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 import org.springframework.http.HttpStatus
 
+@Entity
+@Table(
+    uniqueConstraints = [
+        UniqueConstraint(columnNames = ["oauthType", "oauthId"]),
+    ],
+)
 class Member(
-    val id: Long? = null,
-    val profile: Profile? = null,
-    val email: String,
-    val oauthType: OauthType,
-    val oauthId: String,
-    val codeImage: CodeImage? = null,
-    val faceImage: FaceImage? = null,
-    val memberStatus: MemberStatus = MemberStatus.SIGNUP,
-    val fcmToken: String? = null,
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null,
+    var email: String,
+    @OneToOne(mappedBy = "member")
+    var profile: Profile? = null,
+    var fcmToken: String? = null,
+    var oauthType: OauthType,
+    var oauthId: String,
+    var memberStatus: MemberStatus,
 ) {
-    fun updateProfile(profile: Profile): Member =
-        Member(
-            id = this.id,
-            profile = profile,
-            oauthType = this.oauthType,
-            oauthId = this.oauthId,
-            codeImage = this.codeImage,
-            faceImage = this.faceImage,
-            memberStatus = MemberStatus.CODE_SURVEY,
-            fcmToken = this.fcmToken,
-            email = this.email,
-        )
-
-    fun updateCodeImage(codeImage: CodeImage): Member =
-        Member(
-            id = this.id,
-            profile = this.profile,
-            oauthType = this.oauthType,
-            oauthId = this.oauthId,
-            codeImage = codeImage,
-            faceImage = this.faceImage,
-            memberStatus = MemberStatus.CODE_PROFILE_IMAGE,
-            fcmToken = this.fcmToken,
-            email = this.email,
-        )
-
-    fun updateFaceImage(faceImage: FaceImage): Member =
-        Member(
-            id = this.id,
-            profile = this.profile,
-            oauthType = this.oauthType,
-            oauthId = this.oauthId,
-            codeImage = this.codeImage,
-            faceImage = faceImage,
-            memberStatus = MemberStatus.PENDING,
-            fcmToken = this.fcmToken,
-            email = this.email,
-        )
-
-    fun updateFcmToken(fcmToken: String): Member =
-        Member(
-            id = this.id,
-            profile = this.profile,
-            oauthType = this.oauthType,
-            oauthId = this.oauthId,
-            codeImage = this.codeImage,
-            faceImage = this.faceImage,
-            memberStatus = this.memberStatus,
-            fcmToken = fcmToken,
-            email = this.email,
-        )
-
-    fun updateMemberStatus(memberStatus: MemberStatus): Member =
-        Member(
-            id = this.id,
-            profile = this.profile,
-            oauthType = this.oauthType,
-            oauthId = this.oauthId,
-            codeImage = this.codeImage,
-            faceImage = this.faceImage,
-            memberStatus = memberStatus,
-            fcmToken = this.fcmToken,
-            email = this.email,
-        )
 
     fun getIdOrThrow(): Long = id ?: throw MemberException(HttpStatus.BAD_REQUEST, "id가 없는 멤버 입니다.")
 

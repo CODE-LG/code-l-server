@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 
+@Transactional
 @Service
 class MemberService(
     private val memberRepository: MemberRepository,
@@ -23,41 +24,48 @@ class MemberService(
         return loginMember
     }
 
+    //TODO: 설문에서 저장 받을 때만 고려함, 프로필 수정 고려 필요
     fun saveProfile(
         member: Member,
         profile: Profile,
     ) {
-        val updateMember = member.updateProfile(profile)
-        memberRepository.updateMember(updateMember)
+        val saveProfile = memberRepository.saveProfile(profile)
+        memberRepository.updateMemberProfile(member, saveProfile)
     }
 
+    @Transactional(readOnly = true)
     fun findMember(
         oauthType: OauthType,
         oauthId: String,
     ): Member = memberRepository.findMember(oauthType, oauthId)
 
+    @Transactional(readOnly = true)
     fun findMember(memberId: Long): Member = memberRepository.findMember(memberId)
 
-    @Transactional
     fun saveCodeImage(
         member: Member,
         files: List<MultipartFile>,
     ) {
         val codeImage = uploadCodeImage(files)
-        val updateMember = member.updateCodeImage(codeImage)
-        memberRepository.updateMember(updateMember)
+        val serializeCodeImages = codeImage.serializeAttribute()
+        val profile = member.profile
+        if (profile != null) {
+            memberRepository.updateMemberCodeImage(profile, serializeCodeImages)
+        }
     }
 
     private fun uploadCodeImage(files: List<MultipartFile>): CodeImage = CodeImage(files.map { file -> imageUploader.uploadFile(file) })
 
-    @Transactional
     fun saveFaceImage(
         member: Member,
         files: List<MultipartFile>,
     ) {
         val faceImage = uploadFaceImage(files)
-        val updateMember = member.updateFaceImage(faceImage)
-        memberRepository.updateMember(updateMember)
+        val serializeCodeImages = faceImage.serializeAttribute()
+        val profile = member.profile
+        if (profile != null) {
+            memberRepository.updateMemberFaceImage(profile, serializeCodeImages)
+        }
     }
 
     private fun uploadFaceImage(files: List<MultipartFile>): FaceImage = FaceImage(files.map { file -> imageUploader.uploadFile(file) })
@@ -66,21 +74,19 @@ class MemberService(
         member: Member,
         fcmToken: String,
     ) {
-        val updateMember = member.updateFcmToken(fcmToken)
-        memberRepository.updateMember(updateMember)
+        memberRepository.updateMemberFcmToken(member, fcmToken)
     }
 
+    @Transactional(readOnly = true)
     fun findPendingMembers(): List<Member> = memberRepository.findPendingMembers()
 
     fun approveMember(memberId: Long): Member {
         val member = memberRepository.findMember(memberId)
 
-        val updateMember = member.updateMemberStatus(MemberStatus.DONE)
-        memberRepository.updateMember(updateMember)
-        return updateMember
+        member.memberStatus = MemberStatus.DONE
+        return memberRepository.updateMember(member)
     }
 
-    @Transactional
     fun rejectMember(
         memberId: Long,
         reason: String,
@@ -88,14 +94,15 @@ class MemberService(
         val member = memberRepository.findMember(memberId)
 
         memberRepository.saveRejectReason(member, reason)
-        val updateMember = member.updateMemberStatus(MemberStatus.REJECT)
-        memberRepository.updateMember(updateMember)
+        member.memberStatus = MemberStatus.REJECT
 
-        return updateMember
+        return memberRepository.updateMember(member)
     }
 
+    @Transactional(readOnly = true)
     fun findRejectReason(member: Member): String = memberRepository.findRejectReason(member)
 
+    @Transactional(readOnly = true)
     fun findMemberProfile(member: Member): Member {
         val memberId = member.getIdOrThrow()
         return memberRepository.findMember(memberId)
