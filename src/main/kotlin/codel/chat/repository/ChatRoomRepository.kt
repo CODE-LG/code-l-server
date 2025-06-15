@@ -6,7 +6,6 @@ import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.member.domain.Member
 import codel.member.infrastructure.MemberJpaRepository
-import codel.member.infrastructure.entity.MemberEntity
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 
@@ -16,38 +15,31 @@ class ChatRoomRepository(
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
     private val memberJpaRepository: MemberJpaRepository,
 ) {
-    fun createChatRoom(): ChatRoom {
-        val chatRoom = ChatRoom()
-        return chatRoomJpaRepository.save(chatRoom)
-    }
+    fun saveChatRoom(): ChatRoom = chatRoomJpaRepository.save(ChatRoom())
 
     fun saveChatRoomMembers(
         chatRoom: ChatRoom,
-        requester: MemberEntity,
+        requester: Member,
         partner: Member,
     ) {
         saveChatRoomMember(chatRoom, requester)
-        saveChatRoomMember(chatRoom, findMemberEntity(partner))
+        saveChatRoomMember(chatRoom, partner)
     }
-
-    // TODO. Member 리펙토링 이후에 삭제
-    private fun findMemberEntity(member: Member) =
-        memberJpaRepository.findById(member.getIdOrThrow()).orElseThrow { IllegalArgumentException() }
 
     private fun saveChatRoomMember(
         chatRoom: ChatRoom,
-        memberEntity: MemberEntity,
+        member: Member,
     ) {
-        chatRoomMemberJpaRepository.save(ChatRoomMember(chatRoom = chatRoom, memberEntity = memberEntity))
+        chatRoomMemberJpaRepository.save(ChatRoomMember(chatRoom = chatRoom, member = member))
     }
 
-    fun findChatRoomsByMember(member: MemberEntity): List<ChatRoomMember> = chatRoomMemberJpaRepository.findByMemberEntity(member)
+    fun findChatRoomsByMember(member: Member): List<ChatRoomMember> = chatRoomMemberJpaRepository.findByMember(member)
 
     fun findPartner(
         chatRoom: ChatRoom,
-        requester: MemberEntity,
+        requester: Member,
     ): ChatRoomMember =
-        chatRoomMemberJpaRepository.findByChatRoomAndMemberEntityNot(chatRoom, requester)
+        chatRoomMemberJpaRepository.findByChatRoomAndMemberNot(chatRoom, requester)
             ?: throw IllegalArgumentException("채팅방에 자신을 제외한 다른 사용자가 존재하지 않습니다.")
 
     fun findChatRoomById(chatRoomId: Long): ChatRoom {
@@ -58,8 +50,8 @@ class ChatRoomRepository(
 
     fun findMe(
         chatRoom: ChatRoom,
-        member: MemberEntity,
+        member: Member,
     ): ChatRoomMember =
-        chatRoomMemberJpaRepository.findByChatRoomAndMemberEntity(chatRoom, member)
+        chatRoomMemberJpaRepository.findByChatRoomAndMember(chatRoom, member)
             ?: throw IllegalArgumentException("해당 채팅방 멤버가 존재하지 않습니다.")
 }

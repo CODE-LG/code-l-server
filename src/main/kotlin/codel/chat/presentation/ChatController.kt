@@ -7,7 +7,7 @@ import codel.chat.presentation.response.ChatResponses
 import codel.chat.presentation.response.ChatRoomResponses
 import codel.chat.presentation.response.CreateChatRoomResponse
 import codel.config.argumentresolver.LoginMember
-import codel.member.infrastructure.entity.MemberEntity
+import codel.member.domain.Member
 import org.springframework.http.ResponseEntity
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Controller
@@ -24,18 +24,18 @@ class ChatController(
 ) {
     @PostMapping("/v1/chatroom")
     fun createChatRoom(
-        @LoginMember requester: MemberEntity,
+        @LoginMember requester: Member,
         @RequestBody request: CreateChatRoomRequest,
     ): ResponseEntity<CreateChatRoomResponse> {
-        val createChatRoomResponse = chatService.createChatRoom(requester, request.partnerId)
+        val response = chatService.createChatRoom(requester, request)
 
-        messageTemplate.convertAndSend("/sub/v1/chatroom/member", createChatRoomResponse)
-        return ResponseEntity.ok(createChatRoomResponse)
+        messageTemplate.convertAndSend("/sub/v1/chatroom/member${request.partnerId}", response)
+        return ResponseEntity.ok(response)
     }
 
     @GetMapping("/v1/chatrooms")
     fun getChatRooms(
-        @LoginMember requester: MemberEntity,
+        @LoginMember requester: Member,
     ): ResponseEntity<ChatRoomResponses> {
         val chatRoomResponses = chatService.getChatRooms(requester)
 
@@ -44,7 +44,7 @@ class ChatController(
 
     @GetMapping("/v1/chatroom/{chatRoomId}/chats")
     fun getChats(
-        @LoginMember requester: MemberEntity,
+        @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
     ): ResponseEntity<ChatResponses> {
         val chatResponses = chatService.getChats(chatRoomId, requester)
@@ -54,7 +54,7 @@ class ChatController(
 
     @PutMapping("/v1/chatroom/{chatRoomId}/last-chat")
     fun updateLastChat(
-        @LoginMember requester: MemberEntity,
+        @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
         @RequestBody updateLastChatRequest: UpdateLastChatRequest,
     ): ResponseEntity<Unit> {

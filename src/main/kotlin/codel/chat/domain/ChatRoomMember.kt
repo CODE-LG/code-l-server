@@ -1,6 +1,6 @@
 package codel.chat.domain
 
-import codel.member.infrastructure.entity.MemberEntity
+import codel.member.domain.Member
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -17,5 +17,5 @@ class ChatRoomMember(
     var chatRoom: ChatRoom,
     @ManyToOne(optional = false)
     @JoinColumn(name = "member_id", nullable = false)
-    var memberEntity: MemberEntity,
+    var member: Member,
 )

@@ -2,7 +2,7 @@ package codel.chat.presentation.response
 
 import codel.chat.domain.Chat
 import codel.chat.domain.ChatType
-import codel.member.infrastructure.entity.MemberEntity
+import codel.member.domain.Member
 import java.time.LocalDateTime
 
 data class ChatResponse(
@@ -14,7 +14,7 @@ data class ChatResponse(
     companion object {
         fun of(
             chat: Chat,
-            requester: MemberEntity,
+            requester: Member,
         ): ChatResponse =
             ChatResponse(
                 chatId = chat.getIdOrThrow(),

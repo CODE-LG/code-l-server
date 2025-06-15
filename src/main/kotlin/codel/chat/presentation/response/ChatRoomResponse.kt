@@ -14,17 +14,15 @@ data class ChatRoomResponse(
     val unReadMessageCount: Int,
 ) {
     companion object {
-        // TODO. memberEntity 받아서 반화하는 로직 수정
-        // TODO. 마지막 채팅, 마지막 채팅 시간, 안읽은 메시지 개수 추가
         fun of(
             chatRoom: ChatRoom,
             partner: ChatRoomMember,
         ): ChatRoomResponse =
             ChatRoomResponse(
                 roomId = chatRoom.getIdOrThrow(),
-                memberId = partner.memberEntity.getIdOrThrow(),
-                name = partner.memberEntity.profileEntity?.codeName ?: "",
-                mainImageUrl = partner.memberEntity.profileEntity?.codeImage ?: "",
+                memberId = partner.member.getIdOrThrow(),
+                name = partner.member.profile?.codeName ?: "",
+                mainImageUrl = partner.member.profile?.codeImage ?: "",
                 lastMessage = "",
                 lastMessageSentAt = LocalDateTime.now(),
                 unReadMessageCount = 1,

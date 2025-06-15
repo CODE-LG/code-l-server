@@ -3,16 +3,18 @@ package codel.chat.business
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
 import codel.chat.presentation.request.ChatRequest
+import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.UpdateLastChatRequest
 import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatResponses
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.response.ChatRoomResponses
 import codel.chat.presentation.response.CreateChatRoomResponse
+import codel.chat.presentation.response.SavedChatDto
 import codel.chat.repository.ChatRepository
 import codel.chat.repository.ChatRoomRepository
+import codel.member.domain.Member
 import codel.member.domain.MemberRepository
-import codel.member.infrastructure.entity.MemberEntity
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -24,27 +26,27 @@ class ChatService(
     private val memberRepository: MemberRepository,
 ) {
     fun createChatRoom(
-        requester: MemberEntity,
-        partnerId: Long,
+        requester: Member,
+        request: CreateChatRoomRequest,
     ): CreateChatRoomResponse {
-        val partner = memberRepository.findMember(partnerId)
+        val partner = memberRepository.findMember(request.partnerId)
         if (partner.isNotDone()) {
             throw IllegalArgumentException("상대방 멤버가 회원가입을 완료하지 않았습니다.")
         }
 
-        val savedChatRoom = chatRoomRepository.createChatRoom()
+        val savedChatRoom = chatRoomRepository.saveChatRoom()
         chatRoomRepository.saveChatRoomMembers(savedChatRoom, requester, partner)
 
         return CreateChatRoomResponse.toResponse(savedChatRoom)
     }
 
     @Transactional(readOnly = true)
-    fun getChatRooms(requester: MemberEntity): ChatRoomResponses {
+    fun getChatRooms(requester: Member): ChatRoomResponses {
         val requesterChatRoomMembers = chatRoomRepository.findChatRoomsByMember(requester)
         val chatRoomMemberByChatRoom: Map<ChatRoom, ChatRoomMember> =
             requesterChatRoomMembers.associate { chatRoomMember ->
                 val chatRoom = chatRoomMember.chatRoom
-                chatRoom to chatRoomRepository.findPartner(chatRoom, chatRoomMember.memberEntity)
+                chatRoom to chatRoomRepository.findPartner(chatRoom, chatRoomMember.member)
             }
 
         return ChatRoomResponses.of(chatRoomMemberByChatRoom)
@@ -52,20 +54,24 @@ class ChatService(
 
     fun saveChat(
         chatRoomId: Long,
-        requester: MemberEntity,
+        requester: Member,
         chatRequest: ChatRequest,
-    ): Pair<ChatRoomResponse, ChatResponse> {
+    ): SavedChatDto {
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
         val requesterChatRoomMember = chatRoomRepository.findMe(chatRoom, requester)
         val partnerChatRoomMember = chatRoomRepository.findPartner(chatRoom, requester)
 
         val savedChat = chatRepository.saveChat(requesterChatRoomMember, partnerChatRoomMember, chatRequest)
 
-        return Pair(getChatRoomResponse(requester, chatRoom), ChatResponse.of(savedChat, requester))
+        return SavedChatDto(
+            partner = partnerChatRoomMember.member,
+            chatRoomResponse = getChatRoomResponse(requester, chatRoom),
+            chatResponse = ChatResponse.of(savedChat, requester),
+        )
     }
 
     private fun getChatRoomResponse(
-        requester: MemberEntity,
+        requester: Member,
         chatRoom: ChatRoom,
     ): ChatRoomResponse {
         val partnerChatRoomMember = chatRoomRepository.findPartner(chatRoom, requester)
@@ -76,7 +82,7 @@ class ChatService(
     @Transactional(readOnly = true)
     fun getChats(
         chatRoomId: Long,
-        requester: MemberEntity,
+        requester: Member,
     ): ChatResponses {
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
         val requesterChatRoomMember = chatRoomRepository.findMe(chatRoom, requester)
@@ -89,7 +95,7 @@ class ChatService(
     fun updateLastChat(
         chatRoomId: Long,
         updateLastChatRequest: UpdateLastChatRequest,
-        requester: MemberEntity,
+        requester: Member,
     ) {
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
         val requesterChatRoomMember = chatRoomRepository.findMe(chatRoom, requester)

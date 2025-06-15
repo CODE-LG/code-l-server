@@ -1,7 +1,7 @@
 package codel.chat.domain
 
 import codel.chat.presentation.request.ChatRequest
-import codel.member.infrastructure.entity.MemberEntity
+import codel.member.domain.Member
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -47,12 +47,12 @@ class Chat(
 
     fun getIdOrThrow(): Long = id ?: throw IllegalStateException("chatId가 존재하지 않습니다.")
 
-    fun getChatType(requester: MemberEntity): ChatType {
+    fun getChatType(requester: Member): ChatType {
         if (chatType == ChatType.RECOMMEND_TOPIC) return ChatType.RECOMMEND_TOPIC
 
         return when (requester) {
-            from.memberEntity -> ChatType.MY
-            to.memberEntity -> ChatType.PARTNER
+            from.member -> ChatType.MY
+            to.member -> ChatType.PARTNER
             else -> throw IllegalArgumentException("채팅 타입이 잘못되었습니다.")
         }
     }

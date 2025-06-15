@@ -28,11 +28,12 @@ class Member(
     var oauthId: String,
     var memberStatus: MemberStatus,
 ) {
-
     fun getIdOrThrow(): Long = id ?: throw MemberException(HttpStatus.BAD_REQUEST, "id가 없는 멤버 입니다.")
 
     fun validateRejectedOrThrow() {
         takeIf { memberStatus == MemberStatus.REJECT }
             ?: throw MemberException(HttpStatus.BAD_REQUEST, "심사 거절된 멤버가 아닙니다.")
     }
+
+    fun isNotDone(): Boolean = memberStatus != MemberStatus.DONE
 }

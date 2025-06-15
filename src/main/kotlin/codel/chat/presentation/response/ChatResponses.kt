@@ -1,7 +1,7 @@
 package codel.chat.presentation.response
 
 import codel.chat.domain.Chat
-import codel.member.infrastructure.entity.MemberEntity
+import codel.member.domain.Member
 
 class ChatResponses(
     val chats: List<ChatResponse>,
@@ -9,7 +9,7 @@ class ChatResponses(
     companion object {
         fun of(
             chats: List<Chat>,
-            requester: MemberEntity,
-        ): ChatResponses = ChatResponses(chats.map { chat -> ChatResponse.of(chat, requester) })
+            requester: Member,
+        ): ChatResponses = ChatResponses(chats = chats.map { chat -> ChatResponse.of(chat, requester) })
     }
 }

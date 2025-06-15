@@ -3,7 +3,7 @@ package codel.chat.presentation
 import codel.chat.business.ChatService
 import codel.chat.presentation.request.ChatRequest
 import codel.config.argumentresolver.LoginMember
-import codel.member.infrastructure.entity.MemberEntity
+import codel.member.domain.Member
 import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.handler.annotation.Payload
@@ -18,12 +18,15 @@ class ChatWebSocketController(
     @MessageMapping("/v1/chatroom/{chatRoomId}")
     fun sendChat(
         @DestinationVariable("chatRoomId") chatRoomId: Long,
-        @LoginMember requester: MemberEntity,
+        @LoginMember requester: Member,
         @Payload chatRequest: ChatRequest,
     ) {
-        val chatRoomAndChatResponse = chatService.saveChat(chatRoomId, requester, chatRequest)
+        val responseDto = chatService.saveChat(chatRoomId, requester, chatRequest)
 
-        messagingTemplate.convertAndSend("/sub/v1/chatroom/member", chatRoomAndChatResponse.first)
-        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", chatRoomAndChatResponse.second)
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${responseDto.partner.id}",
+            responseDto.chatRoomResponse,
+        )
+        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", responseDto.chatRoomResponse)
     }
 }
