@@ -24,7 +24,7 @@ class MemberService(
         return loginMember
     }
 
-    //TODO: 설문에서 저장 받을 때만 고려함, 프로필 수정 고려 필요
+    // TODO: 설문에서 저장 받을 때만 고려함, 프로필 수정 고려 필요
     fun saveProfile(
         member: Member,
         profile: Profile,

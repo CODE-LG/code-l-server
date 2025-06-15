@@ -43,7 +43,6 @@ class Profile(
     fun getCodeImage(): List<String>? = this.codeImage?.let { deserializeAttribute(it) }
 
     fun getFaceImage(): List<String>? = this.faceImage?.let { deserializeAttribute(it) }
-
     fun getFirstCodeImage(): String {
         val codeImages = getCodeImage() ?: throw MemberException(HttpStatus.BAD_REQUEST, "코드 이미지를 동록하지 않은 사용지압니다.")
         return codeImages.first()

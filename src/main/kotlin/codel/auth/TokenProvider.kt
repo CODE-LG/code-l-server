@@ -1,7 +1,6 @@
 package codel.auth
 
 import codel.auth.exception.AuthException
-import codel.config.exception.CodelException
 import codel.member.domain.Member
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
