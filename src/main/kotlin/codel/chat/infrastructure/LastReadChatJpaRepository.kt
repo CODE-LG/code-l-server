@@ -1,8 +1,11 @@
 package codel.chat.infrastructure
 
+import codel.chat.domain.ChatRoomMember
 import codel.chat.domain.LastReadChat
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface LastReadChatJpaRepository : JpaRepository<LastReadChat, Long>
+interface LastReadChatJpaRepository : JpaRepository<LastReadChat, Long> {
+    fun findByChatRoomMember(chatRooMember: ChatRoomMember): LastReadChat?
+}

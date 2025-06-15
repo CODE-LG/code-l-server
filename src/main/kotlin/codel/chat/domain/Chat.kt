@@ -15,11 +15,11 @@ import java.time.LocalDateTime
 class Chat(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-    @ManyToOne
-    @JoinColumn(name = "member_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "member_id", nullable = false)
     var from: ChatRoomMember,
-    @ManyToOne
-    @JoinColumn(name = "member_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "member_id", nullable = false)
     var to: ChatRoomMember,
     var message: String,
     var chatType: ChatType,

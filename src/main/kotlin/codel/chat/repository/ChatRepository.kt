@@ -2,10 +2,12 @@ package codel.chat.repository
 
 import codel.chat.domain.Chat
 import codel.chat.domain.ChatRoomMember
+import codel.chat.domain.LastReadChat
 import codel.chat.infrastructure.ChatJpaRepository
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.LastReadChatJpaRepository
 import codel.chat.presentation.request.ChatRequest
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 
 @Component
@@ -20,8 +22,21 @@ class ChatRepository(
         chatRequest: ChatRequest,
     ): Chat = chatJpaRepository.save(Chat.of(requester, partner, chatRequest))
 
-    fun getChats(requester: ChatRoomMember): List<Chat> = chatJpaRepository.findByChatRoomOrderBySentAt(requester.chatRoom)
+    fun findChats(requester: ChatRoomMember): List<Chat> = chatJpaRepository.findByChatRoomOrderBySentAt(requester.chatRoom)
 
-//    fun findLastChat(chatRooms: List<ChatRoom>): Map<ChatRoom, Chat>? {
-//    }
+    fun findChat(chatId: Long): Chat =
+        chatJpaRepository.findByIdOrNull(chatId) ?: throw IllegalArgumentException("해당 chatId에 맞는 채팅을 찾을 수 없습니다.")
+
+    fun upsertLastChat(
+        chatRoomMember: ChatRoomMember,
+        chat: Chat,
+    ) {
+        val entity =
+            lastReadChatJpaRepository
+                .findByChatRoomMember(chatRoomMember)
+                ?.apply { this.chat = chat }
+                ?: LastReadChat(chatRoomMember = chatRoomMember, chat = chat)
+
+        lastReadChatJpaRepository.save(entity)
+    }
 }

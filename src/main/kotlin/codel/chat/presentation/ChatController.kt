@@ -2,9 +2,10 @@ package codel.chat.presentation
 
 import codel.chat.business.ChatService
 import codel.chat.presentation.request.CreateChatRoomRequest
-import codel.chat.presentation.request.CreateChatRoomResponse
+import codel.chat.presentation.request.UpdateLastChatRequest
 import codel.chat.presentation.response.ChatResponses
 import codel.chat.presentation.response.ChatRoomResponses
+import codel.chat.presentation.response.CreateChatRoomResponse
 import codel.config.argumentresolver.LoginMember
 import codel.member.infrastructure.entity.MemberEntity
 import org.springframework.http.ResponseEntity
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 
 @Controller
@@ -48,5 +50,16 @@ class ChatController(
         val chatResponses = chatService.getChats(chatRoomId, requester)
 
         return ResponseEntity.ok(chatResponses)
+    }
+
+    @PutMapping("/v1/chatroom/{chatRoomId}/last-chat")
+    fun updateLastChat(
+        @LoginMember requester: MemberEntity,
+        @PathVariable chatRoomId: Long,
+        @RequestBody updateLastChatRequest: UpdateLastChatRequest,
+    ): ResponseEntity<Unit> {
+        chatService.updateLastChat(chatRoomId, updateLastChatRequest, requester)
+
+        return ResponseEntity.ok().build()
     }
 }

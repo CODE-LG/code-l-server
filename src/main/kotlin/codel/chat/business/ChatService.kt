@@ -3,11 +3,12 @@ package codel.chat.business
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
 import codel.chat.presentation.request.ChatRequest
-import codel.chat.presentation.request.CreateChatRoomResponse
+import codel.chat.presentation.request.UpdateLastChatRequest
 import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatResponses
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.response.ChatRoomResponses
+import codel.chat.presentation.response.CreateChatRoomResponse
 import codel.chat.repository.ChatRepository
 import codel.chat.repository.ChatRoomRepository
 import codel.member.domain.MemberRepository
@@ -80,7 +81,20 @@ class ChatService(
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
         val requesterChatRoomMember = chatRoomRepository.findMe(chatRoom, requester)
 
-        val chats = chatRepository.getChats(requesterChatRoomMember)
+        val chats = chatRepository.findChats(requesterChatRoomMember)
         return ChatResponses.of(chats, requester)
+    }
+
+    @Transactional
+    fun updateLastChat(
+        chatRoomId: Long,
+        updateLastChatRequest: UpdateLastChatRequest,
+        requester: MemberEntity,
+    ) {
+        val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
+        val requesterChatRoomMember = chatRoomRepository.findMe(chatRoom, requester)
+        val lastChat = chatRepository.findChat(updateLastChatRequest.lastChatId)
+
+        chatRepository.upsertLastChat(requesterChatRoomMember, lastChat)
     }
 }

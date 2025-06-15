@@ -1,4 +1,4 @@
-package codel.chat.presentation.request
+package codel.chat.presentation.response
 
 import codel.chat.domain.ChatRoom
 
