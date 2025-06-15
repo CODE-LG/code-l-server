@@ -14,4 +14,9 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMember, Long> {
         chatRoom: ChatRoom,
         excludeMember: MemberEntity,
     ): ChatRoomMember?
+
+    fun findByChatRoomAndMemberEntity(
+        chatRoom: ChatRoom,
+        excludeMember: MemberEntity,
+    ): ChatRoomMember?
 }

@@ -2,20 +2,26 @@ package codel.chat.business
 
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
+import codel.chat.presentation.request.ChatRequest
 import codel.chat.presentation.request.CreateChatRoomResponse
+import codel.chat.presentation.response.ChatResponse
+import codel.chat.presentation.response.ChatResponses
+import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.response.ChatRoomResponses
+import codel.chat.repository.ChatRepository
 import codel.chat.repository.ChatRoomRepository
 import codel.member.domain.MemberRepository
 import codel.member.infrastructure.entity.MemberEntity
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
+@Transactional
 @Service
 class ChatService(
     private val chatRoomRepository: ChatRoomRepository,
+    private val chatRepository: ChatRepository,
     private val memberRepository: MemberRepository,
 ) {
-    @Transactional
     fun createChatRoom(
         requester: MemberEntity,
         partnerId: Long,
@@ -31,6 +37,7 @@ class ChatService(
         return CreateChatRoomResponse.toResponse(savedChatRoom)
     }
 
+    @Transactional(readOnly = true)
     fun getChatRooms(requester: MemberEntity): ChatRoomResponses {
         val requesterChatRoomMembers = chatRoomRepository.findChatRoomsByMember(requester)
         val chatRoomMemberByChatRoom: Map<ChatRoom, ChatRoomMember> =
@@ -40,5 +47,40 @@ class ChatService(
             }
 
         return ChatRoomResponses.of(chatRoomMemberByChatRoom)
+    }
+
+    fun saveChat(
+        chatRoomId: Long,
+        requester: MemberEntity,
+        chatRequest: ChatRequest,
+    ): Pair<ChatRoomResponse, ChatResponse> {
+        val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
+        val requesterChatRoomMember = chatRoomRepository.findMe(chatRoom, requester)
+        val partnerChatRoomMember = chatRoomRepository.findPartner(chatRoom, requester)
+
+        val savedChat = chatRepository.saveChat(requesterChatRoomMember, partnerChatRoomMember, chatRequest)
+
+        return Pair(getChatRoomResponse(requester, chatRoom), ChatResponse.of(savedChat, requester))
+    }
+
+    private fun getChatRoomResponse(
+        requester: MemberEntity,
+        chatRoom: ChatRoom,
+    ): ChatRoomResponse {
+        val partnerChatRoomMember = chatRoomRepository.findPartner(chatRoom, requester)
+
+        return ChatRoomResponse.of(chatRoom, partnerChatRoomMember)
+    }
+
+    @Transactional(readOnly = true)
+    fun getChats(
+        chatRoomId: Long,
+        requester: MemberEntity,
+    ): ChatResponses {
+        val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
+        val requesterChatRoomMember = chatRoomRepository.findMe(chatRoom, requester)
+
+        val chats = chatRepository.getChats(requesterChatRoomMember)
+        return ChatResponses.of(chats, requester)
     }
 }

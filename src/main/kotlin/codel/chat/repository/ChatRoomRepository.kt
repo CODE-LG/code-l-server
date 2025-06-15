@@ -9,9 +9,7 @@ import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.entity.MemberEntity
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 
-@Transactional
 @Component
 class ChatRoomRepository(
     private val chatRoomJpaRepository: ChatRoomJpaRepository,
@@ -43,10 +41,8 @@ class ChatRoomRepository(
         chatRoomMemberJpaRepository.save(ChatRoomMember(chatRoom = chatRoom, memberEntity = memberEntity))
     }
 
-    @Transactional(readOnly = true)
     fun findChatRoomsByMember(member: MemberEntity): List<ChatRoomMember> = chatRoomMemberJpaRepository.findByMemberEntity(member)
 
-    @Transactional(readOnly = true)
     fun findPartner(
         chatRoom: ChatRoom,
         requester: MemberEntity,
@@ -54,10 +50,16 @@ class ChatRoomRepository(
         chatRoomMemberJpaRepository.findByChatRoomAndMemberEntityNot(chatRoom, requester)
             ?: throw IllegalArgumentException("채팅방에 자신을 제외한 다른 사용자가 존재하지 않습니다.")
 
-    @Transactional(readOnly = true)
     fun findChatRoomById(chatRoomId: Long): ChatRoom {
         val chatRoom = chatRoomJpaRepository.findByIdOrNull(chatRoomId)
 
         return chatRoom ?: throw IllegalArgumentException()
     }
+
+    fun findMe(
+        chatRoom: ChatRoom,
+        member: MemberEntity,
+    ): ChatRoomMember =
+        chatRoomMemberJpaRepository.findByChatRoomAndMemberEntity(chatRoom, member)
+            ?: throw IllegalArgumentException("해당 채팅방 멤버가 존재하지 않습니다.")
 }
