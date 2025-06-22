@@ -5,7 +5,7 @@ import codel.chat.domain.ChatRoomMember
 import java.time.LocalDateTime
 
 data class ChatRoomResponse(
-    val roomId: Long,
+    val chatRoomId: Long,
     val memberId: Long,
     val name: String,
     val mainImageUrl: String,
@@ -19,7 +19,7 @@ data class ChatRoomResponse(
             partner: ChatRoomMember,
         ): ChatRoomResponse =
             ChatRoomResponse(
-                roomId = chatRoom.getIdOrThrow(),
+                chatRoomId = chatRoom.getIdOrThrow(),
                 memberId = partner.member.getIdOrThrow(),
                 name = partner.member.profile?.codeName ?: "",
                 mainImageUrl = partner.member.profile?.codeImage ?: "",

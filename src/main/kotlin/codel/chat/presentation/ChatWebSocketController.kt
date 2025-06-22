@@ -15,7 +15,7 @@ class ChatWebSocketController(
     private val messagingTemplate: SimpMessagingTemplate,
     private val chatService: ChatService,
 ) {
-    @MessageMapping("/v1/chatroom/{chatRoomId}")
+    @MessageMapping("/v1/chatroom/{chatRoomId}/chat")
     fun sendChat(
         @DestinationVariable("chatRoomId") chatRoomId: Long,
         @LoginMember requester: Member,

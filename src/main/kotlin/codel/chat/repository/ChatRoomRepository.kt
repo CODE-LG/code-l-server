@@ -17,23 +17,12 @@ class ChatRoomRepository(
 ) {
     fun saveChatRoom(): ChatRoom = chatRoomJpaRepository.save(ChatRoom())
 
-    fun saveChatRoomMembers(
-        chatRoom: ChatRoom,
-        requester: Member,
-        partner: Member,
-    ) {
-        saveChatRoomMember(chatRoom, requester)
-        saveChatRoomMember(chatRoom, partner)
-    }
-
-    private fun saveChatRoomMember(
+    fun saveChatRoomMember(
         chatRoom: ChatRoom,
         member: Member,
-    ) {
-        chatRoomMemberJpaRepository.save(ChatRoomMember(chatRoom = chatRoom, member = member))
-    }
+    ): ChatRoomMember = chatRoomMemberJpaRepository.save(ChatRoomMember(chatRoom = chatRoom, member = member))
 
-    fun findChatRoomsByMember(member: Member): List<ChatRoomMember> = chatRoomMemberJpaRepository.findByMember(member)
+    fun findAllChatRoomMembers(member: Member): List<ChatRoomMember> = chatRoomMemberJpaRepository.findByMember(member)
 
     fun findPartner(
         chatRoom: ChatRoom,

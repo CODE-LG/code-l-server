@@ -4,8 +4,8 @@ import codel.chat.business.ChatService
 import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.UpdateLastChatRequest
 import codel.chat.presentation.response.ChatResponses
+import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.response.ChatRoomResponses
-import codel.chat.presentation.response.CreateChatRoomResponse
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import org.springframework.http.ResponseEntity
@@ -26,7 +26,7 @@ class ChatController(
     fun createChatRoom(
         @LoginMember requester: Member,
         @RequestBody request: CreateChatRoomRequest,
-    ): ResponseEntity<CreateChatRoomResponse> {
+    ): ResponseEntity<ChatRoomResponse> {
         val response = chatService.createChatRoom(requester, request)
 
         messageTemplate.convertAndSend("/sub/v1/chatroom/member${request.partnerId}", response)

@@ -9,7 +9,6 @@ import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatResponses
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.response.ChatRoomResponses
-import codel.chat.presentation.response.CreateChatRoomResponse
 import codel.chat.presentation.response.SavedChatDto
 import codel.chat.repository.ChatRepository
 import codel.chat.repository.ChatRoomRepository
@@ -28,21 +27,22 @@ class ChatService(
     fun createChatRoom(
         requester: Member,
         request: CreateChatRoomRequest,
-    ): CreateChatRoomResponse {
+    ): ChatRoomResponse {
         val partner = memberRepository.findMember(request.partnerId)
         if (partner.isNotDone()) {
             throw IllegalArgumentException("상대방 멤버가 회원가입을 완료하지 않았습니다.")
         }
 
         val savedChatRoom = chatRoomRepository.saveChatRoom()
-        chatRoomRepository.saveChatRoomMembers(savedChatRoom, requester, partner)
+        chatRoomRepository.saveChatRoomMember(savedChatRoom, requester)
+        val partnerChatRoomMember = chatRoomRepository.saveChatRoomMember(savedChatRoom, partner)
 
-        return CreateChatRoomResponse.toResponse(savedChatRoom)
+        return ChatRoomResponse.of(savedChatRoom, partnerChatRoomMember)
     }
 
     @Transactional(readOnly = true)
     fun getChatRooms(requester: Member): ChatRoomResponses {
-        val requesterChatRoomMembers = chatRoomRepository.findChatRoomsByMember(requester)
+        val requesterChatRoomMembers = chatRoomRepository.findAllChatRoomMembers(requester)
         val chatRoomMemberByChatRoom: Map<ChatRoom, ChatRoomMember> =
             requesterChatRoomMembers.associate { chatRoomMember ->
                 val chatRoom = chatRoomMember.chatRoom
@@ -65,18 +65,9 @@ class ChatService(
 
         return SavedChatDto(
             partner = partnerChatRoomMember.member,
-            chatRoomResponse = getChatRoomResponse(requester, chatRoom),
+            chatRoomResponse = ChatRoomResponse.of(chatRoom, partnerChatRoomMember),
             chatResponse = ChatResponse.of(savedChat, requester),
         )
-    }
-
-    private fun getChatRoomResponse(
-        requester: Member,
-        chatRoom: ChatRoom,
-    ): ChatRoomResponse {
-        val partnerChatRoomMember = chatRoomRepository.findPartner(chatRoom, requester)
-
-        return ChatRoomResponse.of(chatRoom, partnerChatRoomMember)
     }
 
     @Transactional(readOnly = true)
