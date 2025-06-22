@@ -10,17 +10,20 @@ data class ChatResponse(
     val chatType: ChatType,
     val message: String,
     val sentAt: LocalDateTime,
+    val isRead: Boolean,
 ) {
     companion object {
+        // TODO. 읽은 채팅인지 구분
         fun of(
-            chat: Chat,
             requester: Member,
+            chat: Chat,
         ): ChatResponse =
             ChatResponse(
                 chatId = chat.getIdOrThrow(),
                 chatType = chat.getChatType(requester),
                 message = chat.message,
                 sentAt = chat.getSentAtOrThrow(),
+                isRead = false,
             )
     }
 }

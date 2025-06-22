@@ -2,6 +2,7 @@ package codel.chat.presentation
 
 import codel.chat.business.ChatService
 import codel.chat.presentation.request.ChatRequest
+import codel.chat.presentation.swagger.ChatWebSocketControllerSwagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import org.springframework.messaging.handler.annotation.DestinationVariable
@@ -14,9 +15,9 @@ import org.springframework.stereotype.Controller
 class ChatWebSocketController(
     private val messagingTemplate: SimpMessagingTemplate,
     private val chatService: ChatService,
-) {
+) : ChatWebSocketControllerSwagger {
     @MessageMapping("/v1/chatroom/{chatRoomId}/chat")
-    fun sendChat(
+    override fun sendChat(
         @DestinationVariable("chatRoomId") chatRoomId: Long,
         @LoginMember requester: Member,
         @Payload chatRequest: ChatRequest,

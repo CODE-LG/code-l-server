@@ -6,13 +6,13 @@ import java.time.LocalDateTime
 
 data class ChatRoomResponse(
     val chatRoomId: Long,
-    val memberId: Long,
     val name: String,
     val mainImageUrl: String,
     val lastMessage: String,
     val lastMessageSentAt: LocalDateTime,
     val unReadMessageCount: Int,
 ) {
+    // TODO. lastMessage, lastMessageSentAt, unReadMessageCount 매핑
     companion object {
         fun of(
             chatRoom: ChatRoom,
@@ -20,7 +20,6 @@ data class ChatRoomResponse(
         ): ChatRoomResponse =
             ChatRoomResponse(
                 chatRoomId = chatRoom.getIdOrThrow(),
-                memberId = partner.member.getIdOrThrow(),
                 name = partner.member.profile?.codeName ?: "",
                 mainImageUrl = partner.member.profile?.codeImage ?: "",
                 lastMessage = "",

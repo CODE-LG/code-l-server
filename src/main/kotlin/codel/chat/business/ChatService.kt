@@ -66,7 +66,7 @@ class ChatService(
         return SavedChatDto(
             partner = partnerChatRoomMember.member,
             chatRoomResponse = ChatRoomResponse.of(chatRoom, partnerChatRoomMember),
-            chatResponse = ChatResponse.of(savedChat, requester),
+            chatResponse = ChatResponse.of(requester, savedChat),
         )
     }
 
@@ -76,10 +76,11 @@ class ChatService(
         requester: Member,
     ): ChatResponses {
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
-        val requesterChatRoomMember = chatRoomRepository.findMe(chatRoom, requester)
+        val requesterInChatRoom = chatRoomRepository.findMe(chatRoom, requester)
+        val partnerInChatRoom = chatRoomRepository.findPartner(chatRoom, requester)
 
-        val chats = chatRepository.findChats(requesterChatRoomMember)
-        return ChatResponses.of(chats, requester)
+        val chats = chatRepository.findChats(requesterInChatRoom)
+        return ChatResponses.of(requester, partnerInChatRoom.member, chats)
     }
 
     @Transactional

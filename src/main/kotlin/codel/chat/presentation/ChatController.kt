@@ -6,6 +6,7 @@ import codel.chat.presentation.request.UpdateLastChatRequest
 import codel.chat.presentation.response.ChatResponses
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.response.ChatRoomResponses
+import codel.chat.presentation.swagger.ChatControllerSwagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import org.springframework.http.ResponseEntity
@@ -21,9 +22,9 @@ import org.springframework.web.bind.annotation.RequestBody
 class ChatController(
     private val chatService: ChatService,
     private val messageTemplate: SimpMessagingTemplate,
-) {
+) : ChatControllerSwagger {
     @PostMapping("/v1/chatroom")
-    fun createChatRoom(
+    override fun createChatRoom(
         @LoginMember requester: Member,
         @RequestBody request: CreateChatRoomRequest,
     ): ResponseEntity<ChatRoomResponse> {
@@ -34,7 +35,7 @@ class ChatController(
     }
 
     @GetMapping("/v1/chatrooms")
-    fun getChatRooms(
+    override fun getChatRooms(
         @LoginMember requester: Member,
     ): ResponseEntity<ChatRoomResponses> {
         val chatRoomResponses = chatService.getChatRooms(requester)
@@ -43,7 +44,7 @@ class ChatController(
     }
 
     @GetMapping("/v1/chatroom/{chatRoomId}/chats")
-    fun getChats(
+    override fun getChats(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
     ): ResponseEntity<ChatResponses> {
@@ -53,13 +54,13 @@ class ChatController(
     }
 
     @PutMapping("/v1/chatroom/{chatRoomId}/last-chat")
-    fun updateLastChat(
+    override fun updateLastChat(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
         @RequestBody updateLastChatRequest: UpdateLastChatRequest,
     ): ResponseEntity<Unit> {
         chatService.updateLastChat(chatRoomId, updateLastChatRequest, requester)
 
-        return ResponseEntity.ok().build()
+        return ResponseEntity.noContent().build()
     }
 }
