@@ -22,7 +22,7 @@ class ChatRepository(
         chatRequest: ChatRequest,
     ): Chat = chatJpaRepository.save(Chat.of(requester, partner, chatRequest))
 
-    fun findChats(requester: ChatRoomMember): List<Chat> = chatJpaRepository.findByChatRoomOrderBySentAt(requester.chatRoom)
+    fun findChats(requester: ChatRoomMember): List<Chat> = chatJpaRepository.findByFromChatRoomOrderBySentAt(requester.chatRoom)
 
     fun findChat(chatId: Long): Chat =
         chatJpaRepository.findByIdOrNull(chatId) ?: throw IllegalArgumentException("해당 chatId에 맞는 채팅을 찾을 수 없습니다.")

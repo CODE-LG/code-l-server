@@ -16,10 +16,10 @@ class Chat(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
     @ManyToOne(optional = false)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "from_chat_room_member_id", nullable = false)
     var from: ChatRoomMember,
     @ManyToOne(optional = false)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "to_chat_room_member_id", nullable = false)
     var to: ChatRoomMember,
     var message: String,
     var chatType: ChatType,
