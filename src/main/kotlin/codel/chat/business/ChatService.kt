@@ -28,10 +28,7 @@ class ChatService(
         requester: Member,
         request: CreateChatRoomRequest,
     ): ChatRoomResponse {
-        val partner = memberRepository.findMember(request.partnerId)
-        if (partner.isNotDone()) {
-            throw IllegalArgumentException("상대방 멤버가 회원가입을 완료하지 않았습니다.")
-        }
+        val partner = memberRepository.findDoneMember(request.partnerId)
 
         val savedChatRoom = chatRoomRepository.saveChatRoom()
         chatRoomRepository.saveChatRoomMember(savedChatRoom, requester)

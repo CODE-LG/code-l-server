@@ -1,5 +1,6 @@
 package codel.chat.domain
 
+import codel.chat.exception.ChatException
 import codel.chat.presentation.request.ChatRequest
 import codel.member.domain.Member
 import jakarta.persistence.Entity
@@ -9,6 +10,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import org.springframework.data.annotation.CreatedDate
+import org.springframework.http.HttpStatus
 import java.time.LocalDateTime
 
 @Entity
@@ -33,7 +35,7 @@ class Chat(
             chatRequest: ChatRequest,
         ): Chat {
             if (from.chatRoom != to.chatRoom) {
-                throw IllegalArgumentException("채팅의 채팅방 정보가 다릅니다.")
+                throw ChatException(HttpStatus.BAD_REQUEST, "채팅의 채팅방 정보가 다릅니다.")
             }
             return Chat(
                 id = null,
@@ -45,7 +47,7 @@ class Chat(
         }
     }
 
-    fun getIdOrThrow(): Long = id ?: throw IllegalStateException("chatId가 존재하지 않습니다.")
+    fun getIdOrThrow(): Long = id ?: throw ChatException(HttpStatus.BAD_REQUEST, "chatId가 존재하지 않습니다.")
 
     fun getChatType(requester: Member): ChatType {
         if (chatType == ChatType.RECOMMEND_TOPIC) return ChatType.RECOMMEND_TOPIC
@@ -53,9 +55,9 @@ class Chat(
         return when (requester) {
             from.member -> ChatType.MY
             to.member -> ChatType.PARTNER
-            else -> throw IllegalArgumentException("채팅 타입이 잘못되었습니다.")
+            else -> throw ChatException(HttpStatus.BAD_REQUEST, "채팅 타입이 잘못되었습니다.")
         }
     }
 
-    fun getSentAtOrThrow(): LocalDateTime = sentAt ?: throw IllegalStateException("채팅 발송 시간이 설정되지 않았습니다.")
+    fun getSentAtOrThrow(): LocalDateTime = sentAt ?: throw ChatException(HttpStatus.BAD_REQUEST, "채팅 발송 시간이 설정되지 않았습니다.")
 }
