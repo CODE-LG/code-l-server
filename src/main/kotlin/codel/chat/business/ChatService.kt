@@ -83,7 +83,6 @@ class ChatService(
         return ChatResponses.of(requester, partnerInChatRoom.member, chats)
     }
 
-    @Transactional
     fun updateLastChat(
         chatRoomId: Long,
         updateLastChatRequest: UpdateLastChatRequest,
