@@ -1,6 +1,7 @@
 package codel.config.filter
 
 import codel.auth.TokenProvider
+import codel.config.Loggable
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -12,7 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 @Order(1)
 class JwtAuthFilter(
     private val tokenProvider: TokenProvider,
-) : OncePerRequestFilter() {
+) : OncePerRequestFilter(), Loggable {
     companion object {
         val EXCLUDE_URIS =
             listOf(
@@ -46,6 +47,7 @@ class JwtAuthFilter(
             response.contentType = "application/json"
             response.characterEncoding = "UTF-8"
             response.writer.write("""{"message": "인증되지 않은 사용자입니다."}""")
+            log.warn { request.requestURI }
             return
         }
         val memberId = tokenProvider.extractMemberId(token)
