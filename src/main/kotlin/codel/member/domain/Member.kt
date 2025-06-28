@@ -2,6 +2,8 @@ package codel.member.domain
 
 import codel.member.exception.MemberException
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -24,15 +26,20 @@ class Member(
     @OneToOne(mappedBy = "member")
     var profile: Profile? = null,
     var fcmToken: String? = null,
+    @Enumerated(EnumType.STRING)
     var oauthType: OauthType,
     var oauthId: String,
+    @Enumerated(EnumType.STRING)
     var memberStatus: MemberStatus,
 ) {
-
     fun getIdOrThrow(): Long = id ?: throw MemberException(HttpStatus.BAD_REQUEST, "id가 없는 멤버 입니다.")
+
+    fun getProfileOrThrow(): Profile = profile ?: throw MemberException(HttpStatus.BAD_REQUEST, "프로필을 등록하지 않은 멤버입니다.")
 
     fun validateRejectedOrThrow() {
         takeIf { memberStatus == MemberStatus.REJECT }
             ?: throw MemberException(HttpStatus.BAD_REQUEST, "심사 거절된 멤버가 아닙니다.")
     }
+
+    fun isNotDone(): Boolean = memberStatus != MemberStatus.DONE
 }

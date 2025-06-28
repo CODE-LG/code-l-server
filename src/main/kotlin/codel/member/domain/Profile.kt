@@ -1,5 +1,6 @@
 package codel.member.domain
 
+import codel.member.exception.MemberException
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -7,6 +8,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToOne
+import org.springframework.http.HttpStatus
 
 @Entity
 class Profile(
@@ -41,4 +43,9 @@ class Profile(
     fun getCodeImage(): List<String>? = this.codeImage?.let { deserializeAttribute(it) }
 
     fun getFaceImage(): List<String>? = this.faceImage?.let { deserializeAttribute(it) }
+
+    fun getFirstCodeImage(): String {
+        val codeImages = getCodeImage() ?: throw MemberException(HttpStatus.BAD_REQUEST, "코드 이미지를 동록하지 않은 사용지압니다.")
+        return codeImages.first()
+    }
 }

@@ -8,7 +8,6 @@ import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 
 @Component
 class MemberRepository(
@@ -30,13 +29,9 @@ class MemberRepository(
     fun findMember(
         oauthType: OauthType,
         oauthId: String,
-    ): Member {
-        return memberJpaRepository.findByOauthTypeAndOauthId(oauthType, oauthId)
-    }
+    ): Member = memberJpaRepository.findByOauthTypeAndOauthId(oauthType, oauthId)
 
-    fun findMember(memberId: Long): Member {
-        return findMemberById(memberId)
-    }
+    fun findMember(memberId: Long): Member = findMemberById(memberId)
 
     private fun findMemberById(memberId: Long) =
         memberJpaRepository.findByIdOrNull(memberId) ?: throw MemberException(
@@ -44,7 +39,18 @@ class MemberRepository(
             "해당 id에 일치하는 멤버가 없습니다.",
         )
 
-    fun updateMemberProfile(member: Member, profile: Profile) {
+    fun findDoneMember(memberId: Long): Member {
+        val member = findMemberById(memberId)
+        if (member.memberStatus != MemberStatus.DONE) {
+            throw MemberException(HttpStatus.BAD_REQUEST, "해당 멤버는 회원가입을 완료하지 않았습니다.")
+        }
+        return member
+    }
+
+    fun updateMemberProfile(
+        member: Member,
+        profile: Profile,
+    ) {
         member.profile = profile
         memberJpaRepository.save(member)
     }
@@ -54,15 +60,15 @@ class MemberRepository(
         rejectReason: String,
     ) {
         val member = findMemberById(member.getIdOrThrow())
-        val memberRejectReason = RejectReason(
-            member = member,
-            reason = rejectReason)
+        val memberRejectReason =
+            RejectReason(
+                member = member,
+                reason = rejectReason,
+            )
         rejectReasonJpaRepository.save(memberRejectReason)
     }
 
-    fun findPendingMembers(): List<Member> {
-        return memberJpaRepository.findByMemberStatus(MemberStatus.PENDING)
-    }
+    fun findPendingMembers(): List<Member> = memberJpaRepository.findByMemberStatus(MemberStatus.PENDING)
 
     fun findRejectReason(member: Member): String {
         member.validateRejectedOrThrow()
@@ -79,25 +85,30 @@ class MemberRepository(
                 "거절 사유가 존재하지 않는 멤버입니다.",
             )
 
-    fun updateMember(member: Member): Member {
-        return memberJpaRepository.save(member)
-    }
+    fun updateMember(member: Member): Member = memberJpaRepository.save(member)
 
-    fun saveProfile(profile: Profile): Profile {
-        return profileJpaRepository.save(profile)
-    }
+    fun saveProfile(profile: Profile): Profile = profileJpaRepository.save(profile)
 
-    fun updateMemberCodeImage(profile: Profile, serializeCodeImages: String) {
+    fun updateMemberCodeImage(
+        profile: Profile,
+        serializeCodeImages: String,
+    ) {
         profile.codeImage = serializeCodeImages
         profileJpaRepository.save(profile)
     }
 
-    fun updateMemberFaceImage(profile: Profile, serializeFaceImage: String) {
+    fun updateMemberFaceImage(
+        profile: Profile,
+        serializeFaceImage: String,
+    ) {
         profile.faceImage = serializeFaceImage
         profileJpaRepository.save(profile)
     }
 
-    fun updateMemberFcmToken(member: Member, fcmToken: String) {
+    fun updateMemberFcmToken(
+        member: Member,
+        fcmToken: String,
+    ) {
         member.fcmToken = fcmToken
         memberJpaRepository.save(member)
     }

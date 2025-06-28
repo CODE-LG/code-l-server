@@ -59,6 +59,9 @@ dependencies {
 
     // web
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+
+    // web socket
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
 }
 
 kotlin {
