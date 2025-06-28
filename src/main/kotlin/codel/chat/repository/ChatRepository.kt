@@ -2,10 +2,9 @@ package codel.chat.repository
 
 import codel.chat.domain.Chat
 import codel.chat.domain.ChatRoomMember
-import codel.chat.domain.LastReadChat
 import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatJpaRepository
-import codel.chat.infrastructure.LastReadChatJpaRepository
+import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.chat.presentation.request.ChatRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
@@ -14,7 +13,7 @@ import org.springframework.stereotype.Component
 @Component
 class ChatRepository(
     private val chatJpaRepository: ChatJpaRepository,
-    private val lastReadChatJpaRepository: LastReadChatJpaRepository,
+    private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
 ) {
     fun saveChat(
         requester: ChatRoomMember,
@@ -34,12 +33,7 @@ class ChatRepository(
         chatRoomMember: ChatRoomMember,
         chat: Chat,
     ) {
-        val entity =
-            lastReadChatJpaRepository
-                .findByChatRoomMember(chatRoomMember)
-                ?.apply { this.chat = chat }
-                ?: LastReadChat(chatRoomMember = chatRoomMember, chat = chat)
-
-        lastReadChatJpaRepository.save(entity)
+        chatRoomMember.lastChat = chat
+        chatRoomMemberJpaRepository.save(chatRoomMember)
     }
 }
