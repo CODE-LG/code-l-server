@@ -7,9 +7,16 @@ data class ChatRoomResponses(
     val chatrooms: List<ChatRoomResponse>,
 ) {
     companion object {
-        fun of(partnerByChatRoom: Map<ChatRoom, ChatRoomMember>): ChatRoomResponses =
+        fun of(partnerByChatRoom: Map<ChatRoom, Pair<ChatRoomMember, Int>>): ChatRoomResponses =
             ChatRoomResponses(
-                chatrooms = partnerByChatRoom.map { entry -> ChatRoomResponse.of(entry.key, entry.value) },
+                chatrooms =
+                    partnerByChatRoom.map { entry ->
+                        ChatRoomResponse.of(
+                            entry.key,
+                            entry.value.first,
+                            entry.value.second,
+                        )
+                    },
             )
     }
 }

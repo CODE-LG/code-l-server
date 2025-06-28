@@ -4,6 +4,8 @@ import codel.chat.exception.ChatException
 import codel.chat.presentation.request.ChatRequest
 import codel.member.domain.Member
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -18,12 +20,13 @@ class Chat(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
     @ManyToOne(optional = false)
+    @JoinColumn(name = "chat_room_id", nullable = false)
+    var chatRoom: ChatRoom,
+    @ManyToOne(optional = false)
     @JoinColumn(name = "from_chat_room_member_id", nullable = false)
     var from: ChatRoomMember,
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "to_chat_room_member_id", nullable = false)
-    var to: ChatRoomMember,
     var message: String,
+    @Enumerated(EnumType.STRING)
     var chatType: ChatType,
     @CreatedDate
     var sentAt: LocalDateTime? = null,
@@ -31,33 +34,24 @@ class Chat(
     companion object {
         fun of(
             from: ChatRoomMember,
-            to: ChatRoomMember,
             chatRequest: ChatRequest,
-        ): Chat {
-            if (from.chatRoom != to.chatRoom) {
-                throw ChatException(HttpStatus.BAD_REQUEST, "채팅의 채팅방 정보가 다릅니다.")
-            }
-            return Chat(
+        ): Chat =
+            Chat(
                 id = null,
+                chatRoom = from.chatRoom,
                 from = from,
-                to = to,
                 message = chatRequest.message,
                 chatType = chatRequest.chatType,
             )
-        }
     }
 
     fun getIdOrThrow(): Long = id ?: throw ChatException(HttpStatus.BAD_REQUEST, "chatId가 존재하지 않습니다.")
 
-    fun getChatType(requester: Member): ChatType {
-        if (chatType == ChatType.RECOMMEND_TOPIC) return ChatType.RECOMMEND_TOPIC
-
-        return when (requester) {
-            from.member -> ChatType.MY
-            to.member -> ChatType.PARTNER
-            else -> throw ChatException(HttpStatus.BAD_REQUEST, "채팅 타입이 잘못되었습니다.")
-        }
-    }
-
     fun getSentAtOrThrow(): LocalDateTime = sentAt ?: throw ChatException(HttpStatus.BAD_REQUEST, "채팅 발송 시간이 설정되지 않았습니다.")
+
+    fun getChatType(requester: Member): ChatType =
+        when (requester) {
+            from.member -> ChatType.MY
+            else -> ChatType.PARTNER
+        }
 }

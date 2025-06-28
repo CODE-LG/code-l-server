@@ -17,14 +17,15 @@ data class ChatRoomResponse(
         fun of(
             chatRoom: ChatRoom,
             partner: ChatRoomMember,
+            unReadMessageCount: Int,
         ): ChatRoomResponse =
             ChatRoomResponse(
                 chatRoomId = chatRoom.getIdOrThrow(),
                 name = partner.member.profile?.codeName ?: "",
                 mainImageUrl = partner.member.profile?.codeImage ?: "",
-                lastMessage = "",
-                lastMessageSentAt = LocalDateTime.now(),
-                unReadMessageCount = 1,
+                lastMessage = chatRoom.recentChat?.message ?: "",
+                lastMessageSentAt = chatRoom.recentChat?.sentAt ?: LocalDateTime.MIN,
+                unReadMessageCount = unReadMessageCount,
             )
     }
 }

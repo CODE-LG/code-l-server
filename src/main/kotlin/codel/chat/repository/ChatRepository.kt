@@ -1,6 +1,7 @@
 package codel.chat.repository
 
 import codel.chat.domain.Chat
+import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
 import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatJpaRepository
@@ -17,9 +18,8 @@ class ChatRepository(
 ) {
     fun saveChat(
         requester: ChatRoomMember,
-        partner: ChatRoomMember,
         chatRequest: ChatRequest,
-    ): Chat = chatJpaRepository.save(Chat.of(requester, partner, chatRequest))
+    ): Chat = chatJpaRepository.save(Chat.of(requester, chatRequest))
 
     fun findChats(requester: ChatRoomMember): List<Chat> = chatJpaRepository.findByFromChatRoomOrderBySentAt(requester.chatRoom)
 
@@ -35,5 +35,16 @@ class ChatRepository(
     ) {
         chatRoomMember.lastChat = chat
         chatRoomMemberJpaRepository.save(chatRoomMember)
+    }
+
+    fun getUnReadMessageCount(
+        chatRoom: ChatRoom,
+        requesterGroupMember: ChatRoomMember,
+    ): Int {
+        val lastChat = requesterGroupMember.lastChat ?: return 0
+        return chatJpaRepository.countByChatRoomAfterLastChat(
+            chatRoom,
+            lastChat.getSentAtOrThrow(),
+        )
     }
 }
