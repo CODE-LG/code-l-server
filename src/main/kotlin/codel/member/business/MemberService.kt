@@ -8,6 +8,9 @@ import codel.member.domain.MemberRepository
 import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import codel.member.domain.Profile
+import codel.member.exception.MemberException
+import codel.member.infrastructure.MemberJpaRepository
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -17,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile
 class MemberService(
     private val memberRepository: MemberRepository,
     private val imageUploader: ImageUploader,
+    private val memberJpaRepository: MemberJpaRepository,
 ) {
     fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
@@ -106,5 +110,11 @@ class MemberService(
     fun findMemberProfile(member: Member): Member {
         val memberId = member.getIdOrThrow()
         return memberRepository.findMember(memberId)
+    }
+
+    @Transactional(readOnly = true)
+    fun recommendMembers(member: Member): List<Member> {
+        val excludeId = member.id ?: throw MemberException(HttpStatus.BAD_REQUEST, "멤버 ID가 없습니다.")
+        return memberJpaRepository.findRandomMembers(excludeId, 5)
     }
 }

@@ -4,6 +4,8 @@ import codel.member.domain.Member
 import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -19,4 +21,13 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
     ): Member
 
     fun findByMemberStatus(memberStatus: MemberStatus): List<Member>
+
+    @Query(
+        value = "SELECT * FROM member WHERE id <> :excludeId ORDER BY RAND() LIMIT :randomSize",
+        nativeQuery = true,
+    )
+    fun findRandomMembers(
+        @Param("excludeId") excludeId: Long,
+        @Param("randomSize") randomSize: Long,
+    ): List<Member>
 }
