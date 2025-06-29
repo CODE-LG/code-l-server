@@ -18,4 +18,9 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMember, Long> {
         chatRoomId: Long,
         member: Member,
     ): ChatRoomMember?
+
+    fun findByChatRoomIdInAndMemberNot(
+        chatRoomIds: List<Long>,
+        member: Member,
+    ): List<ChatRoomMember>
 }

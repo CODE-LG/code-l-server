@@ -39,16 +39,21 @@ class ChatService(
 
     @Transactional(readOnly = true)
     fun getChatRooms(requester: Member): ChatRoomResponses {
-        val requesterChatRoomMembers = chatRoomRepository.findAllChatRoomMembers(requester)
+        val requesterChatRoomMemberByChatRoom = chatRoomRepository.getRequesterChatRoomMemberByChatRoom(requester)
+        val chatRooms = requesterChatRoomMemberByChatRoom.keys.toList()
+
+        val partnerByChatRoom = chatRoomRepository.findPartnerByChatRoom(chatRooms, requester)
+        val recentChatByChatRoom = chatRepository.getRecentChatByChatRoom(chatRooms)
+        val unReadMessageCountByChatRoom =
+            chatRepository.getUnReadMessageCountByChatRoom(requesterChatRoomMemberByChatRoom)
+
         val chatRoomMemberByChatRoom: Map<ChatRoom, ChatRoomInfo> =
-            requesterChatRoomMembers.associate { chatRoomMember ->
-                val chatRoom = chatRoomMember.chatRoom
-                chatRoom to
-                    ChatRoomInfo(
-                        partner = chatRoomRepository.findPartner(chatRoom.getIdOrThrow(), chatRoomMember.member),
-                        recentChat = chatRepository.getRecentChat(chatRoom),
-                        unReadMessageCount = chatRepository.getUnReadMessageCount(chatRoom, chatRoomMember),
-                    )
+            chatRooms.associateWith { chatRoom ->
+                ChatRoomInfo(
+                    partner = partnerByChatRoom.getValue(chatRoom),
+                    recentChat = recentChatByChatRoom.getValue(chatRoom),
+                    unReadMessageCount = unReadMessageCountByChatRoom.getValue(chatRoom),
+                )
             }
 
         return ChatRoomResponses.of(chatRoomMemberByChatRoom)

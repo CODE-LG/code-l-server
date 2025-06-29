@@ -22,7 +22,10 @@ class ChatRoomRepository(
         member: Member,
     ): ChatRoomMember = chatRoomMemberJpaRepository.save(ChatRoomMember(chatRoom = chatRoom, member = member))
 
-    fun findAllChatRoomMembers(member: Member): List<ChatRoomMember> = chatRoomMemberJpaRepository.findByMember(member)
+    fun getRequesterChatRoomMemberByChatRoom(requester: Member): Map<ChatRoom, ChatRoomMember> =
+        chatRoomMemberJpaRepository
+            .findByMember(requester)
+            .associateBy { requesterChatRoomMember -> requesterChatRoomMember.chatRoom }
 
     fun findMe(
         chatRoomId: Long,
@@ -37,6 +40,16 @@ class ChatRoomRepository(
     ): ChatRoomMember =
         chatRoomMemberJpaRepository.findByChatRoomIdAndMemberNot(chatRoomId, requester)
             ?: throw ChatException(HttpStatus.BAD_REQUEST, "채팅방에 자신을 제외한 다른 사용자가 존재하지 않습니다.")
+
+    fun findPartnerByChatRoom(
+        chatRooms: List<ChatRoom>,
+        requester: Member,
+    ): Map<ChatRoom, ChatRoomMember> {
+        val chatRoomIds = chatRooms.map { chatRoom -> chatRoom.getIdOrThrow() }
+        val partnerChatRoomMembers = chatRoomMemberJpaRepository.findByChatRoomIdInAndMemberNot(chatRoomIds, requester)
+
+        return partnerChatRoomMembers.associateBy { partnerChatRoomMember -> partnerChatRoomMember.chatRoom }
+    }
 
     fun findChatRoomById(chatRoomId: Long): ChatRoom =
         chatRoomJpaRepository.findByIdOrNull(chatRoomId) ?: throw ChatException(

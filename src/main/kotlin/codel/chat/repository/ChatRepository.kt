@@ -37,16 +37,14 @@ class ChatRepository(
         chatRoomMemberJpaRepository.save(chatRoomMember)
     }
 
-    fun getRecentChat(chatRoom: ChatRoom): Chat? = chatJpaRepository.findFirstByChatRoomOrderBySentAtDesc(chatRoom)
+    fun getRecentChatByChatRoom(chatRooms: List<ChatRoom>): Map<ChatRoom, Chat?> =
+        chatJpaRepository.findRecentChatByChatRooms(chatRooms).associateBy {
+            it.chatRoom
+        }
 
-    fun getUnReadMessageCount(
-        chatRoom: ChatRoom,
-        requesterGroupMember: ChatRoomMember,
-    ): Int {
-        val lastChat = requesterGroupMember.lastChat ?: return 0
-        return chatJpaRepository.countByChatRoomAfterLastChat(
-            chatRoom,
-            lastChat.getSentAtOrThrow(),
-        )
-    }
+    fun getUnReadMessageCountByChatRoom(requesterChatRoomMemberByChatRoom: Map<ChatRoom, ChatRoomMember>): Map<ChatRoom, Int> =
+        requesterChatRoomMemberByChatRoom.mapValues { (chatRoom, member) ->
+            val lastChat = member.lastChat
+            lastChat?.let { chatJpaRepository.countByChatRoomAfterLastChat(chatRoom, it.getSentAtOrThrow()) } ?: 0
+        }
 }

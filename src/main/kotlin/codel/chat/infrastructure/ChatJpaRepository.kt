@@ -13,9 +13,9 @@ interface ChatJpaRepository : JpaRepository<Chat, Long> {
 
     @Query(
         """
-            SELECT count(c) from Chat c
-            WHERE c.from.chatRoom = :chatRoom
-            AND c.sentAt > :afterTime
+        SELECT count(c) from Chat c
+        WHERE c.from.chatRoom = :chatRoom
+        AND c.sentAt > :afterTime
         """,
     )
     fun countByChatRoomAfterLastChat(
@@ -23,5 +23,15 @@ interface ChatJpaRepository : JpaRepository<Chat, Long> {
         afterTime: LocalDateTime,
     ): Int
 
-    fun findFirstByChatRoomOrderBySentAtDesc(chatRoom: ChatRoom): Chat?
+    @Query(
+        """SELECT c
+        FROM Chat c
+        WHERE (c.chatRoom.id, c.sentAt) IN (
+            SELECT c2.chatRoom.id, MAX(c2.sentAt)
+            FROM Chat c2
+            GROUP BY c2.chatRoom.id
+        )
+        """,
+    )
+    fun findRecentChatByChatRooms(chatRoom: List<ChatRoom>): List<Chat>
 }
