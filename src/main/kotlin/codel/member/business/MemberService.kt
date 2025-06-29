@@ -8,6 +8,7 @@ import codel.member.domain.MemberRepository
 import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import codel.member.domain.Profile
+import codel.member.infrastructure.MemberJpaRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile
 class MemberService(
     private val memberRepository: MemberRepository,
     private val imageUploader: ImageUploader,
+    private val memberJpaRepository: MemberJpaRepository,
 ) {
     fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
@@ -24,7 +26,7 @@ class MemberService(
         return loginMember
     }
 
-    //TODO: 설문에서 저장 받을 때만 고려함, 프로필 수정 고려 필요
+    // TODO: 설문에서 저장 받을 때만 고려함, 프로필 수정 고려 필요
     fun saveProfile(
         member: Member,
         profile: Profile,
@@ -106,5 +108,11 @@ class MemberService(
     fun findMemberProfile(member: Member): Member {
         val memberId = member.getIdOrThrow()
         return memberRepository.findMember(memberId)
+    }
+
+    @Transactional(readOnly = true)
+    fun recommendMembers(member: Member): List<Member> {
+        val excludeId = member.getIdOrThrow()
+        return memberJpaRepository.findRandomMembers(excludeId, 5)
     }
 }

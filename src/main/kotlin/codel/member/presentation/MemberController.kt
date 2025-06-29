@@ -8,6 +8,7 @@ import codel.member.presentation.request.MemberLoginRequest
 import codel.member.presentation.request.ProfileSavedRequest
 import codel.member.presentation.response.MemberLoginResponse
 import codel.member.presentation.response.MemberProfileResponse
+import codel.member.presentation.response.MemberRecommendResponses
 import codel.member.presentation.swagger.MemberControllerSwagger
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -85,5 +86,13 @@ class MemberController(
     ): ResponseEntity<MemberProfileResponse> {
         val findMember = memberService.findMemberProfile(member)
         return ResponseEntity.ok(MemberProfileResponse.toResponse(findMember))
+    }
+
+    @GetMapping("/v1/member/recommend")
+    override fun recommendMembers(
+        @LoginMember member: Member,
+    ): ResponseEntity<MemberRecommendResponses> {
+        val members = memberService.recommendMembers(member)
+        return ResponseEntity.ok(MemberRecommendResponses.toResponse(members))
     }
 }

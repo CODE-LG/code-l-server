@@ -11,7 +11,7 @@ data class PartnerResponse(
         fun of(partner: Member): PartnerResponse =
             PartnerResponse(
                 memberId = partner.getIdOrThrow(),
-                codeImage = partner.getProfileOrThrow().getFirstCodeImage(),
+                codeImage = partner.getProfileOrThrow().getCodeImageOrThrow().first(),
                 name = partner.getProfileOrThrow().codeName,
             )
     }

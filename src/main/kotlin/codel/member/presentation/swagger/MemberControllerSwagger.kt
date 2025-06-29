@@ -6,6 +6,7 @@ import codel.member.presentation.request.MemberLoginRequest
 import codel.member.presentation.request.ProfileSavedRequest
 import codel.member.presentation.response.MemberLoginResponse
 import codel.member.presentation.response.MemberProfileResponse
+import codel.member.presentation.response.MemberRecommendResponses
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -92,4 +93,8 @@ interface MemberControllerSwagger {
     fun findMemberProfile(
         @LoginMember member: Member,
     ): ResponseEntity<MemberProfileResponse>
+
+    fun recommendMembers(
+        @LoginMember member: Member,
+    ): ResponseEntity<MemberRecommendResponses>
 }
