@@ -2,8 +2,6 @@ package codel.member.presentation.response
 
 import codel.member.domain.Member
 import codel.member.domain.Profile
-import codel.member.exception.MemberException
-import org.springframework.http.HttpStatus
 import java.time.LocalDateTime
 
 data class MemberRecommendResponse(
@@ -25,12 +23,7 @@ data class MemberRecommendResponse(
             val profile = member.getProfileOrThrow()
             return MemberRecommendResponse(
                 memberId = member.getIdOrThrow(),
-                codeImage =
-                    profile.getCodeImage()?.firstOrNull()
-                        ?: throw MemberException(
-                            HttpStatus.INTERNAL_SERVER_ERROR,
-                            "프로필 이미지가 존재하지 않습니다",
-                        ),
+                codeImage = profile.getCodeImageOrThrow().first(),
                 name = profile.codeName,
                 age = profile.age,
                 introduce = profile.introduce,

@@ -37,8 +37,8 @@ data class MemberProfileResponse(
                 smallCity = profile.smallCity,
                 mbti = profile.mbti,
                 introduce = profile.introduce,
-                codeImages = profile.getCodeImage() ?: emptyList(),
-                faceImages = profile.getFaceImage() ?: emptyList(),
+                codeImages = profile.getCodeImageOrThrow(),
+                faceImages = profile.getFaceImageOrThrow(),
             )
         }
     }
