@@ -12,7 +12,6 @@ data class ChatRoomResponse(
     val lastMessageSentAt: LocalDateTime,
     val unReadMessageCount: Int,
 ) {
-    // TODO. lastMessage, lastMessageSentAt, unReadMessageCount 매핑
     companion object {
         fun of(
             chatRoom: ChatRoom,
@@ -21,11 +20,13 @@ data class ChatRoomResponse(
             ChatRoomResponse(
                 chatRoomId = chatRoom.getIdOrThrow(),
                 name =
-                    chatRoomInfo.partner.member.profile
-                        ?.codeName ?: "",
+                    chatRoomInfo.partner.member
+                        .getProfileOrThrow()
+                        .codeName,
                 mainImageUrl =
-                    chatRoomInfo.partner.member.profile
-                        ?.codeImage ?: "",
+                    chatRoomInfo.partner.member
+                        .getProfileOrThrow()
+                        .getFirstCodeImage(),
                 lastMessage = chatRoomInfo.recentChat?.message ?: "",
                 lastMessageSentAt = chatRoomInfo.recentChat?.sentAt ?: LocalDateTime.MIN,
                 unReadMessageCount = chatRoomInfo.unReadMessageCount,
