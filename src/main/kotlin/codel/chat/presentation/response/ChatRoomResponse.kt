@@ -1,7 +1,7 @@
 package codel.chat.presentation.response
 
 import codel.chat.domain.ChatRoom
-import codel.chat.domain.ChatRoomMember
+import codel.chat.domain.ChatRoomInfo
 import java.time.LocalDateTime
 
 data class ChatRoomResponse(
@@ -16,16 +16,19 @@ data class ChatRoomResponse(
     companion object {
         fun of(
             chatRoom: ChatRoom,
-            partner: ChatRoomMember,
-            unReadMessageCount: Int,
+            chatRoomInfo: ChatRoomInfo,
         ): ChatRoomResponse =
             ChatRoomResponse(
                 chatRoomId = chatRoom.getIdOrThrow(),
-                name = partner.member.profile?.codeName ?: "",
-                mainImageUrl = partner.member.profile?.codeImage ?: "",
-                lastMessage = chatRoom.recentChat?.message ?: "",
-                lastMessageSentAt = chatRoom.recentChat?.sentAt ?: LocalDateTime.MIN,
-                unReadMessageCount = unReadMessageCount,
+                name =
+                    chatRoomInfo.partner.member.profile
+                        ?.codeName ?: "",
+                mainImageUrl =
+                    chatRoomInfo.partner.member.profile
+                        ?.codeImage ?: "",
+                lastMessage = chatRoomInfo.recentChat?.message ?: "",
+                lastMessageSentAt = chatRoomInfo.recentChat?.sentAt ?: LocalDateTime.MIN,
+                unReadMessageCount = chatRoomInfo.unReadMessageCount,
             )
     }
 }

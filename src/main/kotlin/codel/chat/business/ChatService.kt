@@ -1,7 +1,7 @@
 package codel.chat.business
 
 import codel.chat.domain.ChatRoom
-import codel.chat.domain.ChatRoomMember
+import codel.chat.domain.ChatRoomInfo
 import codel.chat.presentation.request.ChatRequest
 import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.UpdateLastChatRequest
@@ -34,19 +34,20 @@ class ChatService(
         chatRoomRepository.saveChatRoomMember(savedChatRoom, requester)
         val partnerChatRoomMember = chatRoomRepository.saveChatRoomMember(savedChatRoom, partner)
 
-        return ChatRoomResponse.of(savedChatRoom, partnerChatRoomMember, 0)
+        return ChatRoomResponse.of(savedChatRoom, ChatRoomInfo(partnerChatRoomMember, null, 0))
     }
 
     @Transactional(readOnly = true)
     fun getChatRooms(requester: Member): ChatRoomResponses {
         val requesterChatRoomMembers = chatRoomRepository.findAllChatRoomMembers(requester)
-        val chatRoomMemberByChatRoom: Map<ChatRoom, Pair<ChatRoomMember, Int>> =
+        val chatRoomMemberByChatRoom: Map<ChatRoom, ChatRoomInfo> =
             requesterChatRoomMembers.associate { chatRoomMember ->
                 val chatRoom = chatRoomMember.chatRoom
                 chatRoom to
-                    Pair(
-                        chatRoomRepository.findPartner(chatRoom.getIdOrThrow(), chatRoomMember.member),
-                        chatRepository.getUnReadMessageCount(chatRoom, chatRoomMember),
+                    ChatRoomInfo(
+                        partner = chatRoomRepository.findPartner(chatRoom.getIdOrThrow(), chatRoomMember.member),
+                        recentChat = chatRepository.getRecentChat(chatRoom),
+                        unReadMessageCount = chatRepository.getUnReadMessageCount(chatRoom, chatRoomMember),
                     )
             }
 
@@ -66,7 +67,7 @@ class ChatService(
 
         return SavedChatDto(
             partner = partnerChatRoomMember.member,
-            chatRoomResponse = ChatRoomResponse.of(chatRoom, partnerChatRoomMember, 1),
+            chatRoomResponse = ChatRoomResponse.of(chatRoom, ChatRoomInfo(partnerChatRoomMember, savedChat, 1)),
             chatResponse = ChatResponse.of(requester, savedChat),
         )
     }

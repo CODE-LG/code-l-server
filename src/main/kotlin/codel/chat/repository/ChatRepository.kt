@@ -37,6 +37,8 @@ class ChatRepository(
         chatRoomMemberJpaRepository.save(chatRoomMember)
     }
 
+    fun getRecentChat(chatRoom: ChatRoom): Chat? = chatJpaRepository.findFirstByChatRoomOrderBySentAtDesc(chatRoom)
+
     fun getUnReadMessageCount(
         chatRoom: ChatRoom,
         requesterGroupMember: ChatRoomMember,

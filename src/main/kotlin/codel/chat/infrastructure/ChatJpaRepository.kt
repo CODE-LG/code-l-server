@@ -9,13 +9,6 @@ import java.time.LocalDateTime
 
 @Repository
 interface ChatJpaRepository : JpaRepository<Chat, Long> {
-    @Query(
-        """
-        SELECT c FROM Chat c
-        WHERE c.from.chatRoom = :chatRoom
-        ORDER BY c.sentAt
-    """,
-    )
     fun findByFromChatRoomOrderBySentAt(chatRoom: ChatRoom): List<Chat>
 
     @Query(
@@ -29,4 +22,6 @@ interface ChatJpaRepository : JpaRepository<Chat, Long> {
         chatRoom: ChatRoom,
         afterTime: LocalDateTime,
     ): Int
+
+    fun findFirstByChatRoomOrderBySentAtDesc(chatRoom: ChatRoom): Chat?
 }
