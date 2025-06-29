@@ -22,7 +22,7 @@ data class MemberRecommendResponse(
 ) {
     companion object {
         fun toResponse(member: Member): MemberRecommendResponse {
-            val profile = member.profile ?: throw MemberException(HttpStatus.BAD_REQUEST, "멤버의 프로필 정보가 없습니다.")
+            val profile = member.getProfileOrThrow()
             return MemberRecommendResponse(
                 memberId = member.getIdOrThrow(),
                 codeImage =
