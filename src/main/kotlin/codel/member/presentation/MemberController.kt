@@ -8,13 +8,16 @@ import codel.member.presentation.request.MemberLoginRequest
 import codel.member.presentation.request.ProfileSavedRequest
 import codel.member.presentation.response.MemberLoginResponse
 import codel.member.presentation.response.MemberProfileResponse
+import codel.member.presentation.response.MemberRecommendResponse
 import codel.member.presentation.response.MemberRecommendResponses
 import codel.member.presentation.swagger.MemberControllerSwagger
+import org.springframework.data.domain.Page
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
@@ -94,5 +97,19 @@ class MemberController(
     ): ResponseEntity<MemberRecommendResponses> {
         val members = memberService.recommendMembers(member)
         return ResponseEntity.ok(MemberRecommendResponses.toResponse(members))
+    }
+
+    @GetMapping("/v1/member/all")
+    override fun getDailyRecommendMembers(
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "10") size: Int,
+    ): ResponseEntity<Page<MemberRecommendResponse>> {
+        val memberPage = memberService.getRandomMembers(page, size)
+
+        return ResponseEntity.ok(
+            memberPage.map { member ->
+                MemberRecommendResponse.toResponse(member)
+            },
+        )
     }
 }

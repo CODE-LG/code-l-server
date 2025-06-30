@@ -6,13 +6,16 @@ import codel.member.presentation.request.MemberLoginRequest
 import codel.member.presentation.request.ProfileSavedRequest
 import codel.member.presentation.response.MemberLoginResponse
 import codel.member.presentation.response.MemberProfileResponse
+import codel.member.presentation.response.MemberRecommendResponse
 import codel.member.presentation.response.MemberRecommendResponses
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.multipart.MultipartFile
 
@@ -94,7 +97,28 @@ interface MemberControllerSwagger {
         @LoginMember member: Member,
     ): ResponseEntity<MemberProfileResponse>
 
+    @Operation(summary = "홈 코드 추천 매칭 조회", description = "코드 추천 매칭 목록을 받습니다.")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "코드 추천 매칭 조회 성공"),
+            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
+        ],
+    )
     fun recommendMembers(
         @LoginMember member: Member,
     ): ResponseEntity<MemberRecommendResponses>
+
+    @Operation(summary = "홈 파도타기 조회", description = "홈 파도 타기 목록을 받습니다.")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "홈 파도 타기 목록 조회 성공"),
+            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
+        ],
+    )
+    fun getDailyRecommendMembers(
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "10") size: Int,
+    ): ResponseEntity<Page<MemberRecommendResponse>>
 }

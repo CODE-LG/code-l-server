@@ -1,6 +1,7 @@
 package codel.member.business
 
 import codel.member.domain.CodeImage
+import codel.member.domain.DailySeedProvider
 import codel.member.domain.FaceImage
 import codel.member.domain.ImageUploader
 import codel.member.domain.Member
@@ -9,6 +10,9 @@ import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import codel.member.domain.Profile
 import codel.member.infrastructure.MemberJpaRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -113,6 +117,21 @@ class MemberService(
     @Transactional(readOnly = true)
     fun recommendMembers(member: Member): List<Member> {
         val excludeId = member.getIdOrThrow()
-        return memberJpaRepository.findRandomMembers(excludeId, 5)
+        val seed = DailySeedProvider.generateDailySeedForMember(member.getIdOrThrow())
+        return memberJpaRepository.findRandomMembers(excludeId, 5, seed)
+    }
+
+    @Transactional(readOnly = true)
+    fun getRandomMembers(
+        page: Int,
+        size: Int,
+    ): Page<Member> {
+        val seed = DailySeedProvider.generateRandomSeed()
+        val offset = page * size
+        val members = memberJpaRepository.findMembersWithSeed(seed, size, offset)
+        val total = memberJpaRepository.count()
+        val pageable = PageRequest.of(page, size)
+
+        return PageImpl(members, pageable, total)
     }
 }
