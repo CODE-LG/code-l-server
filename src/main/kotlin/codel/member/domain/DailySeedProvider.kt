@@ -1,6 +1,7 @@
 package codel.member.domain
 
 import java.time.LocalDate
+import java.util.UUID
 import kotlin.math.absoluteValue
 
 class DailySeedProvider {
@@ -9,6 +10,11 @@ class DailySeedProvider {
             val today = LocalDate.now()
             val key = "$memberId-$today"
             return key.hashCode().toLong().absoluteValue
+        }
+
+        fun generateRandomSeed(): Long {
+            val uuid = UUID.randomUUID()
+            return (uuid.mostSignificantBits xor uuid.leastSignificantBits).absoluteValue
         }
     }
 }
