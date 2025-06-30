@@ -38,8 +38,8 @@ class ChatRepository(
     }
 
     fun getRecentChatByChatRoom(chatRooms: List<ChatRoom>): Map<ChatRoom, Chat?> =
-        chatJpaRepository.findRecentChatByChatRooms(chatRooms).associateBy {
-            it.chatRoom
+        chatRooms.associateWith { chatRoom ->
+            chatJpaRepository.findTop1ByChatRoomOrderBySentAtDesc(chatRoom)
         }
 
     fun getUnReadMessageCountByChatRoom(requesterChatRoomMemberByChatRoom: Map<ChatRoom, ChatRoomMember>): Map<ChatRoom, Int> =

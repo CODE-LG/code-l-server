@@ -23,19 +23,5 @@ interface ChatJpaRepository : JpaRepository<Chat, Long> {
         afterTime: LocalDateTime,
     ): Int
 
-    @Query(
-        """
-        SELECT *
-        FROM chat c
-        INNER JOIN (
-            SELECT chat_room_id, MAX(sent_at) as max_sent_at
-            FROM chat
-            GROUP BY chat_room_id
-        ) latest
-        ON c.chat_room_id = latest.chat_room_id AND c.sent_at = latest.max_sent_at
-        WHERE c.chat_room_id IN (:chatRoomIds)
-        """,
-        nativeQuery = true,
-    )
-    fun findRecentChatByChatRooms(chatRoom: List<ChatRoom>): List<Chat>
+    fun findTop1ByChatRoomOrderBySentAtDesc(chatRoom: ChatRoom): Chat?
 }
