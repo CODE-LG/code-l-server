@@ -47,4 +47,14 @@ class Profile(
     fun getFaceImageOrThrow(): List<String> =
         this.faceImage?.let { deserializeAttribute(it) }
             ?: throw MemberException(HttpStatus.BAD_REQUEST, "페이스 이미지가 존재하지 않습니다.")
+
+    fun getFaceImage(): List<String>? = this.faceImage?.let { deserializeAttribute(it) }
+
+    fun getFirstCodeImage(): String {
+        val codeImages = getCodeImageOrThrow()
+        if (codeImages.isEmpty()) {
+            throw MemberException(HttpStatus.BAD_REQUEST, "코드 이미지를 동록하지 않은 사용지압니다.")
+        }
+        return codeImages[0]
+    }
 }
