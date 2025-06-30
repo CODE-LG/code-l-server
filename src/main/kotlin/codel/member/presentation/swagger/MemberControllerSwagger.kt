@@ -94,6 +94,14 @@ interface MemberControllerSwagger {
         @LoginMember member: Member,
     ): ResponseEntity<MemberProfileResponse>
 
+    @Operation(summary = "홈 코드 추천 매칭 조회", description = "코드 추천 매칭 목록을 받습니다.")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "코드 추천 매칭 조회 성공"),
+            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
+        ],
+    )
     fun recommendMembers(
         @LoginMember member: Member,
     ): ResponseEntity<MemberRecommendResponses>

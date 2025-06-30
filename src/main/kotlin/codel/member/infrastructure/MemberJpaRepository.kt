@@ -23,11 +23,12 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
     fun findByMemberStatus(memberStatus: MemberStatus): List<Member>
 
     @Query(
-        value = "SELECT * FROM member WHERE id <> :excludeId ORDER BY RAND() LIMIT :randomSize",
+        value = "SELECT * FROM member WHERE id <> :excludeId ORDER BY RAND(:seed) LIMIT :randomSize",
         nativeQuery = true,
     )
     fun findRandomMembers(
         @Param("excludeId") excludeId: Long,
         @Param("randomSize") randomSize: Long,
+        @Param("recommendCode") seed: Long,
     ): List<Member>
 }

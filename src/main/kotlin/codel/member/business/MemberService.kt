@@ -1,6 +1,7 @@
 package codel.member.business
 
 import codel.member.domain.CodeImage
+import codel.member.domain.DailySeedProvider
 import codel.member.domain.FaceImage
 import codel.member.domain.ImageUploader
 import codel.member.domain.Member
@@ -113,6 +114,7 @@ class MemberService(
     @Transactional(readOnly = true)
     fun recommendMembers(member: Member): List<Member> {
         val excludeId = member.getIdOrThrow()
-        return memberJpaRepository.findRandomMembers(excludeId, 5)
+        val seed = DailySeedProvider.generateDailySeedForMember(excludeId)
+        return memberJpaRepository.findRandomMembers(excludeId, 5, seed)
     }
 }
