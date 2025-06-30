@@ -24,14 +24,18 @@ interface ChatJpaRepository : JpaRepository<Chat, Long> {
     ): Int
 
     @Query(
-        """SELECT c
-        FROM Chat c
-        WHERE (c.chatRoom.id, c.sentAt) IN (
-            SELECT c2.chatRoom.id, MAX(c2.sentAt)
-            FROM Chat c2
-            GROUP BY c2.chatRoom.id
-        )
+        """
+        SELECT *
+        FROM chat c
+        INNER JOIN (
+            SELECT chat_room_id, MAX(sent_at) as max_sent_at
+            FROM chat
+            GROUP BY chat_room_id
+        ) latest
+        ON c.chat_room_id = latest.chat_room_id AND c.sent_at = latest.max_sent_at
+        WHERE c.chat_room_id IN (:chatRoomIds)
         """,
+        nativeQuery = true,
     )
     fun findRecentChatByChatRooms(chatRoom: List<ChatRoom>): List<Chat>
 }
