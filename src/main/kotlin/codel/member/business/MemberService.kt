@@ -117,7 +117,7 @@ class MemberService(
     @Transactional(readOnly = true)
     fun recommendMembers(member: Member): List<Member> {
         val excludeId = member.getIdOrThrow()
-        val seed = DailySeedProvider.generateDailySeedForMember(excludeId)
+        val seed = DailySeedProvider.generateDailySeedForMember(member.getIdOrThrow())
         return memberJpaRepository.findRandomMembers(excludeId, 5, seed)
     }
 
