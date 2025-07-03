@@ -47,4 +47,17 @@ class Profile(
     fun getFaceImageOrThrow(): List<String> =
         this.faceImage?.let { deserializeAttribute(it) }
             ?: throw MemberException(HttpStatus.BAD_REQUEST, "페이스 이미지가 존재하지 않습니다.")
+
+    fun update(updateProfile: Profile) {
+        this.codeImage = updateProfile.codeImage
+        this.faceImage = updateProfile.faceImage
+        this.codeName = updateProfile.codeName
+        this.age = updateProfile.age
+        this.job = updateProfile.job
+        this.smoke = updateProfile.smoke
+        this.hobby = updateProfile.hobby
+        this.style = updateProfile.style
+        this.bigCity = updateProfile.bigCity
+        this.introduce = updateProfile.introduce
+    }
 }

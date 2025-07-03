@@ -10,6 +10,7 @@ import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import codel.member.domain.Profile
 import codel.member.infrastructure.MemberJpaRepository
+import codel.member.infrastructure.ProfileJpaRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -23,6 +24,7 @@ class MemberService(
     private val memberRepository: MemberRepository,
     private val imageUploader: ImageUploader,
     private val memberJpaRepository: MemberJpaRepository,
+    private val profileJpaRepository : ProfileJpaRepository,
 ) {
     fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
@@ -31,12 +33,19 @@ class MemberService(
     }
 
     // TODO: 설문에서 저장 받을 때만 고려함, 프로필 수정 고려 필요
-    fun saveProfile(
+    @Transactional
+    fun upsertProfile(
         member: Member,
         profile: Profile,
     ) {
-        val saveProfile = memberRepository.saveProfile(profile)
-        memberRepository.updateMemberProfile(member, saveProfile)
+        val existingProfile = member.profile
+        if(existingProfile == null){
+            val newProfile = profileJpaRepository.save(profile)
+            member.assignProfile(newProfile)
+        }else{
+            existingProfile.update(profile)
+        }
+        memberJpaRepository.save(member)
     }
 
     @Transactional(readOnly = true)
