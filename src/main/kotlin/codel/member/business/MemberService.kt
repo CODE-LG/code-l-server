@@ -32,7 +32,6 @@ class MemberService(
         return loginMember
     }
 
-    // TODO: 설문에서 저장 받을 때만 고려함, 프로필 수정 고려 필요
     @Transactional
     fun upsertProfile(
         member: Member,
