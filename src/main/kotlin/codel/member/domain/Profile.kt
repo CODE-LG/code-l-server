@@ -60,4 +60,8 @@ class Profile(
         this.bigCity = updateProfile.bigCity
         this.introduce = updateProfile.introduce
     }
+
+    fun registerCodeImage(codeImage: String) {
+
+    }
 }

@@ -1,7 +1,6 @@
 package codel.member.domain
 
 import codel.member.exception.MemberException
-import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -48,7 +47,7 @@ class Member(
         this.profile = profile
     }
 
-    fun assignProfile(profile: Profile) {
+    fun registerProfile(profile: Profile) {
         this.profile = profile
         profile.member = this
         this.memberStatus = MemberStatus.CODE_SURVEY

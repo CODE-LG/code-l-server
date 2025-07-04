@@ -9,11 +9,13 @@ import codel.member.domain.MemberRepository
 import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import codel.member.domain.Profile
+import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -40,7 +42,7 @@ class MemberService(
         val existingProfile = member.profile
         if(existingProfile == null){
             val newProfile = profileJpaRepository.save(profile)
-            member.assignProfile(newProfile)
+            member.registerProfile(newProfile)
         }else{
             existingProfile.update(profile)
         }
@@ -60,12 +62,14 @@ class MemberService(
         member: Member,
         files: List<MultipartFile>,
     ) {
+        val profile = member.profile
+            ?: throw MemberException(HttpStatus.BAD_REQUEST, "프로필이 존재하지 않습니다. 먼저 프로필을 등록해주세요.")
+        if (member.memberStatus == MemberStatus.CODE_SURVEY) {
+            member.memberStatus = MemberStatus.CODE_PROFILE_IMAGE
+        }
         val codeImage = uploadCodeImage(files)
         val serializeCodeImages = codeImage.serializeAttribute()
-        val profile = member.profile
-        if (profile != null) {
-            memberRepository.updateMemberCodeImage(profile, serializeCodeImages)
-        }
+        memberRepository.updateMemberCodeImage(profile, serializeCodeImages)
     }
 
     private fun uploadCodeImage(files: List<MultipartFile>): CodeImage = CodeImage(files.map { file -> imageUploader.uploadFile(file) })
