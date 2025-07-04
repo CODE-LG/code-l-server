@@ -14,9 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.multipart.MultipartFile
 import org.mockito.BDDMockito.given
-import org.mockito.ArgumentMatchers.any
 
 @SpringBootTest
 @Transactional
@@ -183,4 +181,64 @@ class MemberServiceTest {
         assertThat(savedProfile.getCodeImageOrThrow()).contains("https://test-bucket.s3.amazonaws.com/image1.png")
         assertThat(savedProfile.getCodeImageOrThrow()).contains("https://test-bucket.s3.amazonaws.com/image2.png")
     }
+
+    @DisplayName("얼굴 이미지 등록 시 프로필과 코드 이미지가 존재하면 얼굴 이미지가 등록되고 멤버 상태가 PENDING으로 변한다.")
+    @Test
+    fun saveFaceImageWithValidProfileAndCodeImage() {
+        // given
+        val faceFile1 = MockMultipartFile("file", "face1.png", "image/png", "얼굴1".toByteArray())
+        val faceFile2 = MockMultipartFile("file", "face2.png", "image/png", "얼굴2".toByteArray())
+        val faceFile3 = MockMultipartFile("file", "face3.png", "image/png", "얼굴3".toByteArray())
+        val faceFiles = listOf(faceFile1, faceFile2, faceFile3)
+
+        val member = memberJpaRepository.save(
+            Member(
+                oauthType = OauthType.KAKAO,
+                oauthId = "hogee1",
+                memberStatus = MemberStatus.SIGNUP,
+                email = "hogee@hogee",
+            )
+        )
+        val profile = Profile(
+            codeName = "hogee",
+            age = 28,
+            job = "백엔드 개발자",
+            alcohol = "자주 마심",
+            smoke = "비흡연자 - 흡연자와 교류 NO",
+            hobby = "영화 & 드라마,여행 & 캠핑",
+            style = "표현을 잘하는 직진형,상대가 필요할 때 항상 먼저 연락하는 스타일",
+            bigCity = "경기도",
+            smallCity = "성남시",
+            mbti = "isfj",
+            introduce = "잘부탁드립니다!",
+        )
+        memberService.upsertProfile(member, profile)
+
+        // 코드 이미지 등록 (상태: CODE_PROFILE_IMAGE)
+        val codeFile1 = MockMultipartFile("file", "test1.png", "image/png", "이미지1".toByteArray())
+        val codeFile2 = MockMultipartFile("file", "test2.png", "image/png", "이미지2".toByteArray())
+        val codeFiles = listOf(codeFile1, codeFile2)
+        given(imageUploader.uploadFile(codeFile1)).willReturn("https://test-bucket.s3.amazonaws.com/codeImage1.png")
+        given(imageUploader.uploadFile(codeFile2)).willReturn("https://test-bucket.s3.amazonaws.com/codeImage2.png")
+        memberService.saveCodeImage(member, codeFiles)
+
+        // 얼굴 이미지 mocking
+        given(imageUploader.uploadFile(faceFile1)).willReturn("https://test-bucket.s3.amazonaws.com/faceImage1.png")
+        given(imageUploader.uploadFile(faceFile2)).willReturn("https://test-bucket.s3.amazonaws.com/faceImage2.png")
+        given(imageUploader.uploadFile(faceFile3)).willReturn("https://test-bucket.s3.amazonaws.com/faceImage3.png")
+
+        // when
+        memberService.saveFaceImage(member, faceFiles)
+
+        // then
+        val updatedMember = memberJpaRepository.findById(member.id!!).get()
+        val savedProfile = updatedMember.profile!!
+        assertThat(updatedMember.memberStatus).isEqualTo(MemberStatus.PENDING)
+        assertThat(savedProfile.faceImage).isNotNull
+        assertThat(savedProfile.getFaceImageOrThrow()).contains("https://test-bucket.s3.amazonaws.com/faceImage1.png")
+        assertThat(savedProfile.getFaceImageOrThrow()).contains("https://test-bucket.s3.amazonaws.com/faceImage2.png")
+        assertThat(savedProfile.getFaceImageOrThrow()).contains("https://test-bucket.s3.amazonaws.com/faceImage3.png")
+    }
+
+    
 }
