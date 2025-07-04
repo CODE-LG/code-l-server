@@ -78,12 +78,14 @@ class MemberService(
         member: Member,
         files: List<MultipartFile>,
     ) {
+        val profile = member.profile
+            ?: throw MemberException(HttpStatus.BAD_REQUEST, "프로필이 존재하지 않습니다. 먼저 프로필을 등록해주세요.")
+        if (member.memberStatus == MemberStatus.CODE_PROFILE_IMAGE) {
+            member.memberStatus = MemberStatus.PENDING
+        }
         val faceImage = uploadFaceImage(files)
         val serializeCodeImages = faceImage.serializeAttribute()
-        val profile = member.profile
-        if (profile != null) {
-            memberRepository.updateMemberFaceImage(profile, serializeCodeImages)
-        }
+        memberRepository.updateMemberFaceImage(profile, serializeCodeImages)
     }
 
     private fun uploadFaceImage(files: List<MultipartFile>): FaceImage = FaceImage(files.map { file -> imageUploader.uploadFile(file) })
