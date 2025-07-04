@@ -34,7 +34,6 @@ class MemberService(
         return loginMember
     }
 
-    @Transactional
     fun upsertProfile(
         member: Member,
         profile: Profile,
