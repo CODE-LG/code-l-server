@@ -1,5 +1,6 @@
 package codel.member.business
 
+import codel.config.TestFixture
 import codel.member.domain.*
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
@@ -18,7 +19,7 @@ import org.mockito.BDDMockito.given
 
 @SpringBootTest
 @Transactional
-class MemberServiceTest {
+class MemberServiceTest : TestFixture() {
     @Autowired
     lateinit var memberService: MemberService
     @Autowired
@@ -32,27 +33,8 @@ class MemberServiceTest {
     @Test
     fun changeMemberStatusByInsertProfileAtSignup() {
         // given
-        val member = memberJpaRepository.save(
-            Member(
-                oauthType = OauthType.KAKAO,
-                oauthId = "hogee1",
-                memberStatus = MemberStatus.SIGNUP,
-                email = "hogee@hogee",
-            )
-        )
-        val profile = Profile(
-            codeName = "hogee",
-            age = 28,
-            job = "백엔드 개발자",
-            alcohol = "자주 마심",
-            smoke = "비흡연자 - 흡연자와 교류 NO",
-            hobby = "영화 & 드라마,여행 & 캠핑",
-            style = "표현을 잘하는 직진형,상대가 필요할 때 항상 먼저 연락하는 스타일",
-            bigCity = "경기도",
-            smallCity = "성남시",
-            mbti = "isfj",
-            introduce = "잘부탁드립니다!",
-        )
+        val member = memberJpaRepository.save(createMember())
+        val profile = createProfile()
 
         // when
         memberService.upsertProfile(member, profile)
@@ -66,43 +48,24 @@ class MemberServiceTest {
     @Test
     fun upsertProfile_update() {
         // given
-        val member = memberJpaRepository.save(
-            Member(
-                oauthType = OauthType.KAKAO,
-                oauthId = "hogee1",
-                memberStatus = MemberStatus.SIGNUP,
-                email = "hogee@hogee",
-            )
-        )
-        val profile = Profile(
-            codeName = "hogee",
-            age = 28,
-            job = "백엔드 개발자",
-            alcohol = "자주 마심",
-            smoke = "비흡연자 - 흡연자와 교류 NO",
-            hobby = "영화 & 드라마,여행 & 캠핑",
-            style = "표현을 잘하는 직진형,상대가 필요할 때 항상 먼저 연락하는 스타일",
-            bigCity = "경기도",
-            smallCity = "성남시",
-            mbti = "isfj",
-            introduce = "잘부탁드립니다!",
-        )
+        val member = memberJpaRepository.save(createMember())
+        val profile = createProfile()
         memberService.upsertProfile(member, profile)
 
-        // when: 프로필 정보 수정
-        val updatedProfile = Profile(
-            codeName = "updateName",
-            age = 22,
-            job = "운동선수",
-            alcohol = "자주",
-            smoke = "비흡연",
-            hobby = "독서",
-            style = "활발함",
-            bigCity = "서울",
-            smallCity = "송파구",
-            mbti = "ISTP",
+        val updatedProfile = createProfile(codeName = "updateName").apply {
+            age = 22
+            job = "운동선수"
+            alcohol = "자주"
+            smoke = "비흡연"
+            hobby = "독서"
+            style = "활발함"
+            bigCity = "서울"
+            smallCity = "송파구"
+            mbti = "ISTP"
             introduce = "연락 주세요"
-        )
+        }
+
+        // when
         memberService.upsertProfile(member, updatedProfile)
 
         // then
@@ -119,20 +82,12 @@ class MemberServiceTest {
     @Test
     fun requireProfileBeforeRegisteringCodeImage() {
         // given
-        val member = memberJpaRepository.save(
-            Member(
-                oauthType = OauthType.KAKAO,
-                oauthId = "hogee2",
-                memberStatus = MemberStatus.SIGNUP,
-                email = "hogee2@hogee",
-            )
-        )
+        val member = memberJpaRepository.save(createMember(oauthId = "hogee2", email = "hogee2@hogee"))
 
         // when & then
         val exception = assertThrows<MemberException> {
             memberService.saveCodeImage(member, emptyList())
         }
-
         assertThat(exception.message).isEqualTo("프로필이 존재하지 않습니다. 먼저 프로필을 등록해주세요.")
     }
 
@@ -140,33 +95,13 @@ class MemberServiceTest {
     @Test
     fun saveCodeImageWithValidProfile() {
         // given
-        val file1 = MockMultipartFile("file", "test1.png", "image/png", "이미지1".toByteArray())
-        val file2 = MockMultipartFile("file", "test2.png", "image/png", "이미지2".toByteArray())
-        val files = listOf(file1, file2)
-
-        val member = memberJpaRepository.save(
-            Member(
-                oauthType = OauthType.KAKAO,
-                oauthId = "hogee1",
-                memberStatus = MemberStatus.SIGNUP,
-                email = "hogee@hogee",
-            )
-        )
-        val profile = Profile(
-            codeName = "hogee",
-            age = 28,
-            job = "백엔드 개발자",
-            alcohol = "자주 마심",
-            smoke = "비흡연자 - 흡연자와 교류 NO",
-            hobby = "영화 & 드라마,여행 & 캠핑",
-            style = "표현을 잘하는 직진형,상대가 필요할 때 항상 먼저 연락하는 스타일",
-            bigCity = "경기도",
-            smallCity = "성남시",
-            mbti = "isfj",
-            introduce = "잘부탁드립니다!",
-        )
+        val member = memberJpaRepository.save(createMember())
+        val profile = createProfile()
         memberService.upsertProfile(member, profile)
 
+        val file1 = createMockFile("test1.png", "이미지1")
+        val file2 = createMockFile("test2.png", "이미지2")
+        val files = listOf(file1, file2)
         given(imageUploader.uploadFile(file1)).willReturn("https://test-bucket.s3.amazonaws.com/image1.png")
         given(imageUploader.uploadFile(file2)).willReturn("https://test-bucket.s3.amazonaws.com/image2.png")
 
@@ -186,43 +121,21 @@ class MemberServiceTest {
     @Test
     fun saveFaceImageWithValidProfileAndCodeImage() {
         // given
-        val faceFile1 = MockMultipartFile("file", "face1.png", "image/png", "얼굴1".toByteArray())
-        val faceFile2 = MockMultipartFile("file", "face2.png", "image/png", "얼굴2".toByteArray())
-        val faceFile3 = MockMultipartFile("file", "face3.png", "image/png", "얼굴3".toByteArray())
-        val faceFiles = listOf(faceFile1, faceFile2, faceFile3)
-
-        val member = memberJpaRepository.save(
-            Member(
-                oauthType = OauthType.KAKAO,
-                oauthId = "hogee1",
-                memberStatus = MemberStatus.SIGNUP,
-                email = "hogee@hogee",
-            )
-        )
-        val profile = Profile(
-            codeName = "hogee",
-            age = 28,
-            job = "백엔드 개발자",
-            alcohol = "자주 마심",
-            smoke = "비흡연자 - 흡연자와 교류 NO",
-            hobby = "영화 & 드라마,여행 & 캠핑",
-            style = "표현을 잘하는 직진형,상대가 필요할 때 항상 먼저 연락하는 스타일",
-            bigCity = "경기도",
-            smallCity = "성남시",
-            mbti = "isfj",
-            introduce = "잘부탁드립니다!",
-        )
+        val member = memberJpaRepository.save(createMember())
+        val profile = createProfile()
         memberService.upsertProfile(member, profile)
 
-        // 코드 이미지 등록 (상태: CODE_PROFILE_IMAGE)
-        val codeFile1 = MockMultipartFile("file", "test1.png", "image/png", "이미지1".toByteArray())
-        val codeFile2 = MockMultipartFile("file", "test2.png", "image/png", "이미지2".toByteArray())
+        val codeFile1 = createMockFile("code1.png", "이미지1")
+        val codeFile2 = createMockFile("code1.png", "이미지2")
         val codeFiles = listOf(codeFile1, codeFile2)
         given(imageUploader.uploadFile(codeFile1)).willReturn("https://test-bucket.s3.amazonaws.com/codeImage1.png")
         given(imageUploader.uploadFile(codeFile2)).willReturn("https://test-bucket.s3.amazonaws.com/codeImage2.png")
         memberService.saveCodeImage(member, codeFiles)
 
-        // 얼굴 이미지 mocking
+        val faceFile1 = createMockFile("face1.png", "얼굴1")
+        val faceFile2 = createMockFile("face2.png", "얼굴2")
+        val faceFile3 = createMockFile("face3.png", "얼굴3")
+        val faceFiles = listOf(faceFile1, faceFile2, faceFile3)
         given(imageUploader.uploadFile(faceFile1)).willReturn("https://test-bucket.s3.amazonaws.com/faceImage1.png")
         given(imageUploader.uploadFile(faceFile2)).willReturn("https://test-bucket.s3.amazonaws.com/faceImage2.png")
         given(imageUploader.uploadFile(faceFile3)).willReturn("https://test-bucket.s3.amazonaws.com/faceImage3.png")
@@ -239,6 +152,4 @@ class MemberServiceTest {
         assertThat(savedProfile.getFaceImageOrThrow()).contains("https://test-bucket.s3.amazonaws.com/faceImage2.png")
         assertThat(savedProfile.getFaceImageOrThrow()).contains("https://test-bucket.s3.amazonaws.com/faceImage3.png")
     }
-
-    
 }
