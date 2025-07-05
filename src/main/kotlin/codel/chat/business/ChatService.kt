@@ -4,9 +4,7 @@ import codel.chat.presentation.request.ChatRequest
 import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.UpdateLastChatRequest
 import codel.chat.presentation.response.ChatResponse
-import codel.chat.presentation.response.ChatResponses
 import codel.chat.presentation.response.ChatRoomResponse
-import codel.chat.presentation.response.SavedChatDto
 import codel.chat.repository.ChatRepository
 import codel.chat.repository.ChatRoomRepository
 import codel.member.domain.Member
@@ -33,7 +31,7 @@ class ChatService(
         chatRoomRepository.saveChatRoomMember(savedChatRoom, requester)
         chatRoomRepository.saveChatRoomMember(savedChatRoom, partner)
 
-        return ChatRoomResponse.of(savedChatRoom, partner, 0)
+        return ChatRoomResponse.toResponse(savedChatRoom, requester, partner, 0)
     }
 
     @Transactional(readOnly = true)
@@ -41,11 +39,12 @@ class ChatService(
         requester: Member,
         pageable: Pageable,
     ): Page<ChatRoomResponse> {
-        val chatRoomsWithPageable = chatRoomRepository.findChatRooms(requester, pageable)
+        val pagedChatRooms = chatRoomRepository.findChatRooms(requester, pageable)
 
-        return chatRoomsWithPageable.map { chatRoom ->
-            ChatRoomResponse.of(
+        return pagedChatRooms.map { chatRoom ->
+            ChatRoomResponse.toResponse(
                 chatRoom,
+                requester,
                 chatRoomRepository.findPartner(chatRoom.getIdOrThrow(), requester),
                 chatRepository.getUnReadMessageCount(chatRoom, requester),
             )
@@ -56,28 +55,21 @@ class ChatService(
         chatRoomId: Long,
         requester: Member,
         chatRequest: ChatRequest,
-    ): SavedChatDto {
-        val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
-        val partner = chatRoomRepository.findPartner(chatRoomId, requester)
-
+    ): ChatResponse {
         val savedChat = chatRepository.saveChat(chatRoomId, requester, chatRequest)
 
-        return SavedChatDto(
-            partner = partner,
-            chatRoomResponse = ChatRoomResponse.of(chatRoom, partner, 1),
-            chatResponse = ChatResponse.of(requester, savedChat),
-        )
+        return ChatResponse.toResponse(requester, savedChat)
     }
 
     @Transactional(readOnly = true)
     fun getChats(
         chatRoomId: Long,
         requester: Member,
-    ): ChatResponses {
-        val partner = chatRoomRepository.findPartner(chatRoomId, requester)
-        val chats = chatRepository.findChats(chatRoomId, requester)
+        pageable: Pageable,
+    ): Page<ChatResponse> {
+        val pagedChats = chatRepository.findChats(chatRoomId, pageable)
 
-        return ChatResponses.of(requester, partner, chats)
+        return pagedChats.map { chat -> ChatResponse.toResponse(requester, chat) }
     }
 
     fun updateLastChat(

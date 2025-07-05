@@ -3,11 +3,17 @@ package codel.chat.repository
 import codel.chat.domain.Chat
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
+import codel.chat.domain.ChatRoom_
 import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatJpaRepository
+import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.chat.presentation.request.ChatRequest
 import codel.member.domain.Member
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
@@ -16,6 +22,7 @@ import org.springframework.stereotype.Component
 class ChatRepository(
     private val chatJpaRepository: ChatJpaRepository,
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
+    private val chatRoomJpaRepository: ChatRoomJpaRepository,
 ) {
     fun saveChat(
         chatRoomId: Long,
@@ -29,11 +36,16 @@ class ChatRepository(
 
     fun findChats(
         chatRoomId: Long,
-        requester: Member,
-    ): List<Chat> {
-        val requesterChatRoomMember = findMe(chatRoomId, requester)
+        pageable: Pageable,
+    ): Page<Chat> {
+        val pageableWithSort: Pageable = PageRequest.of(pageable.pageNumber, pageable.pageSize, getChatDefaultSort())
+        val chatRoom =
+            chatRoomJpaRepository.findByIdOrNull(chatRoomId) ?: throw ChatException(
+                HttpStatus.BAD_REQUEST,
+                "채팅방을 찾을 수 없습니다.",
+            )
 
-        return chatJpaRepository.findByFromChatRoomOrderBySentAt(requesterChatRoomMember.chatRoom)
+        return chatJpaRepository.findAllByFromChatRoom(chatRoom, pageableWithSort)
     }
 
     fun findChat(chatId: Long): Chat =
@@ -73,4 +85,6 @@ class ChatRepository(
     ): ChatRoomMember =
         chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, requester)
             ?: throw ChatException(HttpStatus.BAD_REQUEST, "해당 채팅방 멤버가 존재하지 않습니다.")
+
+    private fun getChatDefaultSort(): Sort = Sort.by(Sort.Order.desc(ChatRoom_.CREATED_AT))
 }

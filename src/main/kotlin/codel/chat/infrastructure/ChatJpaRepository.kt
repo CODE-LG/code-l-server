@@ -2,6 +2,8 @@ package codel.chat.infrastructure
 
 import codel.chat.domain.Chat
 import codel.chat.domain.ChatRoom
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
@@ -11,12 +13,15 @@ import java.time.LocalDateTime
 interface ChatJpaRepository : JpaRepository<Chat, Long> {
     @Query(
         """
-        SELECT c FROM Chat c
-        WHERE c.from.chatRoom = :chatRoom
-        ORDER BY c.sentAt
+    SELECT c
+    FROM Chat c
+    WHERE c.from.chatRoom = :chatRoom
     """,
     )
-    fun findByFromChatRoomOrderBySentAt(chatRoom: ChatRoom): List<Chat>
+    fun findAllByFromChatRoom(
+        chatRoom: ChatRoom,
+        pageable: Pageable,
+    ): Page<Chat>
 
     @Query(
         """
