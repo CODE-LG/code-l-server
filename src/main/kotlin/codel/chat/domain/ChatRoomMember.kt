@@ -24,5 +24,5 @@ class ChatRoomMember(
     var member: Member,
     @OneToOne
     @JoinColumn(name = "chat_id")
-    var lastChat: Chat? = null,
+    var lastReadChat: Chat? = null,
 )

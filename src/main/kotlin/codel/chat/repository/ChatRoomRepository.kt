@@ -2,10 +2,15 @@ package codel.chat.repository
 
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
+import codel.chat.domain.ChatRoom_
 import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.member.domain.Member
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
@@ -20,27 +25,39 @@ class ChatRoomRepository(
     fun saveChatRoomMember(
         chatRoom: ChatRoom,
         member: Member,
-    ): ChatRoomMember = chatRoomMemberJpaRepository.save(ChatRoomMember(chatRoom = chatRoom, member = member))
+    ) {
+        chatRoomMemberJpaRepository.save(ChatRoomMember(chatRoom = chatRoom, member = member))
+    }
 
-    fun findAllChatRoomMembers(member: Member): List<ChatRoomMember> = chatRoomMemberJpaRepository.findByMember(member)
+    fun findAllChatRoomMembers(member: Member): List<ChatRoomMember> = chatRoomMemberJpaRepository.findAllByMember(member)
 
-    fun findMe(
-        chatRoomId: Long,
-        requester: Member,
-    ): ChatRoomMember =
-        chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, requester)
-            ?: throw ChatException(HttpStatus.BAD_REQUEST, "해당 채팅방 멤버가 존재하지 않습니다.")
+    fun findChatRooms(
+        member: Member,
+        pageable: Pageable,
+    ): Page<ChatRoom> {
+        val sort = getDefaultChatRoomSort()
+        val pageableWithSort: Pageable = PageRequest.of(pageable.pageNumber, pageable.pageSize, sort)
+
+        return chatRoomJpaRepository.findMyChatRoomWithPageable(member.getIdOrThrow(), pageableWithSort)
+    }
 
     fun findPartner(
         chatRoomId: Long,
         requester: Member,
-    ): ChatRoomMember =
-        chatRoomMemberJpaRepository.findByChatRoomIdAndMemberNot(chatRoomId, requester)
-            ?: throw ChatException(HttpStatus.BAD_REQUEST, "채팅방에 자신을 제외한 다른 사용자가 존재하지 않습니다.")
+    ): Member {
+        val chatRoomMember = (
+            chatRoomMemberJpaRepository.findByChatRoomIdAndMemberNot(chatRoomId, requester)
+                ?: throw ChatException(HttpStatus.BAD_REQUEST, "채팅방에 자신을 제외한 다른 사용자가 존재하지 않습니다.")
+        )
+
+        return chatRoomMember.member
+    }
 
     fun findChatRoomById(chatRoomId: Long): ChatRoom =
         chatRoomJpaRepository.findByIdOrNull(chatRoomId) ?: throw ChatException(
             HttpStatus.BAD_REQUEST,
             "chatId에 해당하는 채팅방을 찾을 수 없습니다.",
         )
+
+    private fun getDefaultChatRoomSort(): Sort = Sort.by(Sort.Order.desc(ChatRoom_.UPDATED_AT))
 }
