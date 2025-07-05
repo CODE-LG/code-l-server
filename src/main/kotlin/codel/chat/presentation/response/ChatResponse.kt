@@ -7,23 +7,22 @@ import java.time.LocalDateTime
 
 data class ChatResponse(
     val chatId: Long,
-    val chatType: ChatType,
+    val chatRoomId: Long,
     val message: String,
+    val chatType: ChatType,
     val sentAt: LocalDateTime,
-    val isRead: Boolean,
 ) {
     companion object {
-        // TODO. 읽은 채팅인지 구분
-        fun of(
+        fun toResponse(
             requester: Member,
             chat: Chat,
         ): ChatResponse =
             ChatResponse(
                 chatId = chat.getIdOrThrow(),
+                chatRoomId = chat.chatRoom.getIdOrThrow(),
                 chatType = chat.getChatType(requester),
                 message = chat.message,
                 sentAt = chat.getSentAtOrThrow(),
-                isRead = false,
             )
     }
 }

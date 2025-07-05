@@ -29,14 +29,12 @@ class ChatRoomRepository(
         chatRoomMemberJpaRepository.save(ChatRoomMember(chatRoom = chatRoom, member = member))
     }
 
-    fun findAllChatRoomMembers(member: Member): List<ChatRoomMember> = chatRoomMemberJpaRepository.findAllByMember(member)
-
     fun findChatRooms(
         member: Member,
         pageable: Pageable,
     ): Page<ChatRoom> {
-        val sort = getDefaultChatRoomSort()
-        val pageableWithSort: Pageable = PageRequest.of(pageable.pageNumber, pageable.pageSize, sort)
+        val pageableWithSort: Pageable =
+            PageRequest.of(pageable.pageNumber, pageable.pageSize, getChatRoomDefaultSort())
 
         return chatRoomJpaRepository.findMyChatRoomWithPageable(member.getIdOrThrow(), pageableWithSort)
     }
@@ -59,5 +57,5 @@ class ChatRoomRepository(
             "chatId에 해당하는 채팅방을 찾을 수 없습니다.",
         )
 
-    private fun getDefaultChatRoomSort(): Sort = Sort.by(Sort.Order.desc(ChatRoom_.UPDATED_AT))
+    private fun getChatRoomDefaultSort(): Sort = Sort.by(Sort.Order.desc(ChatRoom_.UPDATED_AT))
 }

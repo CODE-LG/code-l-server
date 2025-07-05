@@ -2,7 +2,7 @@ package codel.chat.presentation.swagger
 
 import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.UpdateLastChatRequest
-import codel.chat.presentation.response.ChatResponses
+import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
@@ -65,7 +65,8 @@ interface ChatControllerSwagger {
     fun getChats(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
-    ): ResponseEntity<ChatResponses>
+        @PageableDefault(size = 10, page = 0) pageable: Pageable,
+    ): ResponseEntity<Page<ChatResponse>>
 
     @Operation(
         summary = "채팅방에서 마지막으로 읽은 채팅 업데이트",

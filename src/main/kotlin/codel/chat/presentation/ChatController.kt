@@ -3,7 +3,7 @@ package codel.chat.presentation
 import codel.chat.business.ChatService
 import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.UpdateLastChatRequest
-import codel.chat.presentation.response.ChatResponses
+import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.swagger.ChatControllerSwagger
 import codel.config.argumentresolver.LoginMember
@@ -49,8 +49,9 @@ class ChatController(
     override fun getChats(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
-    ): ResponseEntity<ChatResponses> {
-        val chatResponses = chatService.getChats(chatRoomId, requester)
+        @PageableDefault(size = 20, page = 0) pageable: Pageable,
+    ): ResponseEntity<Page<ChatResponse>> {
+        val chatResponses = chatService.getChats(chatRoomId, requester, pageable)
 
         return ResponseEntity.ok(chatResponses)
     }
