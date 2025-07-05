@@ -5,6 +5,7 @@ import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.UpdateLastChatRequest
 import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomResponse
+import codel.chat.presentation.response.SavedChatDto
 import codel.chat.repository.ChatRepository
 import codel.chat.repository.ChatRoomRepository
 import codel.member.domain.Member
@@ -55,10 +56,16 @@ class ChatService(
         chatRoomId: Long,
         requester: Member,
         chatRequest: ChatRequest,
-    ): ChatResponse {
+    ): SavedChatDto {
+        val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
         val savedChat = chatRepository.saveChat(chatRoomId, requester, chatRequest)
+        val partner = chatRoomRepository.findPartner(chatRoomId, requester)
+        val unReadMessageCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
 
-        return ChatResponse.toResponse(requester, savedChat)
+        val chatResponse = ChatResponse.toResponse(requester, savedChat)
+        val chatRoomResponse = ChatRoomResponse.toResponse(chatRoom, requester, partner, unReadMessageCount)
+
+        return SavedChatDto(partner, chatRoomResponse, chatResponse)
     }
 
     @Transactional(readOnly = true)
