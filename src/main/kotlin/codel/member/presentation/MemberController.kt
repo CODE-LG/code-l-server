@@ -8,8 +8,8 @@ import codel.member.presentation.request.MemberLoginRequest
 import codel.member.presentation.request.ProfileSavedRequest
 import codel.member.presentation.response.MemberLoginResponse
 import codel.member.presentation.response.MemberProfileResponse
-import codel.member.presentation.response.MemberRecommendResponse
 import codel.member.presentation.response.MemberRecommendResponses
+import codel.member.presentation.response.MemberResponse
 import codel.member.presentation.swagger.MemberControllerSwagger
 import org.springframework.data.domain.Page
 import org.springframework.http.MediaType
@@ -103,12 +103,12 @@ class MemberController(
     override fun getDailyRecommendMembers(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
-    ): ResponseEntity<Page<MemberRecommendResponse>> {
+    ): ResponseEntity<Page<MemberResponse>> {
         val memberPage = memberService.getRandomMembers(page, size)
 
         return ResponseEntity.ok(
             memberPage.map { member ->
-                MemberRecommendResponse.toResponse(member)
+                MemberResponse.toResponse(member)
             },
         )
     }

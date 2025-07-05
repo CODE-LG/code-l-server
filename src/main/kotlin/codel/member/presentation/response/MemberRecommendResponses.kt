@@ -1,17 +1,16 @@
 package codel.member.presentation.response
 
 import codel.member.domain.Member
-import kotlin.streams.toList
 
 data class MemberRecommendResponses(
-    val responses: List<MemberRecommendResponse>,
+    val responses: List<MemberResponse>,
 ) {
     companion object {
         fun toResponse(members: List<Member>): MemberRecommendResponses {
             val responses =
                 members
                     .stream()
-                    .map { member -> MemberRecommendResponse.toResponse(member) }
+                    .map { member -> MemberResponse.toResponse(member) }
                     .toList()
             return MemberRecommendResponses(responses)
         }
