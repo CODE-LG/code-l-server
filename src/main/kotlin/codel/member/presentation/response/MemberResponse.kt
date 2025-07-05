@@ -4,7 +4,7 @@ import codel.member.domain.Member
 import codel.member.domain.Profile
 import java.time.LocalDateTime
 
-data class MemberRecommendResponse(
+data class MemberResponse(
     val memberId: Long,
     val codeImage: String,
     val name: String,
@@ -19,9 +19,9 @@ data class MemberRecommendResponse(
     val unlockTime: LocalDateTime,
 ) {
     companion object {
-        fun toResponse(member: Member): MemberRecommendResponse {
+        fun toResponse(member: Member): MemberResponse {
             val profile = member.getProfileOrThrow()
-            return MemberRecommendResponse(
+            return MemberResponse(
                 memberId = member.getIdOrThrow(),
                 codeImage = profile.getCodeImageOrThrow().first(),
                 name = profile.codeName,
