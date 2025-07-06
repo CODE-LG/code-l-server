@@ -29,9 +29,13 @@ class ChatRepository(
         requester: Member,
         chatRequest: ChatRequest,
     ): Chat {
+        val chatRoom = getChatRoom(chatRoomId)
         val requesterChatRoomMember = findMe(chatRoomId, requester)
 
-        return chatJpaRepository.save(Chat.of(requesterChatRoomMember, chatRequest))
+        val savedChat = chatJpaRepository.save(Chat.of(requesterChatRoomMember, chatRequest))
+        chatRoom.recentChat = savedChat
+        chatRoomJpaRepository.save(chatRoom)
+        return savedChat
     }
 
     fun findChats(
@@ -39,13 +43,18 @@ class ChatRepository(
         pageable: Pageable,
     ): Page<Chat> {
         val pageableWithSort: Pageable = PageRequest.of(pageable.pageNumber, pageable.pageSize, getChatDefaultSort())
+        val chatRoom = getChatRoom(chatRoomId)
+
+        return chatJpaRepository.findAllByFromChatRoom(chatRoom, pageableWithSort)
+    }
+
+    private fun getChatRoom(chatRoomId: Long): ChatRoom {
         val chatRoom =
             chatRoomJpaRepository.findByIdOrNull(chatRoomId) ?: throw ChatException(
                 HttpStatus.BAD_REQUEST,
                 "채팅방을 찾을 수 없습니다.",
             )
-
-        return chatJpaRepository.findAllByFromChatRoom(chatRoom, pageableWithSort)
+        return chatRoom
     }
 
     fun findChat(chatId: Long): Chat =
