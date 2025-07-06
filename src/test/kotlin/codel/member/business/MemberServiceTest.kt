@@ -13,19 +13,19 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.mock.web.MockMultipartFile
-import org.springframework.transaction.annotation.Transactional
 import org.mockito.BDDMockito.given
 
 @SpringBootTest
-@Transactional
 class MemberServiceTest : TestFixture() {
     @Autowired
     lateinit var memberService: MemberService
+
     @Autowired
-    lateinit var memberJpaRepository: MemberJpaRepository
+    override lateinit var memberJpaRepository: MemberJpaRepository
+
     @Autowired
-    lateinit var profileJpaRepository: ProfileJpaRepository
+    override lateinit var profileJpaRepository: ProfileJpaRepository
+
     @MockBean
     lateinit var imageUploader: ImageUploader
 
@@ -33,7 +33,7 @@ class MemberServiceTest : TestFixture() {
     @Test
     fun changeMemberStatusByInsertProfileAtSignup() {
         // given
-        val member = memberJpaRepository.save(createMember())
+        val member = memberSignup
         val profile = createProfile()
 
         // when
@@ -48,10 +48,7 @@ class MemberServiceTest : TestFixture() {
     @Test
     fun upsertProfile_update() {
         // given
-        val member = memberJpaRepository.save(createMember())
-        val profile = createProfile()
-        memberService.upsertProfile(member, profile)
-
+        val member = memberJpaRepository.findById(memberCodeSurvey.id!!).get()
         val updatedProfile = createProfile(codeName = "updateName").apply {
             age = 22
             job = "운동선수"
@@ -82,7 +79,7 @@ class MemberServiceTest : TestFixture() {
     @Test
     fun requireProfileBeforeRegisteringCodeImage() {
         // given
-        val member = memberJpaRepository.save(createMember(oauthId = "hogee2", email = "hogee2@hogee"))
+        val member = memberSignup // memberSignup은 profile이 없는 상태
 
         // when & then
         val exception = assertThrows<MemberException> {
@@ -95,10 +92,7 @@ class MemberServiceTest : TestFixture() {
     @Test
     fun saveCodeImageWithValidProfile() {
         // given
-        val member = memberJpaRepository.save(createMember())
-        val profile = createProfile()
-        memberService.upsertProfile(member, profile)
-
+        val member = memberCodeSurvey
         val file1 = createMockFile("test1.png", "이미지1")
         val file2 = createMockFile("test2.png", "이미지2")
         val files = listOf(file1, file2)
@@ -121,17 +115,7 @@ class MemberServiceTest : TestFixture() {
     @Test
     fun saveFaceImageWithValidProfileAndCodeImage() {
         // given
-        val member = memberJpaRepository.save(createMember())
-        val profile = createProfile()
-        memberService.upsertProfile(member, profile)
-
-        val codeFile1 = createMockFile("code1.png", "이미지1")
-        val codeFile2 = createMockFile("code1.png", "이미지2")
-        val codeFiles = listOf(codeFile1, codeFile2)
-        given(imageUploader.uploadFile(codeFile1)).willReturn("https://test-bucket.s3.amazonaws.com/codeImage1.png")
-        given(imageUploader.uploadFile(codeFile2)).willReturn("https://test-bucket.s3.amazonaws.com/codeImage2.png")
-        memberService.saveCodeImage(member, codeFiles)
-
+        val member = memberCodeProfileImage // profile+codeImage가 이미 연결된 상태
         val faceFile1 = createMockFile("face1.png", "얼굴1")
         val faceFile2 = createMockFile("face2.png", "얼굴2")
         val faceFile3 = createMockFile("face3.png", "얼굴3")

@@ -1,9 +1,11 @@
 package codel.member.domain
 
 import codel.member.exception.MemberException
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -23,7 +25,7 @@ class Member(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
     var email: String,
-    @OneToOne(mappedBy = "member")
+    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     var profile: Profile? = null,
     var fcmToken: String? = null,
     @Enumerated(EnumType.STRING)

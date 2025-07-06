@@ -1,8 +1,10 @@
 package codel.member.domain
 
 import codel.member.exception.MemberException
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -30,7 +32,7 @@ class Profile(
     var codeImage: String? = null, // 복수
     @Column(length = 1000)
     var faceImage: String? = null, // 복수
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinColumn(name = "member_id")
     var member: Member? = null,
 ) {
