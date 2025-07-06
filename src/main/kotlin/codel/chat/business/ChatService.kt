@@ -1,5 +1,6 @@
 package codel.chat.business
 
+import codel.chat.domain.ChatRoom
 import codel.chat.presentation.request.ChatRequest
 import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.UpdateLastChatRequest
@@ -42,15 +43,28 @@ class ChatService(
     ): Page<ChatRoomResponse> {
         val pagedChatRooms = chatRoomRepository.findChatRooms(requester, pageable)
 
-        return pagedChatRooms.map { chatRoom ->
-            ChatRoomResponse.toResponse(
-                chatRoom,
-                requester,
-                chatRoomRepository.findPartner(chatRoom.getIdOrThrow(), requester),
-                chatRepository.getUnReadMessageCount(chatRoom, requester),
-            )
-        }
+        return pagedChatRooms.map { chatRoom -> convertChatRoomToChatRoomResponse(chatRoom, requester) }
     }
+
+    @Transactional(readOnly = true)
+    fun getChatRoom(
+        chatRoomId: Long,
+        requester: Member,
+    ): ChatRoomResponse {
+        val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
+
+        return convertChatRoomToChatRoomResponse(chatRoom, requester)
+    }
+
+    private fun convertChatRoomToChatRoomResponse(
+        chatRoom: ChatRoom,
+        requester: Member,
+    ) = ChatRoomResponse.toResponse(
+        chatRoom,
+        requester,
+        chatRoomRepository.findPartner(chatRoom.getIdOrThrow(), requester),
+        chatRepository.getUnReadMessageCount(chatRoom, requester),
+    )
 
     fun saveChat(
         chatRoomId: Long,

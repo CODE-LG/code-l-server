@@ -45,6 +45,15 @@ class ChatController(
         return ResponseEntity.ok(chatRoomResponses)
     }
 
+    @GetMapping("/v1/chatRooms/{chatRoomId}")
+    override fun getChatRoom(
+        @PathVariable chatRoomId: Long,
+        @LoginMember requester: Member,
+    ): ResponseEntity<ChatRoomResponse> {
+        val chatRoomResponse = chatService.getChatRoom(chatRoomId, requester)
+        return ResponseEntity.ok(chatRoomResponse)
+    }
+
     @GetMapping("/v1/chatroom/{chatRoomId}/chats")
     override fun getChats(
         @LoginMember requester: Member,

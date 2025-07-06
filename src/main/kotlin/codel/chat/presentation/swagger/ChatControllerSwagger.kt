@@ -52,6 +52,22 @@ interface ChatControllerSwagger {
     ): ResponseEntity<Page<ChatRoomResponse>>
 
     @Operation(
+        summary = "채팅방 정보 조회",
+        description = "내가 채팅방에 들어갈 때 채팅방에 대한 정보 조회",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "성공적으로 채팅방 정보 조회"),
+            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
+        ],
+    )
+    fun getChatRoom(
+        @PathVariable chatRoomId: Long,
+        @LoginMember requester: Member,
+    ): ResponseEntity<ChatRoomResponse>
+
+    @Operation(
         summary = "채팅 목록 조회",
         description = "내가 참여하고 있는 채팅방의 모든 채팅 목록 조회",
     )
