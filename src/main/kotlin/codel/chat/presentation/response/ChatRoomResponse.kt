@@ -1,31 +1,32 @@
 package codel.chat.presentation.response
 
 import codel.chat.domain.ChatRoom
-import codel.chat.domain.ChatRoomMember
+import codel.member.domain.Member
+import codel.member.presentation.response.MemberResponse
 import java.time.LocalDateTime
 
 data class ChatRoomResponse(
     val chatRoomId: Long,
-    val name: String,
-    val mainImageUrl: String,
-    val lastMessage: String,
-    val lastMessageSentAt: LocalDateTime,
     val unReadMessageCount: Int,
+    val partner: MemberResponse,
+    val recentChat: ChatResponse?,
+    val createdAt: LocalDateTime,
+    val updatedAt: LocalDateTime,
 ) {
-    // TODO. lastMessage, lastMessageSentAt, unReadMessageCount 매핑
     companion object {
-        fun of(
+        fun toResponse(
             chatRoom: ChatRoom,
-            partner: ChatRoomMember,
+            requester: Member,
+            partner: Member,
             unReadMessageCount: Int,
         ): ChatRoomResponse =
             ChatRoomResponse(
                 chatRoomId = chatRoom.getIdOrThrow(),
-                name = partner.member.profile?.codeName ?: "",
-                mainImageUrl = partner.member.profile?.codeImage ?: "",
-                lastMessage = chatRoom.recentChat?.message ?: "",
-                lastMessageSentAt = chatRoom.recentChat?.sentAt ?: LocalDateTime.MIN,
+                partner = MemberResponse.toResponse(partner),
+                recentChat = chatRoom.recentChat?.let { ChatResponse.toResponse(requester, it) },
                 unReadMessageCount = unReadMessageCount,
+                createdAt = chatRoom.createdAt,
+                updatedAt = chatRoom.updatedAt,
             )
     }
 }

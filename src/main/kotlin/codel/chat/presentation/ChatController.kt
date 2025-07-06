@@ -3,12 +3,14 @@ package codel.chat.presentation
 import codel.chat.business.ChatService
 import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.UpdateLastChatRequest
-import codel.chat.presentation.response.ChatResponses
+import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomResponse
-import codel.chat.presentation.response.ChatRoomResponses
 import codel.chat.presentation.swagger.ChatControllerSwagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PageableDefault
 import org.springframework.http.ResponseEntity
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Controller
@@ -37,9 +39,9 @@ class ChatController(
     @GetMapping("/v1/chatrooms")
     override fun getChatRooms(
         @LoginMember requester: Member,
-    ): ResponseEntity<ChatRoomResponses> {
-        val chatRoomResponses = chatService.getChatRooms(requester)
-
+        @PageableDefault(size = 10, page = 0) pageable: Pageable,
+    ): ResponseEntity<Page<ChatRoomResponse>> {
+        val chatRoomResponses = chatService.getChatRooms(requester, pageable)
         return ResponseEntity.ok(chatRoomResponses)
     }
 
@@ -47,8 +49,9 @@ class ChatController(
     override fun getChats(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
-    ): ResponseEntity<ChatResponses> {
-        val chatResponses = chatService.getChats(chatRoomId, requester)
+        @PageableDefault(size = 20, page = 0) pageable: Pageable,
+    ): ResponseEntity<Page<ChatResponse>> {
+        val chatResponses = chatService.getChats(chatRoomId, requester, pageable)
 
         return ResponseEntity.ok(chatResponses)
     }

@@ -5,8 +5,14 @@ import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
 import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatJpaRepository
+import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.chat.presentation.request.ChatRequest
+import codel.member.domain.Member
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
@@ -15,13 +21,31 @@ import org.springframework.stereotype.Component
 class ChatRepository(
     private val chatJpaRepository: ChatJpaRepository,
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
+    private val chatRoomJpaRepository: ChatRoomJpaRepository,
 ) {
     fun saveChat(
-        requester: ChatRoomMember,
+        chatRoomId: Long,
+        requester: Member,
         chatRequest: ChatRequest,
-    ): Chat = chatJpaRepository.save(Chat.of(requester, chatRequest))
+    ): Chat {
+        val requesterChatRoomMember = findMe(chatRoomId, requester)
 
-    fun findChats(requester: ChatRoomMember): List<Chat> = chatJpaRepository.findByFromChatRoomOrderBySentAt(requester.chatRoom)
+        return chatJpaRepository.save(Chat.of(requesterChatRoomMember, chatRequest))
+    }
+
+    fun findChats(
+        chatRoomId: Long,
+        pageable: Pageable,
+    ): Page<Chat> {
+        val pageableWithSort: Pageable = PageRequest.of(pageable.pageNumber, pageable.pageSize, getChatDefaultSort())
+        val chatRoom =
+            chatRoomJpaRepository.findByIdOrNull(chatRoomId) ?: throw ChatException(
+                HttpStatus.BAD_REQUEST,
+                "채팅방을 찾을 수 없습니다.",
+            )
+
+        return chatJpaRepository.findAllByFromChatRoom(chatRoom, pageableWithSort)
+    }
 
     fun findChat(chatId: Long): Chat =
         chatJpaRepository.findByIdOrNull(chatId) ?: throw ChatException(
@@ -30,21 +54,36 @@ class ChatRepository(
         )
 
     fun upsertLastChat(
-        chatRoomMember: ChatRoomMember,
+        chatRoomId: Long,
+        requester: Member,
         chat: Chat,
     ) {
-        chatRoomMember.lastChat = chat
-        chatRoomMemberJpaRepository.save(chatRoomMember)
+        val requesterChatRoomMember = findMe(chatRoomId, requester)
+        requesterChatRoomMember.lastReadChat = chat
+        chatRoomMemberJpaRepository.save(requesterChatRoomMember)
     }
 
     fun getUnReadMessageCount(
         chatRoom: ChatRoom,
-        requesterGroupMember: ChatRoomMember,
+        requester: Member,
     ): Int {
-        val lastChat = requesterGroupMember.lastChat ?: return 0
+        val requesterChatRoomMember =
+            chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoom.getIdOrThrow(), requester)
+                ?: throw ChatException(HttpStatus.BAD_REQUEST, "해당 채팅방에 속해있는 사용자가 아닙니다.")
+
+        val lastChat = requesterChatRoomMember.lastReadChat ?: return 0
         return chatJpaRepository.countByChatRoomAfterLastChat(
             chatRoom,
             lastChat.getSentAtOrThrow(),
         )
     }
+
+    private fun findMe(
+        chatRoomId: Long,
+        requester: Member,
+    ): ChatRoomMember =
+        chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, requester)
+            ?: throw ChatException(HttpStatus.BAD_REQUEST, "해당 채팅방 멤버가 존재하지 않습니다.")
+
+    private fun getChatDefaultSort(): Sort = Sort.by(Sort.Order.desc("createdAt"))
 }

@@ -2,15 +2,17 @@ package codel.chat.presentation.swagger
 
 import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.UpdateLastChatRequest
-import codel.chat.presentation.response.ChatResponses
+import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomResponse
-import codel.chat.presentation.response.ChatRoomResponses
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PageableDefault
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
@@ -46,7 +48,8 @@ interface ChatControllerSwagger {
     )
     fun getChatRooms(
         @LoginMember requester: Member,
-    ): ResponseEntity<ChatRoomResponses>
+        @PageableDefault(size = 10, page = 0) pageable: Pageable,
+    ): ResponseEntity<Page<ChatRoomResponse>>
 
     @Operation(
         summary = "채팅 목록 조회",
@@ -62,7 +65,8 @@ interface ChatControllerSwagger {
     fun getChats(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
-    ): ResponseEntity<ChatResponses>
+        @PageableDefault(size = 10, page = 0) pageable: Pageable,
+    ): ResponseEntity<Page<ChatResponse>>
 
     @Operation(
         summary = "채팅방에서 마지막으로 읽은 채팅 업데이트",
