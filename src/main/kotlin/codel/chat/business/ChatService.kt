@@ -100,6 +100,6 @@ class ChatService(
     ) {
         val lastChat = chatRepository.findChat(updateLastChatRequest.lastChatId)
 
-        chatRepository.upsertLastChat(chatRoomId, requester, lastChat)
+        chatRepository.updateLastChat(chatRoomId, requester, lastChat)
     }
 }

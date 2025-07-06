@@ -63,7 +63,7 @@ class ChatRepository(
             "해당 chatId에 맞는 채팅을 찾을 수 없습니다.",
         )
 
-    fun upsertLastChat(
+    fun updateLastChat(
         chatRoomId: Long,
         requester: Member,
         chat: Chat,

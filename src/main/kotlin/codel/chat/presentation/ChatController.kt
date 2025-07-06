@@ -73,6 +73,6 @@ class ChatController(
     ): ResponseEntity<Unit> {
         chatService.updateLastChat(chatRoomId, updateLastChatRequest, requester)
 
-        return ResponseEntity.noContent().build()
+        return ResponseEntity.ok().build()
     }
 }
