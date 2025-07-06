@@ -3,7 +3,6 @@ package codel.chat.repository
 import codel.chat.domain.Chat
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
-import codel.chat.domain.ChatRoom_
 import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatJpaRepository
 import codel.chat.infrastructure.ChatRoomJpaRepository
@@ -86,5 +85,5 @@ class ChatRepository(
         chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, requester)
             ?: throw ChatException(HttpStatus.BAD_REQUEST, "해당 채팅방 멤버가 존재하지 않습니다.")
 
-    private fun getChatDefaultSort(): Sort = Sort.by(Sort.Order.desc(ChatRoom_.CREATED_AT))
+    private fun getChatDefaultSort(): Sort = Sort.by(Sort.Order.desc("createdAt"))
 }

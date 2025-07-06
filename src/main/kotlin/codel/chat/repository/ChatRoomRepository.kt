@@ -2,7 +2,6 @@ package codel.chat.repository
 
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
-import codel.chat.domain.ChatRoom_
 import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
@@ -42,8 +41,7 @@ class ChatRoomRepository(
         member: Member,
         pageable: Pageable,
     ): Page<ChatRoom> {
-        val pageableWithSort: Pageable =
-            PageRequest.of(pageable.pageNumber, pageable.pageSize, getChatRoomDefaultSort())
+        val pageableWithSort = PageRequest.of(pageable.pageNumber, pageable.pageSize, getChatRoomDefaultSort())
 
         return chatRoomJpaRepository.findMyChatRoomWithPageable(member.getIdOrThrow(), pageableWithSort)
     }
@@ -66,5 +64,5 @@ class ChatRoomRepository(
             "chatId에 해당하는 채팅방을 찾을 수 없습니다.",
         )
 
-    private fun getChatRoomDefaultSort(): Sort = Sort.by(Sort.Order.desc(ChatRoom_.UPDATED_AT))
+    private fun getChatRoomDefaultSort(): Sort = Sort.by(Sort.Order.desc("updatedAt"))
 }
