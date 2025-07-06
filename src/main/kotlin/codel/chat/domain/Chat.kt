@@ -24,7 +24,7 @@ class Chat(
     var chatRoom: ChatRoom,
     @ManyToOne(optional = false)
     @JoinColumn(name = "from_chat_room_member_id", nullable = false)
-    var from: ChatRoomMember,
+    var fromChatRoomMember: ChatRoomMember,
     var message: String,
     @Enumerated(EnumType.STRING)
     var chatType: ChatType,
@@ -33,13 +33,13 @@ class Chat(
 ) {
     companion object {
         fun of(
-            from: ChatRoomMember,
+            fromChatRoomMember: ChatRoomMember,
             chatRequest: ChatRequest,
         ): Chat =
             Chat(
                 id = null,
-                chatRoom = from.chatRoom,
-                from = from,
+                chatRoom = fromChatRoomMember.chatRoom,
+                fromChatRoomMember = fromChatRoomMember,
                 message = chatRequest.message,
                 chatType = chatRequest.chatType,
             )
@@ -51,7 +51,7 @@ class Chat(
 
     fun getChatType(requester: Member): ChatType =
         when (requester) {
-            from.member -> ChatType.MY
+            fromChatRoomMember.member -> ChatType.MY
             else -> ChatType.PARTNER
         }
 }

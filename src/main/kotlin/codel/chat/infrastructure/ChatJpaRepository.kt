@@ -15,7 +15,7 @@ interface ChatJpaRepository : JpaRepository<Chat, Long> {
         """
     SELECT c
     FROM Chat c
-    WHERE c.from.chatRoom = :chatRoom
+    WHERE c.fromChatRoomMember.chatRoom = :chatRoom
     """,
     )
     fun findAllByFromChatRoom(
@@ -26,7 +26,7 @@ interface ChatJpaRepository : JpaRepository<Chat, Long> {
     @Query(
         """
             SELECT count(c) from Chat c
-            WHERE c.from.chatRoom = :chatRoom
+            WHERE c.fromChatRoomMember.chatRoom = :chatRoom
             AND c.sentAt > :afterTime
         """,
     )
