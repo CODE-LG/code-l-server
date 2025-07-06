@@ -20,9 +20,18 @@ class ChatRoomRepository(
     private val chatRoomJpaRepository: ChatRoomJpaRepository,
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
 ) {
-    fun saveChatRoom(): ChatRoom = chatRoomJpaRepository.save(ChatRoom())
+    fun saveChatRoom(
+        requester: Member,
+        partner: Member,
+    ): ChatRoom {
+        val savedChatRoom = chatRoomJpaRepository.save(ChatRoom())
+        saveChatRoomMember(savedChatRoom, requester)
+        saveChatRoomMember(savedChatRoom, partner)
 
-    fun saveChatRoomMember(
+        return savedChatRoom
+    }
+
+    private fun saveChatRoomMember(
         chatRoom: ChatRoom,
         member: Member,
     ) {

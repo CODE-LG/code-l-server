@@ -27,10 +27,7 @@ class ChatService(
         request: CreateChatRoomRequest,
     ): ChatRoomResponse {
         val partner = memberRepository.findDoneMember(request.partnerId)
-
-        val savedChatRoom = chatRoomRepository.saveChatRoom()
-        chatRoomRepository.saveChatRoomMember(savedChatRoom, requester)
-        chatRoomRepository.saveChatRoomMember(savedChatRoom, partner)
+        val savedChatRoom = chatRoomRepository.saveChatRoom(requester, partner)
 
         return ChatRoomResponse.toResponse(savedChatRoom, requester, partner, 0)
     }
@@ -57,8 +54,9 @@ class ChatService(
         requester: Member,
         chatRequest: ChatRequest,
     ): SavedChatDto {
-        val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
         val savedChat = chatRepository.saveChat(chatRoomId, requester, chatRequest)
+
+        val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
         val partner = chatRoomRepository.findPartner(chatRoomId, requester)
         val unReadMessageCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
 
