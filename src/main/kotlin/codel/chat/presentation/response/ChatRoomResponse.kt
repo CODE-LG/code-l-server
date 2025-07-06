@@ -2,13 +2,13 @@ package codel.chat.presentation.response
 
 import codel.chat.domain.ChatRoom
 import codel.member.domain.Member
-import codel.member.presentation.response.MemberRecommendResponse
+import codel.member.presentation.response.MemberResponse
 import java.time.LocalDateTime
 
 data class ChatRoomResponse(
     val chatRoomId: Long,
     val unReadMessageCount: Int,
-    val partner: MemberRecommendResponse,
+    val partner: MemberResponse,
     val recentChat: ChatResponse?,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
@@ -22,7 +22,7 @@ data class ChatRoomResponse(
         ): ChatRoomResponse =
             ChatRoomResponse(
                 chatRoomId = chatRoom.getIdOrThrow(),
-                partner = MemberRecommendResponse.toResponse(partner),
+                partner = MemberResponse.toResponse(partner),
                 recentChat = chatRoom.recentChat?.let { ChatResponse.toResponse(requester, it) },
                 unReadMessageCount = unReadMessageCount,
                 createdAt = chatRoom.createdAt,
