@@ -7,8 +7,6 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMember, Long> {
-    fun findAllByMember(member: Member): List<ChatRoomMember>
-
     fun findByChatRoomIdAndMemberNot(
         chatRoomId: Long,
         excludeMember: Member,
