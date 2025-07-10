@@ -85,5 +85,5 @@ class ChatRepository(
         chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, requester)
             ?: throw ChatException(HttpStatus.BAD_REQUEST, "해당 채팅방 멤버가 존재하지 않습니다.")
 
-    private fun getChatDefaultSort(): Sort = Sort.by(Sort.Order.desc("createdAt"))
+    private fun getChatDefaultSort(): Sort = Sort.by(Sort.Order.desc("sentAt"))
 }
