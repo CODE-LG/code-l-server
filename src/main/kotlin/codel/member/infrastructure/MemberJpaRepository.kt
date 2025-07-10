@@ -29,7 +29,7 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
     fun findRandomMembersStatusDone(
         @Param("excludeId") excludeId: Long,
         @Param("randomSize") randomSize: Long,
-        @Param("recommendCode") seed: Long,
+        @Param("seed") seed: Long,
     ): List<Member>
 
     @Query(
