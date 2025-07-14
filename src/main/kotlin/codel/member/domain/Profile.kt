@@ -1,8 +1,10 @@
 package codel.member.domain
 
 import codel.member.exception.MemberException
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -30,7 +32,7 @@ class Profile(
     var codeImage: String? = null, // 복수
     @Column(length = 1000)
     var faceImage: String? = null, // 복수
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinColumn(name = "member_id")
     var member: Member? = null,
 ) {
@@ -47,4 +49,21 @@ class Profile(
     fun getFaceImageOrThrow(): List<String> =
         this.faceImage?.let { deserializeAttribute(it) }
             ?: throw MemberException(HttpStatus.BAD_REQUEST, "페이스 이미지가 존재하지 않습니다.")
+
+    fun update(updateProfile: Profile) {
+        this.codeImage = updateProfile.codeImage
+        this.faceImage = updateProfile.faceImage
+        this.codeName = updateProfile.codeName
+        this.age = updateProfile.age
+        this.job = updateProfile.job
+        this.smoke = updateProfile.smoke
+        this.hobby = updateProfile.hobby
+        this.style = updateProfile.style
+        this.bigCity = updateProfile.bigCity
+        this.introduce = updateProfile.introduce
+    }
+
+    fun registerCodeImage(codeImage: String) {
+
+    }
 }

@@ -9,10 +9,13 @@ import codel.member.domain.MemberRepository
 import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import codel.member.domain.Profile
+import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
+import codel.member.infrastructure.ProfileJpaRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -23,6 +26,7 @@ class MemberService(
     private val memberRepository: MemberRepository,
     private val imageUploader: ImageUploader,
     private val memberJpaRepository: MemberJpaRepository,
+    private val profileJpaRepository : ProfileJpaRepository,
 ) {
     fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
@@ -30,13 +34,18 @@ class MemberService(
         return loginMember
     }
 
-    // TODO: 설문에서 저장 받을 때만 고려함, 프로필 수정 고려 필요
-    fun saveProfile(
+    fun upsertProfile(
         member: Member,
         profile: Profile,
     ) {
-        val saveProfile = memberRepository.saveProfile(profile)
-        memberRepository.updateMemberProfile(member, saveProfile)
+        val existingProfile = member.profile
+        if(existingProfile == null){
+            val newProfile = profileJpaRepository.save(profile)
+            member.registerProfile(newProfile)
+        }else{
+            existingProfile.update(profile)
+        }
+        memberJpaRepository.save(member)
     }
 
     @Transactional(readOnly = true)
@@ -52,12 +61,14 @@ class MemberService(
         member: Member,
         files: List<MultipartFile>,
     ) {
+        val profile = member.profile
+            ?: throw MemberException(HttpStatus.BAD_REQUEST, "프로필이 존재하지 않습니다. 먼저 프로필을 등록해주세요.")
+        if (member.memberStatus == MemberStatus.CODE_SURVEY) {
+            member.memberStatus = MemberStatus.CODE_PROFILE_IMAGE
+        }
         val codeImage = uploadCodeImage(files)
         val serializeCodeImages = codeImage.serializeAttribute()
-        val profile = member.profile
-        if (profile != null) {
-            memberRepository.updateMemberCodeImage(profile, serializeCodeImages)
-        }
+        memberRepository.updateMemberCodeImage(profile, serializeCodeImages)
     }
 
     private fun uploadCodeImage(files: List<MultipartFile>): CodeImage = CodeImage(files.map { file -> imageUploader.uploadFile(file) })
@@ -66,12 +77,14 @@ class MemberService(
         member: Member,
         files: List<MultipartFile>,
     ) {
+        val profile = member.profile
+            ?: throw MemberException(HttpStatus.BAD_REQUEST, "프로필이 존재하지 않습니다. 먼저 프로필을 등록해주세요.")
+        if (member.memberStatus == MemberStatus.CODE_PROFILE_IMAGE) {
+            member.memberStatus = MemberStatus.PENDING
+        }
         val faceImage = uploadFaceImage(files)
         val serializeCodeImages = faceImage.serializeAttribute()
-        val profile = member.profile
-        if (profile != null) {
-            memberRepository.updateMemberFaceImage(profile, serializeCodeImages)
-        }
+        memberRepository.updateMemberFaceImage(profile, serializeCodeImages)
     }
 
     private fun uploadFaceImage(files: List<MultipartFile>): FaceImage = FaceImage(files.map { file -> imageUploader.uploadFile(file) })

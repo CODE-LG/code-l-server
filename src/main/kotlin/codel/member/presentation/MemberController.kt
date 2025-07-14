@@ -44,7 +44,7 @@ class MemberController(
         @LoginMember member: Member,
         @RequestBody request: ProfileSavedRequest,
     ): ResponseEntity<Unit> {
-        memberService.saveProfile(member, request.toProfile())
+        memberService.upsertProfile(member, request.toProfile())
         return ResponseEntity.ok().build()
     }
 
