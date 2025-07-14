@@ -33,12 +33,21 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
     ): List<Member>
 
     @Query(
-        value = "SELECT * FROM member WHERE member_status = 'DONE' ORDER BY RAND(:seed) LIMIT :limit OFFSET :offset",
+        value = "SELECT * FROM member WHERE id <> :excludeId AND member_status = 'DONE' ORDER BY RAND(:seed) LIMIT :limit OFFSET :offset",
         nativeQuery = true,
     )
-    fun findMembersWithSeedStatusDone(
+    fun findMembersWithSeedStatusDoneExcludeMe(
+        @Param("excludeId") excludeId: Long,
         @Param("seed") seed: Long,
         @Param("limit") limit: Int,
         @Param("offset") offset: Int,
     ): List<Member>
+
+    @Query(
+        value = "SELECT COUNT(*) FROM member WHERE id <> :excludeId AND member_status = 'DONE'",
+        nativeQuery = true,
+    )
+    fun countMembersStatusDoneExcludeMe(
+        @Param("excludeId") excludeId: Long,
+    ): Long
 }

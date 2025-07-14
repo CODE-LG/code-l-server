@@ -101,10 +101,11 @@ class MemberController(
 
     @GetMapping("/v1/member/all")
     override fun getDailyRecommendMembers(
+        @LoginMember member: Member,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
     ): ResponseEntity<Page<MemberResponse>> {
-        val memberPage = memberService.getRandomMembers(page, size)
+        val memberPage = memberService.getRandomMembers(member, page, size)
 
         return ResponseEntity.ok(
             memberPage.map { member ->

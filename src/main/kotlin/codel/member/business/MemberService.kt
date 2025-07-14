@@ -136,13 +136,15 @@ class MemberService(
 
     @Transactional(readOnly = true)
     fun getRandomMembers(
+        member: Member,
         page: Int,
         size: Int,
     ): Page<Member> {
+        val excludeId = member.getIdOrThrow()
         val seed = DailySeedProvider.generateRandomSeed()
         val offset = page * size
-        val members = memberJpaRepository.findMembersWithSeedStatusDone(seed, size, offset)
-        val total = memberJpaRepository.count()
+        val members = memberJpaRepository.findMembersWithSeedStatusDoneExcludeMe(excludeId, seed, size, offset)
+        val total = memberJpaRepository.countMembersStatusDoneExcludeMe(excludeId)
         val pageable = PageRequest.of(page, size)
 
         return PageImpl(members, pageable, total)
