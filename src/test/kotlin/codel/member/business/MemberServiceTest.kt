@@ -151,4 +151,18 @@ class MemberServiceTest : TestFixture() {
         val rejectMember = memberJpaRepository.findById(member.id!!).get()
         assertThat(rejectMember.memberStatus).isEqualTo(MemberStatus.REJECT)
     }
+
+    @DisplayName("멤버 상태가 PENDING인 상황에서 관리자가 승인하면 상태가 DONE으로 변경된다.")
+    @Test
+    fun approveMemberProfile(){
+        //given
+        val member = memberPending
+        val reason = "이미지를 다시 업로드 부탁드립니다."
+        //when
+        memberService.approveMember(member.id!!)
+
+        //then
+        val rejectMember = memberJpaRepository.findById(member.id!!).get()
+        assertThat(rejectMember.memberStatus).isEqualTo(MemberStatus.DONE)
+    }
 }
