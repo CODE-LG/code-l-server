@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import codel.signal.domain.SignalTestHelper
 
 @ExtendWith(MockitoExtension::class)
 class SignalServiceTest {
@@ -74,7 +75,9 @@ class SignalServiceTest {
         val toMember = mock(Member::class.java)
         val toMemberId = 2L
         given(fromMember.id).willReturn(1L)
-        val lastSignal = Signal.testInstance(fromMember = fromMember, toMember = toMember, status = SignalStatus.PENDING, createdAt = LocalDateTime.now().minusDays(1))
+        val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.PENDING)
+        SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(1))
+        SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(1))
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
         given(signalRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
 
@@ -94,7 +97,9 @@ class SignalServiceTest {
         val toMember = mock(Member::class.java)
         val toMemberId = 2L
         given(fromMember.id).willReturn(1L)
-        val lastSignal = Signal.testInstance(fromMember = fromMember, toMember = toMember, status = SignalStatus.ACCEPTED, createdAt = LocalDateTime.now().minusDays(1))
+        val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.ACCEPTED)
+        SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(1))
+        SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(1))
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
         given(signalRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
 
@@ -106,20 +111,17 @@ class SignalServiceTest {
         assertThat(exception.message).contains("이미 시그널을 보낸 상대입니다.")
     }
 
-    @DisplayName("REJECTED 상태지만 15일이 지나지 않았으면 예외가 발생한다")
+    @DisplayName("REJECTED 상태지만 7일이 지나지 않았으면 예외가 발생한다")
     @Test
-    fun sendSignal_rejected_within_15days_fail() {
+    fun sendSignal_rejected_within_7days_fail() {
         // given
         val fromMember = mock(Member::class.java)
         val toMember = mock(Member::class.java)
         val toMemberId = 2L
         given(fromMember.id).willReturn(1L)
-        val lastSignal = Signal.testInstance(
-            fromMember = fromMember,
-            toMember = toMember,
-            status = SignalStatus.REJECTED,
-            createdAt = LocalDateTime.now().minusDays(10) // 테스트 전용 생성자 사용
-        )
+        val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.REJECTED)
+        SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(8))
+        SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(6))
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
         given(signalRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
 
@@ -128,6 +130,27 @@ class SignalServiceTest {
             signalService.sendSignal(fromMember, toMemberId)
         }
         assertThat(exception.status).isEqualTo(HttpStatus.BAD_REQUEST)
-        assertThat(exception.message).contains("거절된 상대에게는 15일 후에 다시 시그널을 보낼 수 있습니다.")
+        assertThat(exception.message).contains("거절된 상대에게는 7일 후에 다시 시그널을 보낼 수 있습니다.")
+    }
+
+    @DisplayName("REJECTED 상태지만 7일이 지났으면 시그널을 재전송할 수 있다")
+    @Test
+    fun sendSignal_success_after_7days() {
+        // given
+        val fromMember = mock(Member::class.java)
+        val toMember = mock(Member::class.java)
+        val toMemberId = 2L
+        given(fromMember.id).willReturn(1L)
+        val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.REJECTED)
+        SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(10))
+        SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(8))
+        given(memberRepository.findMember(toMemberId)).willReturn(toMember)
+        given(signalRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
+        val savedSignal = Signal(fromMember = fromMember, toMember = toMember)
+        given(signalRepository.save(any())).willReturn(savedSignal)
+
+        // when & then
+        val sendSignal = signalService.sendSignal(fromMember, toMemberId)
+        assertThat(sendSignal.status).isEqualTo(SignalStatus.PENDING)
     }
 } 
