@@ -62,7 +62,7 @@ jobs:
             jpa:
               open-in-view: false
               hibernate:
-                ddl-auto: create
+                ddl-auto: validate
               show-sql: true
               database-platform: org.hibernate.dialect.MySQL8Dialect
           springdoc:
