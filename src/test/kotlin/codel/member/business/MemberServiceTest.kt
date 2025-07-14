@@ -136,4 +136,19 @@ class MemberServiceTest : TestFixture() {
         assertThat(savedProfile.getFaceImageOrThrow()).contains("https://test-bucket.s3.amazonaws.com/faceImage2.png")
         assertThat(savedProfile.getFaceImageOrThrow()).contains("https://test-bucket.s3.amazonaws.com/faceImage3.png")
     }
+
+
+    @DisplayName("멤버 상태가 PENDING인 상황에서 관리자가 거절하면 상태가 REJECT으로 변경된다.")
+    @Test
+    fun rejectMemberProfile(){
+        //given
+        val member = memberPending
+        val reason = "이미지를 다시 업로드 부탁드립니다."
+        //when
+        memberService.rejectMember(member.id!!, reason)
+
+        //then
+        val rejectMember = memberJpaRepository.findById(member.id!!).get()
+        assertThat(rejectMember.memberStatus).isEqualTo(MemberStatus.REJECT)
+    }
 }
