@@ -6,15 +6,17 @@ import codel.signal.domain.Signal
 import codel.signal.domain.SignalStatus
 import codel.signal.exception.SignalException
 import codel.signal.infrastructure.SignalRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 
 @Service
 class SignalService(
     private val memberRepository: MemberRepository,
-    private val signalRepository: SignalRepository
+    private val signalRepository: SignalRepository,
 ) {
     @Transactional
     fun sendSignal(fromMember: Member, toMemberId: Long): Signal {
@@ -31,4 +33,16 @@ class SignalService(
             throw SignalException(HttpStatus.BAD_REQUEST, "자기 자신에게는 시그널을 보낼 수 없습니다.")
         }
     }
+
+    @Transactional(readOnly = true)
+    fun getReceivedSignals(
+        me: Member,
+        page: Int,
+        size: Int
+    ): Page<Signal>{
+        val pageable = PageRequest.of(page, size)
+        val receivedSignals = signalRepository.findByToMemberAndStatus(me, SignalStatus.PENDING)
+        return PageImpl(receivedSignals, pageable, receivedSignals.size.toLong())
+    }
+
 } 

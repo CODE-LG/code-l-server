@@ -6,6 +6,7 @@ import codel.signal.exception.SignalException
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -20,9 +21,9 @@ class Signal(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     val fromMember: Member,
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     val toMember: Member,
     @Enumerated(EnumType.STRING)
     var status: SignalStatus = SignalStatus.PENDING
