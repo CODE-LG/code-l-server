@@ -262,4 +262,10 @@ class SignalServiceTest {
         assertThat(result.content).containsExactly(signalForMe)
         assertThat(result.content).doesNotContain(signalForOther)
     }
+
+    @DisplayName("받은 시그널을 승인한다")
+    @Test
+    fun acceptSignal(){
+
+    }
 } 

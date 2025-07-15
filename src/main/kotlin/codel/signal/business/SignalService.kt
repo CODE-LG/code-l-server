@@ -45,6 +45,8 @@ class SignalService(
         return PageImpl(receivedSignals, pageable, receivedSignals.size.toLong())
     }
 
+
+    @Transactional(readOnly = true)
     fun getSendSignalByMe(
         me: Member,
         page: Int,
@@ -54,4 +56,18 @@ class SignalService(
         return PageImpl(sendSignals, pageable, sendSignals.size.toLong())
     }
 
-} 
+
+    @Transactional
+    fun acceptSignal(
+        me: Member,
+        id: Long) {
+        val findSignal = signalJpaRepository.findById(id).get()
+        if(findSignal.toMember.id != me.id){
+            throw SignalException(HttpStatus.BAD_REQUEST, "내게 온 시그널만 수락할 수 있어요.")
+        }
+        findSignal.validateChangeAcceptable()
+        findSignal.accepct()
+        signalJpaRepository.save(findSignal)
+    }
+
+}

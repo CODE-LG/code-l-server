@@ -43,4 +43,13 @@ class SignalController(
         val signals = signalService.getSendSignalByMe(me, page, size)
         return ResponseEntity.ok(signals.map { SignalMemberResponse.from(it) })
     }
+
+    @PostMapping("/{id}/accpet")
+    fun acceptSignal(
+        @LoginMember me : Member,
+        @PathVariable id : Long
+    ) : ResponseEntity<Unit>{
+        signalService.acceptSignal(me, id)
+        return ResponseEntity.ok().build<Unit>()
+    }
 }
