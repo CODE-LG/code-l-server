@@ -60,14 +60,32 @@ class SignalService(
     @Transactional
     fun acceptSignal(
         me: Member,
-        id: Long) {
-        val findSignal = signalJpaRepository.findById(id).get()
-        if(findSignal.toMember.id != me.id){
-            throw SignalException(HttpStatus.BAD_REQUEST, "내게 온 시그널만 수락할 수 있어요.")
-        }
-        findSignal.validateChangeAcceptable()
-        findSignal.accepct()
+        id: Long
+    ) {
+        val findSignal = signalJpaRepository.findById(id)
+            .orElseThrow{ SignalException(HttpStatus.NOT_FOUND, "해당 시그널을 찾을 수 없습니다.")}
+
+        validateMySignal(findSignal, me)
+        findSignal.accept()
         signalJpaRepository.save(findSignal)
     }
 
+private fun validateMySignal(findSignal: Signal, me: Member) {
+        if (findSignal.toMember.id != me.id) {
+            throw SignalException(HttpStatus.BAD_REQUEST, "내게 온 시그널만 수락할 수 있어요.")
+        }
+    }
+
+    @Transactional
+    fun rejectSignal(
+        me: Member,
+        id: Long
+    ) {
+        val findSignal = signalJpaRepository.findById(id)
+            .orElseThrow{ SignalException(HttpStatus.NOT_FOUND, "해당 시그널을 찾을 수 없습니다.")}
+
+        validateMySignal(findSignal, me)
+        findSignal.reject()
+        signalJpaRepository.save(findSignal)
+    }
 }

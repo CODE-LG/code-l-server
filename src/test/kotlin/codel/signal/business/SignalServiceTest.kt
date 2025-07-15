@@ -283,7 +283,7 @@ class SignalServiceTest {
         assertThat(signal.status).isEqualTo(SignalStatus.ACCEPTED)
     }
 
-    @DisplayName("내게 온 시그널이 아니면 예외가 발생한다")
+    @DisplayName("승인 할 때, 내게 온 시그널이 아니면 예외가 발생한다")
     @Test
     fun acceptSignal_notMySignal_fail() {
         // given
@@ -327,6 +327,74 @@ class SignalServiceTest {
         given(signalJpaRepository.findById(signalId)).willReturn(Optional.of(rejectedSignal))
         val exception2 = assertThrows<SignalException> {
             signalService.acceptSignal(me, signalId)
+        }
+        assertThat(exception2.status).isEqualTo(HttpStatus.BAD_REQUEST)
+    }
+
+
+    @DisplayName("받은 시그널을 정상적으로 거절한다")
+    @Test
+    fun rejectSignal_success() {
+        // given
+        val me = mock(Member::class.java)
+        val fromMember = mock(Member::class.java)
+        val signalId = 1L
+        given(me.id).willReturn(2L)
+        val signal = Signal(fromMember = fromMember, toMember = me, status = SignalStatus.PENDING)
+        given(signalJpaRepository.findById(signalId)).willReturn(Optional.of(signal))
+        given(signalJpaRepository.save(signal)).willReturn(signal)
+
+        // when
+        signalService.rejectSignal(me, signalId)
+
+        // then
+        assertThat(signal.status).isEqualTo(SignalStatus.REJECTED)
+    }
+
+    @DisplayName("거절 할 때, 내게 온 시그널이 아니면 예외가 발생한다")
+    @Test
+    fun rejectSignal_notMySignal_fail() {
+        // given
+        val me = mock(Member::class.java)
+        val fromMember = mock(Member::class.java)
+        val notMe = mock(Member::class.java)
+        val signalId = 1L
+        given(me.id).willReturn(2L)
+        given(notMe.id).willReturn(3L)
+        val signal = Signal(fromMember = fromMember, toMember = notMe, status = SignalStatus.PENDING)
+        given(signalJpaRepository.findById(signalId)).willReturn(Optional.of(signal))
+
+        // when & then
+        val exception = assertThrows<SignalException> {
+            signalService.rejectSignal(me, signalId)
+        }
+        assertThat(exception.status).isEqualTo(HttpStatus.BAD_REQUEST)
+        assertThat(exception.message).contains("내게 온 시그널만 수락할 수 있어요.")
+    }
+
+    @DisplayName("이미 처리된 시그널(ACCEPTED/REJECTED)은 거절할 수 없다")
+    @Test
+    fun rejectSignal_alreadyProcessed_fail() {
+        // given
+        val me = mock(Member::class.java)
+        val fromMember = mock(Member::class.java)
+        val signalId = 1L
+        given(me.id).willReturn(2L)
+        val acceptedSignal = Signal(fromMember = fromMember, toMember = me, status = SignalStatus.ACCEPTED)
+        val rejectedSignal = Signal(fromMember = fromMember, toMember = me, status = SignalStatus.REJECTED)
+        given(signalJpaRepository.findById(signalId)).willReturn(Optional.of(acceptedSignal))
+
+        // when & then
+        val exception1 = assertThrows<SignalException> {
+            signalService.rejectSignal(me, signalId)
+        }
+        assertThat(exception1.status).isEqualTo(HttpStatus.BAD_REQUEST)
+        // 상태 메시지는 도메인 예외 메시지에 맞게 검증
+
+        // REJECTED 상태도 검증
+        given(signalJpaRepository.findById(signalId)).willReturn(Optional.of(rejectedSignal))
+        val exception2 = assertThrows<SignalException> {
+            signalService.rejectSignal(me, signalId)
         }
         assertThat(exception2.status).isEqualTo(HttpStatus.BAD_REQUEST)
     }
