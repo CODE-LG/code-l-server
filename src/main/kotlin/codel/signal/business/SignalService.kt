@@ -5,7 +5,7 @@ import codel.member.domain.MemberRepository
 import codel.signal.domain.Signal
 import codel.signal.domain.SignalStatus
 import codel.signal.exception.SignalException
-import codel.signal.infrastructure.SignalRepository
+import codel.signal.infrastructure.SignalJpaRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -16,16 +16,16 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class SignalService(
     private val memberRepository: MemberRepository,
-    private val signalRepository: SignalRepository,
+    private val signalJpaRepository: SignalJpaRepository,
 ) {
     @Transactional
     fun sendSignal(fromMember: Member, toMemberId: Long): Signal {
         validateNotSelf(fromMember, toMemberId)
         val toMember = memberRepository.findMember(toMemberId)
-        val lastSignal = signalRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)
+        val lastSignal = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)
         lastSignal?.validateSendable()
         val signal = Signal(fromMember = fromMember, toMember = toMember)
-        return signalRepository.save(signal)
+        return signalJpaRepository.save(signal)
     }
 
     private fun validateNotSelf(fromMember: Member, toMemberId: Long) {
@@ -41,8 +41,17 @@ class SignalService(
         size: Int
     ): Page<Signal>{
         val pageable = PageRequest.of(page, size)
-        val receivedSignals = signalRepository.findByToMemberAndStatus(me, SignalStatus.PENDING)
+        val receivedSignals = signalJpaRepository.findByToMemberAndStatus(me, SignalStatus.PENDING)
         return PageImpl(receivedSignals, pageable, receivedSignals.size.toLong())
+    }
+
+    fun getSendSignalByMe(
+        me: Member,
+        page: Int,
+        size: Int) : Page<Signal>{
+        val pageable = PageRequest.of(page, size)
+        val sendSignals = signalJpaRepository.findByFromMemberAndStatus(me, SignalStatus.PENDING)
+        return PageImpl(sendSignals, pageable, sendSignals.size.toLong())
     }
 
 } 

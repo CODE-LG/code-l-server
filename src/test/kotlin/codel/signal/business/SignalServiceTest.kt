@@ -4,7 +4,7 @@ import codel.member.domain.Member
 import codel.member.domain.MemberRepository
 import codel.signal.domain.Signal
 import codel.signal.domain.SignalStatus
-import codel.signal.infrastructure.SignalRepository
+import codel.signal.infrastructure.SignalJpaRepository
 import codel.signal.exception.SignalException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
@@ -20,14 +20,13 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import codel.signal.domain.SignalTestHelper
-import org.springframework.data.domain.PageImpl
 
 @ExtendWith(MockitoExtension::class)
 class SignalServiceTest {
     @Mock
     lateinit var memberRepository: MemberRepository
     @Mock
-    lateinit var signalRepository: SignalRepository
+    lateinit var signalJpaRepository: SignalJpaRepository
     @InjectMocks
     lateinit var signalService: SignalService
 
@@ -41,7 +40,7 @@ class SignalServiceTest {
         val savedSignal = Signal(fromMember = fromMember, toMember = toMember)
 
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
-        given(signalRepository.save(any())).willReturn(savedSignal)
+        given(signalJpaRepository.save(any())).willReturn(savedSignal)
 
         // when
         val result = signalService.sendSignal(fromMember, toMemberId)
@@ -80,7 +79,7 @@ class SignalServiceTest {
         SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(1))
         SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(1))
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
-        given(signalRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
+        given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
 
         // when & then
         val exception = assertThrows<SignalException> {
@@ -102,7 +101,7 @@ class SignalServiceTest {
         SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(1))
         SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(1))
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
-        given(signalRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
+        given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
 
         // when & then
         val exception = assertThrows<SignalException> {
@@ -124,7 +123,7 @@ class SignalServiceTest {
         SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(8))
         SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(6))
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
-        given(signalRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
+        given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
 
         // when & then
         val exception = assertThrows<SignalException> {
@@ -146,16 +145,16 @@ class SignalServiceTest {
         SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(10))
         SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(8))
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
-        given(signalRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
+        given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
         val savedSignal = Signal(fromMember = fromMember, toMember = toMember)
-        given(signalRepository.save(any())).willReturn(savedSignal)
+        given(signalJpaRepository.save(any())).willReturn(savedSignal)
 
         // when & then
         val sendSignal = signalService.sendSignal(fromMember, toMemberId)
         assertThat(sendSignal.status).isEqualTo(SignalStatus.PENDING)
     }
 
-    @DisplayName("여러 상태의 시그널 중 PENDING만 반환된다")
+    @DisplayName("여러 상태의 받은 시그널 중 PENDING만 반환된다")
     @Test
     fun getReceivedSignals_onlyPending() {
         // given
@@ -165,7 +164,7 @@ class SignalServiceTest {
         val pendingSignal = Signal(fromMember = fromMember1, toMember = me, status = SignalStatus.PENDING)
         val acceptedSignal = Signal(fromMember = fromMember2, toMember = me, status = SignalStatus.ACCEPTED)
         val rejectedSignal = Signal(fromMember = fromMember2, toMember = me, status = SignalStatus.REJECTED)
-        given(signalRepository.findByToMemberAndStatus(me, SignalStatus.PENDING)).willReturn(listOf(pendingSignal))
+        given(signalJpaRepository.findByToMemberAndStatus(me, SignalStatus.PENDING)).willReturn(listOf(pendingSignal))
 
         // when
         val result = signalService.getReceivedSignals(me, 0, 10)
@@ -180,7 +179,7 @@ class SignalServiceTest {
     fun getReceivedSignals_empty() {
         // given
         val me = mock(Member::class.java)
-        given(signalRepository.findByToMemberAndStatus(me, SignalStatus.PENDING)).willReturn(emptyList())
+        given(signalJpaRepository.findByToMemberAndStatus(me, SignalStatus.PENDING)).willReturn(emptyList())
 
         // when
         val result = signalService.getReceivedSignals(me, 0, 10)
@@ -199,10 +198,65 @@ class SignalServiceTest {
         val fromMember = mock(Member::class.java)
         val signalForMe = Signal(fromMember = fromMember, toMember = me, status = SignalStatus.PENDING)
         val signalForOther = Signal(fromMember = fromMember, toMember = notMe, status = SignalStatus.PENDING)
-        given(signalRepository.findByToMemberAndStatus(me, SignalStatus.PENDING)).willReturn(listOf(signalForMe))
+        given(signalJpaRepository.findByToMemberAndStatus(me, SignalStatus.PENDING)).willReturn(listOf(signalForMe))
 
         // when
         val result = signalService.getReceivedSignals(me, 0, 10)
+
+        // then
+        assertThat(result.content).containsExactly(signalForMe)
+        assertThat(result.content).doesNotContain(signalForOther)
+    }
+
+    @DisplayName("여러 상태의 전송 시그널 중 PENDING만 반환된다")
+    @Test
+    fun getSendSignal_onlyPending() {
+        // given
+        val me = mock(Member::class.java)
+        val fromMember1 = mock(Member::class.java)
+        val fromMember2 = mock(Member::class.java)
+
+        val pendingSignal = Signal(fromMember = fromMember1, toMember = me, status = SignalStatus.PENDING)
+        val acceptedSignal = Signal(fromMember = fromMember2, toMember = me, status = SignalStatus.ACCEPTED)
+        val rejectedSignal = Signal(fromMember = fromMember2, toMember = me, status = SignalStatus.REJECTED)
+        given(signalJpaRepository.findByFromMemberAndStatus(me, SignalStatus.PENDING)).willReturn(listOf(pendingSignal))
+
+        // when
+        val result = signalService.getSendSignalByMe(me, 0, 10)
+
+        // then
+        assertThat(result.content).containsExactly(pendingSignal)
+        assertThat(result.content).doesNotContain(acceptedSignal, rejectedSignal)
+    }
+
+    @DisplayName("전송 시그널이 없을 때 빈 Page가 반환된다")
+    @Test
+    fun getSendSignals_empty() {
+        // given
+        val me = mock(Member::class.java)
+        given(signalJpaRepository.findByFromMemberAndStatus(me, SignalStatus.PENDING)).willReturn(emptyList())
+
+        // when
+        val result = signalService.getSendSignalByMe(me, 0, 10)
+
+        // then
+        assertThat(result.content).isEmpty()
+        assertThat(result.totalElements).isEqualTo(0)
+    }
+
+    @DisplayName("toMember가 나(me)가 아닌 시그널은 결과에 포함되지 않는다")
+    @Test
+    fun getSendSignals_excludesOtherToMember() {
+        // given
+        val me = mock(Member::class.java)
+        val notMe = mock(Member::class.java)
+        val fromMember = mock(Member::class.java)
+        val signalForMe = Signal(fromMember = fromMember, toMember = me, status = SignalStatus.PENDING)
+        val signalForOther = Signal(fromMember = fromMember, toMember = notMe, status = SignalStatus.PENDING)
+        given(signalJpaRepository.findByFromMemberAndStatus(me, SignalStatus.PENDING)).willReturn(listOf(signalForMe))
+
+        // when
+        val result = signalService.getSendSignalByMe(me, 0, 10)
 
         // then
         assertThat(result.content).containsExactly(signalForMe)

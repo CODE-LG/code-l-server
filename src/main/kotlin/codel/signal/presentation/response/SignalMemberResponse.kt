@@ -5,15 +5,15 @@ import codel.signal.domain.Signal
 import codel.signal.domain.SignalStatus
 import java.time.LocalDateTime
 
-data class ReceivedSignalResponse(
+data class SignalMemberResponse(
     val signalId: Long,
     val fromMember: MemberProfileResponse,
     val status: SignalStatus,
     val createAt: LocalDateTime
 ) {
     companion object {
-        fun from(signal: Signal): ReceivedSignalResponse {
-            return ReceivedSignalResponse(
+        fun from(signal: Signal): SignalMemberResponse {
+            return SignalMemberResponse(
                 signalId = signal.id!!,
                 fromMember = MemberProfileResponse.toResponse(signal.fromMember),
                 status = signal.status,
