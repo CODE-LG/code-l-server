@@ -12,6 +12,7 @@ import codel.member.domain.Profile
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
+import codel.signal.infrastructure.SignalJpaRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -19,6 +20,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
+import java.time.LocalDateTime
 
 @Transactional
 @Service
@@ -27,6 +29,7 @@ class MemberService(
     private val imageUploader: ImageUploader,
     private val memberJpaRepository: MemberJpaRepository,
     private val profileJpaRepository : ProfileJpaRepository,
+    private val signalJpaRepository: SignalJpaRepository,
 ) {
     fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
@@ -131,7 +134,24 @@ class MemberService(
     fun recommendMembers(member: Member): List<Member> {
         val excludeId = member.getIdOrThrow()
         val seed = DailySeedProvider.generateDailySeedForMember(member.getIdOrThrow())
-        return memberJpaRepository.findRandomMembersStatusDone(excludeId, 5, seed)
+        val candidateSize = 20L // 넉넉히 뽑아서 필터링
+        val candidates = memberJpaRepository.findRandomMembersStatusDone(excludeId, candidateSize, seed)
+        if (candidates.isEmpty()) return emptyList()
+
+        val now = LocalDateTime.now()
+        val sevenDaysAgo = now.minusDays(7)
+
+        val filtered = candidates.filter { candidate ->
+            val lastSignal = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(member, candidate)
+            when {
+                lastSignal == null -> true // 시그널이 없으면 추천
+                lastSignal.status.name in listOf("ACCEPTED", "ACCEPTED_HIDDEN", "PENDING", "PENDING_HIDDEN") -> false // 언제든 제외
+                lastSignal.status.name == "REJECTED" && lastSignal.createdAt.isAfter(sevenDaysAgo) -> false // 7일 이내 REJECTED 제외
+                lastSignal.status.name == "REJECTED" && lastSignal.createdAt.isBefore(sevenDaysAgo) -> true // 7일 지난 REJECTED는 추천
+                else -> true // 기타 상황(방어적)
+            }
+        }.take(5)
+        return filtered
     }
 
     @Transactional(readOnly = true)
