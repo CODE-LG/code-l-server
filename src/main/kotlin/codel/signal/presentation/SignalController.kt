@@ -6,6 +6,7 @@ import codel.signal.presentation.request.SendSignalRequest
 import codel.signal.presentation.response.SignalResponse
 import codel.config.argumentresolver.LoginMember
 import codel.signal.presentation.response.SignalMemberResponse
+import codel.signal.presentation.swagger.SignalControllerSwagger
 import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -14,9 +15,9 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/v1/signals")
 class SignalController(
     private val signalService: SignalService
-) {
+) : SignalControllerSwagger {
     @PostMapping
-    fun sendSignal(
+    override fun sendSignal(
         @LoginMember fromMember: Member,
         @RequestBody request: SendSignalRequest
     ): ResponseEntity<SignalResponse> {
@@ -25,7 +26,7 @@ class SignalController(
     }
 
     @GetMapping("/received")
-    fun getReceiveSignalForMe(
+    override fun getReceiveSignalForMe(
         @LoginMember me: Member,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
@@ -35,7 +36,7 @@ class SignalController(
     }
 
     @GetMapping("/send")
-    fun getSendSignalByMe(
+    override fun getSendSignalByMe(
         @LoginMember me: Member,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
@@ -45,7 +46,7 @@ class SignalController(
     }
 
     @PostMapping("/{id}/accept")
-    fun acceptSignal(
+    override fun acceptSignal(
         @LoginMember me : Member,
         @PathVariable id : Long
     ) : ResponseEntity<Unit>{
@@ -54,7 +55,7 @@ class SignalController(
     }
 
     @PostMapping("/{id}/reject")
-    fun rejectSignal(
+    override fun rejectSignal(
         @LoginMember me : Member,
         @PathVariable id : Long
     ) : ResponseEntity<Unit>{
