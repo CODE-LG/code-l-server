@@ -134,8 +134,9 @@ class MemberService(
     fun recommendMembers(member: Member): List<Member> {
         val excludeId = member.getIdOrThrow()
         val seed = DailySeedProvider.generateDailySeedForMember(member.getIdOrThrow())
-        val candidateSize = 20L // 넉넉히 뽑아서 필터링
-        val candidates = memberJpaRepository.findRandomMembersStatusDone(excludeId, candidateSize, seed)
+        val candidateSize = 20 // 넉넉히 뽑아서 필터링
+        val pageable = PageRequest.of(0, candidateSize)
+        val candidates = memberJpaRepository.findRandomMembersStatusDoneWithProfile(excludeId, seed, pageable)
         if (candidates.isEmpty()) return emptyList()
 
         val now = LocalDateTime.now()
