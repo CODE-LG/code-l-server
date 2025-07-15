@@ -44,12 +44,21 @@ class SignalController(
         return ResponseEntity.ok(signals.map { SignalMemberResponse.from(it) })
     }
 
-    @PostMapping("/{id}/accpet")
+    @PostMapping("/{id}/accept")
     fun acceptSignal(
         @LoginMember me : Member,
         @PathVariable id : Long
     ) : ResponseEntity<Unit>{
         signalService.acceptSignal(me, id)
+        return ResponseEntity.ok().build<Unit>()
+    }
+
+    @PostMapping("/{id}/reject")
+    fun rejectSignal(
+        @LoginMember me : Member,
+        @PathVariable id : Long
+    ) : ResponseEntity<Unit>{
+        signalService.rejectSignal(me, id)
         return ResponseEntity.ok().build<Unit>()
     }
 }

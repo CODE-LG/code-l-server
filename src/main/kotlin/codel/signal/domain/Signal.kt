@@ -40,20 +40,26 @@ class Signal(
         }
     }
 
-    fun canSendNewSignal(now: LocalDateTime = LocalDateTime.now()): Boolean {
+    private fun canSendNewSignal(now: LocalDateTime = LocalDateTime.now()): Boolean {
         return when (status) {
             SignalStatus.PENDING, SignalStatus.ACCEPTED, SignalStatus.PENDING_HIDDEN, SignalStatus.ACCEPTED_HIDDEN -> false
             SignalStatus.REJECTED -> updatedAt.plusDays(7).isBefore(now)
         }
     }
 
-    fun validateChangeAcceptable() {
+    fun accept() {
+        validateChangeAcceptable()
+        status = SignalStatus.ACCEPTED
+    }
+
+    fun reject(){
+        validateChangeAcceptable()
+        status = SignalStatus.REJECTED
+    }
+
+    private fun validateChangeAcceptable() {
         status.changeBlockedMessage()?.let { msg ->
             throw SignalException(HttpStatus.BAD_REQUEST, msg)
         }
-    }
-
-    fun accepct() {
-        status = SignalStatus.ACCEPTED
     }
 }
