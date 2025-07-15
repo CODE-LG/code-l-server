@@ -141,17 +141,12 @@ class MemberService(
         val now = LocalDateTime.now()
         val sevenDaysAgo = now.minusDays(7)
 
-        val filtered = candidates.filter { candidate ->
-            val lastSignal = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(member, candidate)
-            when {
-                lastSignal == null -> true // 시그널이 없으면 추천
-                lastSignal.status.name in listOf("ACCEPTED", "ACCEPTED_HIDDEN", "PENDING", "PENDING_HIDDEN") -> false // 언제든 제외
-                lastSignal.status.name == "REJECTED" && lastSignal.createdAt.isAfter(sevenDaysAgo) -> false // 7일 이내 REJECTED 제외
-                lastSignal.status.name == "REJECTED" && lastSignal.createdAt.isBefore(sevenDaysAgo) -> true // 7일 지난 REJECTED는 추천
-                else -> true // 기타 상황(방어적)
-            }
+        // 제외 대상 후보의 toMemberId를 한 번에 조회
+        val excludeIds = signalJpaRepository.findExcludedToMemberIds(member, candidates, sevenDaysAgo).toSet()
+
+        return candidates.filter { candidate ->
+            candidate.id !in excludeIds
         }.take(5)
-        return filtered
     }
 
     @Transactional(readOnly = true)
