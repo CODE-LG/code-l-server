@@ -24,7 +24,7 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
     WHERE s.fromMember = :fromMember
       AND s.toMember IN :candidates
       AND (
-        (s.status = 'REJECTED' AND s.createdAt >= :sevenDaysAgo)
+        (s.status = 'REJECTED' AND s.updatedAt >= :sevenDaysAgo)
         OR s.status IN ('ACCEPTED', 'ACCEPTED_HIDDEN', 'PENDING', 'PENDING_HIDDEN')
       )
       AND s.id IN (
