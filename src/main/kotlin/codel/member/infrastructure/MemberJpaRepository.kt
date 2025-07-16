@@ -3,10 +3,12 @@ package codel.member.infrastructure
 import codel.member.domain.Member
 import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.awt.print.Pageable
 
 @Repository
 interface MemberJpaRepository : JpaRepository<Member, Long> {
@@ -50,4 +52,14 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
     fun countMembersStatusDoneExcludeMe(
         @Param("excludeId") excludeId: Long,
     ): Long
+
+    @Query(
+        value = "SELECT m FROM Member m JOIN FETCH m.profile WHERE m.id <> :excludeId AND m.memberStatus = 'DONE' ORDER BY function('RAND', :seed)",
+        countQuery = "SELECT COUNT(m) FROM Member m WHERE m.id <> :excludeId AND m.memberStatus = 'DONE'"
+    )
+    fun findRandomMembersStatusDoneWithProfile(
+        @Param("excludeId") excludeId: Long,
+        @Param("seed") seed: Long,
+        pageRequest: PageRequest
+    ): List<Member>
 }

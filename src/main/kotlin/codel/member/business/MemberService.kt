@@ -12,6 +12,7 @@ import codel.member.domain.Profile
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
+import codel.signal.infrastructure.SignalJpaRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -19,6 +20,8 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Transactional
 @Service
@@ -27,6 +30,7 @@ class MemberService(
     private val imageUploader: ImageUploader,
     private val memberJpaRepository: MemberJpaRepository,
     private val profileJpaRepository : ProfileJpaRepository,
+    private val signalJpaRepository: SignalJpaRepository,
 ) {
     fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
@@ -130,8 +134,30 @@ class MemberService(
     @Transactional(readOnly = true)
     fun recommendMembers(member: Member): List<Member> {
         val excludeId = member.getIdOrThrow()
+        val today = LocalDate.now()
+        val todayMidnight = today.atStartOfDay()
         val seed = DailySeedProvider.generateDailySeedForMember(member.getIdOrThrow())
-        return memberJpaRepository.findRandomMembersStatusDone(excludeId, 5, seed)
+        val candidateSize = 20
+        val pageable = PageRequest.of(0, candidateSize)
+        val candidates = memberJpaRepository.findRandomMembersStatusDoneWithProfile(excludeId, seed, pageable)
+        if (candidates.isEmpty()) return emptyList()
+
+        val now = LocalDateTime.now()
+        val sevenDaysAgo = now.minusDays(7)
+
+        // 1. 00시 기준(오늘 00시 이전) 제외 조건 적용 → 5명만 고정
+        val excludeIds = signalJpaRepository.findExcludedToMemberIdsAtMidnight(
+            member, candidates, sevenDaysAgo, todayMidnight
+        ).toSet()
+        val dailyList = candidates.filter { candidate ->
+            candidate.id !in excludeIds
+        }.take(5) // 5명 고정
+
+        // 2. 하루 동안은 실시간으로 ACCEPTED/ACCEPTED_HIDDEN만 제외 (대체 없이)
+        val realTimeExcludeIds = signalJpaRepository.findAcceptedToMemberIds(member, dailyList)
+        return dailyList.filter { candidate ->
+            candidate.id !in realTimeExcludeIds
+        }
     }
 
     @Transactional(readOnly = true)
