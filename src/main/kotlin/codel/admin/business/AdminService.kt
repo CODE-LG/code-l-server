@@ -39,7 +39,7 @@ class AdminService(
 
     fun approveMemberProfile(memberId: Long) {
         val approvedMember = memberService.approveMember(memberId)
-        sendNotification(approvedMember)
+//        sendNotification(approvedMember)
     }
 
     fun rejectMemberProfile(
@@ -47,7 +47,7 @@ class AdminService(
         reason: String,
     ) {
         val rejectedMember = memberService.rejectMember(memberId, reason)
-        sendNotification(rejectedMember)
+//        sendNotification(rejectedMember)
     }
 
     private fun sendNotification(member: Member) {
