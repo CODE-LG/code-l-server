@@ -15,7 +15,7 @@
         <div class="mb-5">
             <h4>코드 이미지</h4>
             <div class="row">
-                <div class="col-md-4 mb-3" th:each="url : ${member.codeImage?.urls}">
+                <div class="col-md-4 mb-3" th:each="url : ${member.profile.codeImage}">
                     <img th:src="${url}" class="img-fluid rounded shadow-sm"
                          style="height: 300px; object-fit: cover; width: 100%;"/>
                 </div>
@@ -25,7 +25,7 @@
         <div class="mb-5">
             <h4>페이스 이미지</h4>
             <div class="row">
-                <div class="col-md-4 mb-3" th:each="url : ${member.faceImage?.urls}">
+                <div class="col-md-4 mb-3" th:each="url : ${member.profile.faceImage}">
                     <img th:src="${url}" class="img-fluid rounded shadow-sm"
                          style="height: 300px; object-fit: cover; width: 100%;"/>
                 </div>
