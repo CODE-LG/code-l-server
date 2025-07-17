@@ -98,7 +98,7 @@ class SignalServiceTest {
         val toMember = mock(Member::class.java)
         val toMemberId = 2L
         given(fromMember.id).willReturn(1L)
-        val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.ACCEPTED)
+        val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.APPROVED)
         SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(1))
         SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(1))
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
@@ -163,7 +163,7 @@ class SignalServiceTest {
         val fromMember1 = mock(Member::class.java)
         val fromMember2 = mock(Member::class.java)
         val pendingSignal = Signal(fromMember = fromMember1, toMember = me, status = SignalStatus.PENDING)
-        val acceptedSignal = Signal(fromMember = fromMember2, toMember = me, status = SignalStatus.ACCEPTED)
+        val approvedSignal = Signal(fromMember = fromMember2, toMember = me, status = SignalStatus.APPROVED)
         val rejectedSignal = Signal(fromMember = fromMember2, toMember = me, status = SignalStatus.REJECTED)
         given(signalJpaRepository.findByToMemberAndStatus(me, SignalStatus.PENDING)).willReturn(listOf(pendingSignal))
 
@@ -172,7 +172,7 @@ class SignalServiceTest {
 
         // then
         assertThat(result.content).containsExactly(pendingSignal)
-        assertThat(result.content).doesNotContain(acceptedSignal, rejectedSignal)
+        assertThat(result.content).doesNotContain(approvedSignal, rejectedSignal)
     }
 
     @DisplayName("받은 시그널이 없을 때 빈 Page가 반환된다")
@@ -218,7 +218,7 @@ class SignalServiceTest {
         val fromMember2 = mock(Member::class.java)
 
         val pendingSignal = Signal(fromMember = fromMember1, toMember = me, status = SignalStatus.PENDING)
-        val acceptedSignal = Signal(fromMember = fromMember2, toMember = me, status = SignalStatus.ACCEPTED)
+        val approvedSignal = Signal(fromMember = fromMember2, toMember = me, status = SignalStatus.APPROVED)
         val rejectedSignal = Signal(fromMember = fromMember2, toMember = me, status = SignalStatus.REJECTED)
         given(signalJpaRepository.findByFromMemberAndStatus(me, SignalStatus.PENDING)).willReturn(listOf(pendingSignal))
 
@@ -227,7 +227,7 @@ class SignalServiceTest {
 
         // then
         assertThat(result.content).containsExactly(pendingSignal)
-        assertThat(result.content).doesNotContain(acceptedSignal, rejectedSignal)
+        assertThat(result.content).doesNotContain(approvedSignal, rejectedSignal)
     }
 
     @DisplayName("전송 시그널이 없을 때 빈 Page가 반환된다")
@@ -280,7 +280,7 @@ class SignalServiceTest {
         signalService.acceptSignal(me, signalId)
 
         // then
-        assertThat(signal.status).isEqualTo(SignalStatus.ACCEPTED)
+        assertThat(signal.status).isEqualTo(SignalStatus.APPROVED)
     }
 
     @DisplayName("승인 할 때, 내게 온 시그널이 아니면 예외가 발생한다")
@@ -312,9 +312,9 @@ class SignalServiceTest {
         val fromMember = mock(Member::class.java)
         val signalId = 1L
         given(me.id).willReturn(2L)
-        val acceptedSignal = Signal(fromMember = fromMember, toMember = me, status = SignalStatus.ACCEPTED)
+        val approvedSignal = Signal(fromMember = fromMember, toMember = me, status = SignalStatus.APPROVED)
         val rejectedSignal = Signal(fromMember = fromMember, toMember = me, status = SignalStatus.REJECTED)
-        given(signalJpaRepository.findById(signalId)).willReturn(Optional.of(acceptedSignal))
+        given(signalJpaRepository.findById(signalId)).willReturn(Optional.of(approvedSignal))
 
         // when & then
         val exception1 = assertThrows<SignalException> {
@@ -380,9 +380,9 @@ class SignalServiceTest {
         val fromMember = mock(Member::class.java)
         val signalId = 1L
         given(me.id).willReturn(2L)
-        val acceptedSignal = Signal(fromMember = fromMember, toMember = me, status = SignalStatus.ACCEPTED)
+        val approvedSignal = Signal(fromMember = fromMember, toMember = me, status = SignalStatus.APPROVED)
         val rejectedSignal = Signal(fromMember = fromMember, toMember = me, status = SignalStatus.REJECTED)
-        given(signalJpaRepository.findById(signalId)).willReturn(Optional.of(acceptedSignal))
+        given(signalJpaRepository.findById(signalId)).willReturn(Optional.of(approvedSignal))
 
         // when & then
         val exception1 = assertThrows<SignalException> {
