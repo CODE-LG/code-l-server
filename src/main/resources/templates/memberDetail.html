@@ -15,7 +15,7 @@
         <div class="mb-5">
             <h4>코드 이미지</h4>
             <div class="row">
-                <div class="col-md-4 mb-3" th:each="url : ${member.codeImage?.urls}">
+                <div class="col-md-4 mb-3" th:each="url : ${member.profile.codeImage}">
                     <img th:src="${url}" class="img-fluid rounded shadow-sm"
                          style="height: 300px; object-fit: cover; width: 100%;"/>
                 </div>
@@ -25,7 +25,7 @@
         <div class="mb-5">
             <h4>페이스 이미지</h4>
             <div class="row">
-                <div class="col-md-4 mb-3" th:each="url : ${member.faceImage?.urls}">
+                <div class="col-md-4 mb-3" th:each="url : ${member.profile.faceImage}">
                     <img th:src="${url}" class="img-fluid rounded shadow-sm"
                          style="height: 300px; object-fit: cover; width: 100%;"/>
                 </div>
@@ -41,12 +41,14 @@
 
     <div class="d-flex justify-content-center gap-3">
         <a href="/v1/admin/home" class="btn btn-outline-secondary">목록으로</a>
-        <form id="approvalForm" th:action="@{'/v1/admin/approval/' + ${member.id}}" method="post" th:object="${member}">
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal">
-                심사 승인
-            </button>
-        </form>
-        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">심사 거절</button>
+        <th:block th:if="${member.memberStatus.name()} == 'PENDING'">
+            <form id="approvalForm" th:action="@{'/v1/admin/approval/' + ${member.id}}" method="post" th:object="${member}">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal">
+                    심사 승인
+                </button>
+            </form>
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">심사 거절</button>
+        </th:block>
     </div>
 </div>
 <!-- 거절 확인 모달 -->

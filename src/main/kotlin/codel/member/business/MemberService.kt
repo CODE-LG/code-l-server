@@ -16,6 +16,7 @@ import codel.signal.infrastructure.SignalJpaRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -175,4 +176,12 @@ class MemberService(
 
         return PageImpl(members, pageable, total)
     }
+
+    fun findMembersWithFilter(keyword: String?, status: String?, pageable: Pageable): Page<Member> {
+        val statusEnum = status?.let { runCatching { MemberStatus.valueOf(it) }.getOrNull() }
+        return memberJpaRepository.findMembersWithFilter(keyword, statusEnum, pageable)
+    }
+
+    fun countAllMembers(): Long = memberJpaRepository.count()
+    fun countPendingMembers(): Long = memberJpaRepository.countByMemberStatus(MemberStatus.PENDING)
 }
