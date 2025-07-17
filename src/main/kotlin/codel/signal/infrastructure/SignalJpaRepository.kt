@@ -16,8 +16,15 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
     @Query("SELECT s FROM Signal s JOIN FETCH s.fromMember fm JOIN FETCH fm.profile WHERE s.toMember = :member AND s.status= :status")
     fun findByToMemberAndStatus(member: Member, @Param("status") signalStatus : SignalStatus) : List<Signal>
 
-    @Query("SELECT s FROM Signal s JOIN FETCH s.toMember tm JOIN FETCH tm.profile WHERE s.fromMember = :member AND s.status= :status")
-    fun findByFromMemberAndStatus(me: Member, @Param("status") signalStatus: SignalStatus) : List<Signal>
+    @Query("""
+    SELECT DISTINCT s FROM Signal s
+        JOIN FETCH s.fromMember fm
+        JOIN FETCH fm.profile
+        JOIN FETCH s.toMember tm
+        JOIN FETCH tm.profile
+        WHERE s.fromMember = :member AND s.status = :status
+    """)
+    fun findByFromMemberAndStatus(member: Member, @Param("status") signalStatus: SignalStatus) : List<Signal>
 
     @Query("""
     SELECT s.toMember.id FROM Signal s
