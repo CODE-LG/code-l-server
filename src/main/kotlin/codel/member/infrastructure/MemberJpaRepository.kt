@@ -3,12 +3,13 @@ package codel.member.infrastructure
 import codel.member.domain.Member
 import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
-import java.awt.print.Pageable
 
 @Repository
 interface MemberJpaRepository : JpaRepository<Member, Long> {
@@ -23,6 +24,8 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
     ): Member
 
     fun findByMemberStatus(memberStatus: MemberStatus): List<Member>
+
+    fun countByMemberStatus(memberStatus: MemberStatus): Long
 
     @Query(
         value = "SELECT * FROM member WHERE id <> :excludeId AND member_status = 'DONE' ORDER BY RAND(:seed) LIMIT :randomSize",
@@ -62,4 +65,22 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
         @Param("seed") seed: Long,
         pageRequest: PageRequest
     ): List<Member>
+
+    @Query(
+        """
+        SELECT m FROM Member m JOIN FETCH m.profile p
+        WHERE (:status IS NULL OR m.memberStatus = :status)
+          AND (
+            :keyword IS NULL OR :keyword = ''
+            OR LOWER(m.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(p.codeName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+          )
+        ORDER BY m.id DESC
+        """
+    )
+    fun findMembersWithFilter(
+        @Param("keyword") keyword: String?,
+        @Param("status") status: MemberStatus?,
+        pageable: Pageable
+    ): Page<Member>
 }

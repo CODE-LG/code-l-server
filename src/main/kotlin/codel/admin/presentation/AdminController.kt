@@ -4,8 +4,12 @@ import codel.admin.business.AdminService
 import codel.admin.domain.Admin
 import codel.admin.exception.AdminException
 import codel.admin.presentation.request.AdminLoginRequest
+import codel.member.domain.Member
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PageableDefault
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
@@ -52,9 +56,10 @@ class AdminController(
 
     @GetMapping("/v1/admin/home")
     fun home(model: Model): String {
-        val members = adminService.findPendingMembers()
-        model.addAttribute("members", members)
-
+        val totalMembers = adminService.countAllMembers()
+        val pendingMembers = adminService.countPendingMembers()
+        model.addAttribute("totalMembers", totalMembers)
+        model.addAttribute("pendingMembers", pendingMembers)
         return "home"
     }
 
@@ -86,5 +91,18 @@ class AdminController(
         adminService.rejectMemberProfile(memberId, rejectReason)
 
         return "redirect:/v1/admin/home"
+    }
+
+    @GetMapping("/v1/admin/members")
+    fun memberList(
+        model: Model,
+        @RequestParam(required = false) keyword: String?,
+        @RequestParam(required = false) status: String?,
+        @PageableDefault(size = 20) pageable: Pageable
+    ): String {
+        val members: Page<Member> = adminService.findMembersWithFilter(keyword, status, pageable)
+        model.addAttribute("members", members)
+        model.addAttribute("param", mapOf("keyword" to (keyword ?: ""), "status" to (status ?: "")))
+        return "memberList"
     }
 }

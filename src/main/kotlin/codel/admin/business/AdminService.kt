@@ -7,6 +7,8 @@ import codel.member.domain.Member
 import codel.notification.business.NotificationService
 import codel.notification.domain.Notification
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 
 @Service
@@ -50,6 +52,9 @@ class AdminService(
 //        sendNotification(rejectedMember)
     }
 
+    fun countAllMembers(): Long = memberService.countAllMembers()
+    fun countPendingMembers(): Long = memberService.countPendingMembers()
+
     private fun sendNotification(member: Member) {
         member.fcmToken?.let { fcmToken ->
             notificationService.sendPushNotification(
@@ -61,5 +66,9 @@ class AdminService(
                     ),
             )
         }
+    }
+
+    fun findMembersWithFilter(keyword: String?, status: String?, pageable: Pageable): Page<Member> {
+        return memberService.findMembersWithFilter(keyword, status, pageable)
     }
 }
