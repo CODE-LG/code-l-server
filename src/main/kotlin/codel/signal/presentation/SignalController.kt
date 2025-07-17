@@ -45,6 +45,16 @@ class SignalController(
         return ResponseEntity.ok(signals.map { SignalMemberResponse.from(it) })
     }
 
+    @GetMapping("/accepted")
+    override fun getAcceptedSignal(
+        @LoginMember me : Member,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "10") size : Int
+    ) : ResponseEntity<Page<SignalMemberResponse>>{
+        val acceptedSignals =  signalService.getAcceptedSignals(me, page, size);
+        return ResponseEntity.ok(acceptedSignals.map { SignalMemberResponse.from(it) })
+    }
+
     @PostMapping("/{id}/accept")
     override fun acceptSignal(
         @LoginMember me : Member,
