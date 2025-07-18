@@ -70,7 +70,7 @@ class SignalService(
         signalJpaRepository.save(findSignal)
     }
 
-private fun validateMySignal(findSignal: Signal, me: Member) {
+    private fun validateMySignal(findSignal: Signal, me: Member) {
         if (findSignal.toMember.id != me.id) {
             throw SignalException(HttpStatus.BAD_REQUEST, "내게 온 시그널만 수락할 수 있어요.")
         }
@@ -87,5 +87,15 @@ private fun validateMySignal(findSignal: Signal, me: Member) {
         validateMySignal(findSignal, me)
         findSignal.reject()
         signalJpaRepository.save(findSignal)
+    }
+
+    fun getAcceptedSignals(
+        me : Member,
+        page : Int,
+        size : Int
+    ) : Page<Signal>{
+        val pageable = PageRequest.of(page, size)
+        val acceptedSignals = signalJpaRepository.findByFromMemberAndStatus(me, SignalStatus.APPROVED)
+        return PageImpl(acceptedSignals, pageable, acceptedSignals.size.toLong())
     }
 }

@@ -32,7 +32,7 @@ class Signal(
     fun validateSendable(now: LocalDateTime = LocalDateTime.now()) {
         if (!canSendNewSignal(now)) {
             when (status) {
-                SignalStatus.PENDING, SignalStatus.ACCEPTED, SignalStatus.PENDING_HIDDEN, SignalStatus.ACCEPTED_HIDDEN ->
+                SignalStatus.PENDING, SignalStatus.APPROVED, SignalStatus.PENDING_HIDDEN, SignalStatus.APPROVED_HIDDEN ->
                     throw SignalException(HttpStatus.BAD_REQUEST, "이미 시그널을 보낸 상대입니다.")
                 SignalStatus.REJECTED ->
                     throw SignalException(HttpStatus.BAD_REQUEST, "거절된 상대에게는 7일 후에 다시 시그널을 보낼 수 있습니다.")
@@ -42,14 +42,14 @@ class Signal(
 
     private fun canSendNewSignal(now: LocalDateTime = LocalDateTime.now()): Boolean {
         return when (status) {
-            SignalStatus.PENDING, SignalStatus.ACCEPTED, SignalStatus.PENDING_HIDDEN, SignalStatus.ACCEPTED_HIDDEN -> false
+            SignalStatus.PENDING, SignalStatus.APPROVED, SignalStatus.PENDING_HIDDEN, SignalStatus.APPROVED_HIDDEN -> false
             SignalStatus.REJECTED -> updatedAt.plusDays(7).isBefore(now)
         }
     }
 
     fun accept() {
         validateChangeAcceptable()
-        status = SignalStatus.ACCEPTED
+        status = SignalStatus.APPROVED
     }
 
     fun reject(){
