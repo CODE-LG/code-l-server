@@ -77,6 +77,23 @@ interface SignalControllerSwagger {
     ): ResponseEntity<Page<SignalMemberResponse>>
 
     @Operation(
+        summary = "매칭 성공된 시그널 목록 조회",
+        description = "매칭 성공된 시그널(신호) 목록을 페이징하여 조회합니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "조회 성공", content = [Content(schema = Schema(implementation = SignalMemberResponse::class))]),
+            ApiResponse(responseCode = "401", description = "인증 실패"),
+            ApiResponse(responseCode = "500", description = "서버 오류")
+        ]
+    )
+    fun getAcceptedSignal(
+        @Parameter(hidden = true) @LoginMember me: Member,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "10") size: Int
+    ): ResponseEntity<Page<SignalMemberResponse>>
+
+    @Operation(
         summary = "시그널 수락",
         description = "내가 받은 시그널을 수락합니다. 이미 처리된 시그널은 수락할 수 없습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
     )
