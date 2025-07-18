@@ -86,4 +86,10 @@ class ChatService(
 
         chatRepository.upsertLastChat(chatRoomId, requester, lastChat)
     }
+
+    fun updateUnlockChatRoom(requester: Member, chatRoomId: Long) {
+        val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
+
+        chatRoom.unlock(requester.id!!)
+    }
 }

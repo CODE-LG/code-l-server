@@ -2,6 +2,7 @@ package codel.chat.repository
 
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
+import codel.chat.domain.ChatRoomStatus
 import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
