@@ -66,4 +66,13 @@ class ChatController(
 
         return ResponseEntity.noContent().build()
     }
+
+    @PostMapping("/v1/chatroom/{chatRoomId}/unlock")
+    fun updateChatRoomStatus(
+        @LoginMember requester : Member,
+        @PathVariable chatRoomId : Long,
+    ) : ResponseEntity<Unit> {
+        chatService.updateUnlockChatRoom(requester, chatRoomId)
+        return ResponseEntity.ok().build()
+    }
 }
