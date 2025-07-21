@@ -23,7 +23,8 @@ class Signal(
 ) : BaseTimeEntity() {
     fun getIdOrThrow(): Long = id ?: throw SignalException(HttpStatus.BAD_REQUEST, "id가 없는 시그널 입니다.")
 
-    fun validateSendable(now: LocalDateTime = LocalDateTime.now()) {
+    fun validateSendable(fromMemberId : Long, toMemberId : Long, now: LocalDateTime = LocalDateTime.now()) {
+        validateNotSelf(fromMemberId, toMemberId)
         if (!canSendNewSignal(now)) {
             when (status) {
                 SignalStatus.PENDING, SignalStatus.APPROVED, SignalStatus.PENDING_HIDDEN, SignalStatus.APPROVED_HIDDEN ->
@@ -32,6 +33,12 @@ class Signal(
                 SignalStatus.REJECTED ->
                     throw SignalException(HttpStatus.BAD_REQUEST, "거절된 상대에게는 7일 후에 다시 시그널을 보낼 수 있습니다.")
             }
+        }
+    }
+
+    private fun validateNotSelf(fromMemberId: Long, toMemberId: Long) {
+        if (fromMemberId == toMemberId) {
+            throw SignalException(HttpStatus.BAD_REQUEST, "자기 자신에게는 시그널을 보낼 수 없습니다.")
         }
     }
 
