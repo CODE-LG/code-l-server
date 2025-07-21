@@ -28,6 +28,8 @@ class Profile(
     var smallCity: String,
     var mbti: String,
     var introduce: String,
+    var question : String,
+    var answer : String,
     @Column(length = 1000)
     var codeImage: String? = null, // 복수
     @Column(length = 1000)
@@ -60,6 +62,8 @@ class Profile(
         this.hobby = updateProfile.hobby
         this.style = updateProfile.style
         this.bigCity = updateProfile.bigCity
+        this.question = updateProfile.question
+        this.answer = updateProfile.answer
         this.introduce = updateProfile.introduce
     }
 

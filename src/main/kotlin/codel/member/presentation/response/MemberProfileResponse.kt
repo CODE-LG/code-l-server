@@ -16,6 +16,8 @@ data class MemberProfileResponse(
     val smallCity: String,
     val mbti: String,
     val introduce: String,
+    val question : String,
+    val answer : String,
     val codeImages: List<String>,
     val faceImages: List<String>,
 ) {
@@ -37,6 +39,8 @@ data class MemberProfileResponse(
                 smallCity = profile.smallCity,
                 mbti = profile.mbti,
                 introduce = profile.introduce,
+                question = profile.question,
+                answer = profile.answer,
                 codeImages = profile.getCodeImageOrThrow(),
                 faceImages = profile.getFaceImageOrThrow(),
             )
