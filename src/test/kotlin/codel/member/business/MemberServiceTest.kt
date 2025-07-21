@@ -1,7 +1,8 @@
 package codel.member.business
 
 import codel.config.TestFixture
-import codel.member.domain.*
+import codel.member.domain.ImageUploader
+import codel.member.domain.MemberStatus
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
@@ -10,10 +11,10 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertAll
 import org.junit.jupiter.api.assertThrows
+import org.mockito.BDDMockito.given
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.mockito.BDDMockito.given
 import org.springframework.test.context.ActiveProfiles
 
 @SpringBootTest
@@ -142,7 +143,7 @@ class MemberServiceTest : TestFixture() {
 
     @DisplayName("멤버 상태가 PENDING인 상황에서 관리자가 거절하면 상태가 REJECT으로 변경된다.")
     @Test
-    fun rejectMemberProfile(){
+    fun rejectMemberProfile() {
         //given
         val member = memberPending
         val reason = "이미지를 다시 업로드 부탁드립니다."
@@ -156,7 +157,7 @@ class MemberServiceTest : TestFixture() {
 
     @DisplayName("멤버 상태가 PENDING인 상황에서 관리자가 승인하면 상태가 DONE으로 변경된다.")
     @Test
-    fun approveMemberProfile(){
+    fun approveMemberProfile() {
         //given
         val member = memberPending
         val reason = "이미지를 다시 업로드 부탁드립니다."

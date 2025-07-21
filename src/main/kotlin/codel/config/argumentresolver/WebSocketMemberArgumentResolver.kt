@@ -17,7 +17,7 @@ class WebSocketMemberArgumentResolver(
 ) : HandlerMethodArgumentResolver {
     override fun supportsParameter(parameter: MethodParameter): Boolean =
         parameter.hasParameterAnnotation(LoginMember::class.java) &&
-            parameter.parameterType == Member::class.java
+                parameter.parameterType == Member::class.java
 
     override fun resolveArgument(
         parameter: MethodParameter,

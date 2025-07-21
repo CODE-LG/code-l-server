@@ -2,7 +2,6 @@ package codel.chat.repository
 
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
-import codel.chat.domain.ChatRoomStatus
 import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
@@ -52,9 +51,9 @@ class ChatRoomRepository(
         requester: Member,
     ): Member {
         val chatRoomMember = (
-            chatRoomMemberJpaRepository.findByChatRoomIdAndMemberNot(chatRoomId, requester)
-                ?: throw ChatException(HttpStatus.BAD_REQUEST, "채팅방에 자신을 제외한 다른 사용자가 존재하지 않습니다.")
-        )
+                chatRoomMemberJpaRepository.findByChatRoomIdAndMemberNot(chatRoomId, requester)
+                    ?: throw ChatException(HttpStatus.BAD_REQUEST, "채팅방에 자신을 제외한 다른 사용자가 존재하지 않습니다.")
+                )
 
         return chatRoomMember.member
     }

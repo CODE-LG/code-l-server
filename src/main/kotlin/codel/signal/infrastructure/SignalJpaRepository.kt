@@ -1,7 +1,7 @@
 package codel.signal.infrastructure
 
-import codel.signal.domain.Signal
 import codel.member.domain.Member
+import codel.signal.domain.Signal
 import codel.signal.domain.SignalStatus
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
@@ -14,9 +14,10 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
     fun findTopByFromMemberAndToMemberOrderByIdDesc(fromMember: Member, toMember: Member): Signal?
 
     @Query("SELECT s FROM Signal s JOIN FETCH s.fromMember fm JOIN FETCH fm.profile WHERE s.toMember = :member AND s.status= :status")
-    fun findByToMemberAndStatus(member: Member, @Param("status") signalStatus : SignalStatus) : List<Signal>
+    fun findByToMemberAndStatus(member: Member, @Param("status") signalStatus: SignalStatus): List<Signal>
 
-    @Query("""
+    @Query(
+        """
     SELECT DISTINCT s FROM Signal s
         JOIN FETCH s.fromMember fm
         JOIN FETCH fm.profile
@@ -24,10 +25,12 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
         JOIN FETCH tm.profile
         WHERE s.status = :status
         AND (s.fromMember = :member OR s.toMember = :member)
-    """)
-    fun findByMemberAndStatus(member: Member, @Param("status") signalStatus: SignalStatus) : List<Signal>
+    """
+    )
+    fun findByMemberAndStatus(member: Member, @Param("status") signalStatus: SignalStatus): List<Signal>
 
-    @Query("""
+    @Query(
+        """
     SELECT DISTINCT s FROM Signal s
         JOIN FETCH s.fromMember fm
         JOIN FETCH fm.profile
@@ -35,10 +38,12 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
         JOIN FETCH tm.profile
         WHERE s.fromMember = :member
         AND s.status = :status
-    """)
-    fun findByFromMemberAndStatus(member: Member, @Param("status") signalStatus: SignalStatus) : List<Signal>
+    """
+    )
+    fun findByFromMemberAndStatus(member: Member, @Param("status") signalStatus: SignalStatus): List<Signal>
 
-    @Query("""
+    @Query(
+        """
     SELECT s.toMember.id FROM Signal s
     WHERE s.fromMember = :fromMember
       AND s.toMember IN :candidates
@@ -51,14 +56,16 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
         WHERE s2.fromMember = :fromMember AND s2.toMember IN :candidates
         GROUP BY s2.toMember
       )
-    """)
+    """
+    )
     fun findExcludedToMemberIds(
         @Param("fromMember") fromMember: Member,
         @Param("candidates") candidates: List<Member>,
         @Param("sevenDaysAgo") sevenDaysAgo: LocalDateTime
     ): List<Long>
 
-    @Query("""
+    @Query(
+        """
     SELECT s.toMember.id FROM Signal s
     WHERE s.fromMember = :fromMember
       AND s.toMember IN :candidates
@@ -68,13 +75,15 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
         WHERE s2.fromMember = :fromMember AND s2.toMember IN :candidates
         GROUP BY s2.toMember
       )
-    """)
+    """
+    )
     fun findAcceptedToMemberIds(
         @Param("fromMember") fromMember: Member,
         @Param("candidates") candidates: List<Member>
     ): List<Long>
 
-    @Query("""
+    @Query(
+        """
     SELECT s.toMember.id FROM Signal s
     WHERE s.fromMember = :fromMember
       AND s.toMember IN :candidates
@@ -87,7 +96,8 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
         WHERE s2.fromMember = :fromMember AND s2.toMember IN :candidates
         GROUP BY s2.toMember
       )
-    """)
+    """
+    )
     fun findExcludedToMemberIdsAtMidnight(
         @Param("fromMember") fromMember: Member,
         @Param("candidates") candidates: List<Member>,

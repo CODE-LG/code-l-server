@@ -1,12 +1,15 @@
 package codel.config
 
-import codel.member.domain.*
+import codel.member.domain.Member
+import codel.member.domain.MemberStatus
+import codel.member.domain.OauthType
+import codel.member.domain.Profile
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.mock.web.MockMultipartFile
 
 @SpringBootTest

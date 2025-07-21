@@ -5,6 +5,6 @@ import codel.member.domain.Profile
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface ProfileJpaRepository : JpaRepository<Profile, Long> {
-    fun findByMemberId(member : Member) : Profile?
+    fun findByMemberId(member: Member): Profile?
 }
 

@@ -2,12 +2,12 @@
 <html lang="ko">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
     <title>STOMP</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-2.2.4.min.js"
-            integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+    <link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+          integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" rel="stylesheet">
+    <script crossorigin="anonymous"
+            integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.4.0/sockjs.min.js"></script>
@@ -119,30 +119,30 @@
 <div class="container">
     <h1>WebSocket CONNECT</h1>
     <div class="mb-3 input-group" style="width: 500px;">
-        <input type="text" id="websocketUrl" class="form-control" placeholder="ws://localhost:8080/ws-stomp"/>
-        <button id="connectBtn" class="btn btn-primary">CONN</button>
+        <input class="form-control" id="websocketUrl" placeholder="ws://localhost:8080/ws-stomp" type="text"/>
+        <button class="btn btn-primary" id="connectBtn">CONN</button>
     </div>
 
     <h2>SUBSCRIBE</h2>
     <div id="subscriptionList"></div>
     <div class="input-group mb-3">
-        <button id="addSubscriptionBtn" class="btn btn-secondary">ADD</button>
+        <button class="btn btn-secondary" id="addSubscriptionBtn">ADD</button>
     </div>
 
     <h2>SEND MESSAGE</h2>
     <div class="mb-3">
-        <label for="destinationPath" class="form-label">DESTINATION PATH:</label>
-        <input type="text" id="destinationPath" class="form-control" placeholder="/pub/send/message"/>
+        <label class="form-label" for="destinationPath">DESTINATION PATH:</label>
+        <input class="form-control" id="destinationPath" placeholder="/pub/send/message" type="text"/>
     </div>
     <div class="mb-3">
-        <label for="message" class="form-label">MESSAGE(JSON):</label>
-        <textarea id="message" class="form-control"
+        <label class="form-label" for="message">MESSAGE(JSON):</label>
+        <textarea class="form-control" id="message"
                   placeholder='{"targetUsername": "유저명", "message": "전송할 메시지", "sender": "발신자명"}'></textarea>
     </div>
-    <button id="sendBtn" class="btn btn-success">SEND</button>
+    <button class="btn btn-success" id="sendBtn">SEND</button>
 
     <h2 class="mt-4">MESSAGES</h2>
-    <div id="messageBox" class="border p-3" style="height: 200px; overflow-y: auto;"></div>
+    <div class="border p-3" id="messageBox" style="height: 200px; overflow-y: auto;"></div>
 </div>
 </body>
 </html>

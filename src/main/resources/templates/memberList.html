@@ -3,21 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <title>회원 관리</title>
-    <link rel="icon" type="image/png" th:href="@{/image/favicon.png}">
+    <link rel="icon" th:href="@{/image/favicon.png}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
-        body { background: #f4f6f9; }
-        .sidebar { min-height: 100vh; background: #343a40; }
-        .sidebar .nav-link { color: #fff; }
-        .sidebar .nav-link.active, .sidebar .nav-link:hover { background: #495057; }
-        .table-hover tbody tr:hover { background: #f1f3f6; }
-        .badge { font-size: 1em; }
+        body {
+            background: #f4f6f9;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background: #343a40;
+        }
+
+        .sidebar .nav-link {
+            color: #fff;
+        }
+
+        .sidebar .nav-link.active, .sidebar .nav-link:hover {
+            background: #495057;
+        }
+
+        .table-hover tbody tr:hover {
+            background: #f1f3f6;
+        }
+
+        .badge {
+            font-size: 1em;
+        }
+
         /* 커스텀 상태별 배지 색상 */
-        .badge-pending { background: #ffc107 !important; color: #212529 !important; }
-        .badge-done { background: #28a745 !important; color: #fff !important; }
-        .badge-reject { background: #dc3545 !important; color: #fff !important; }
-        .badge-signup { background: #6c757d !important; color: #fff !important; }
+        .badge-pending {
+            background: #ffc107 !important;
+            color: #212529 !important;
+        }
+
+        .badge-done {
+            background: #28a745 !important;
+            color: #fff !important;
+        }
+
+        .badge-reject {
+            background: #dc3545 !important;
+            color: #fff !important;
+        }
+
+        .badge-signup {
+            background: #6c757d !important;
+            color: #fff !important;
+        }
     </style>
 </head>
 <body>
@@ -49,28 +83,31 @@
             <!-- 검색/필터 UI (기본) -->
             <form class="row g-3 mb-4" method="get" th:action="@{/v1/admin/members}">
                 <div class="col-md-3">
-                    <input type="text" class="form-control" name="keyword" placeholder="이름 검색" th:value="${param.keyword}">
+                    <input class="form-control" name="keyword" placeholder="이름 검색" th:value="${param.keyword}"
+                           type="text">
                 </div>
                 <div class="col-md-2">
                     <select class="form-select" name="status">
                         <option value="">전체 상태</option>
-                        <option value="PENDING" th:selected="${param.status == 'PENDING'}">PENDING</option>
-                        <option value="DONE" th:selected="${param.status == 'DONE'}">DONE</option>
-                        <option value="REJECT" th:selected="${param.status == 'REJECT'}">REJECT</option>
-                        <option value="SIGNUP" th:selected="${param.status == 'SIGNUP'}">SIGNUP</option>
+                        <option th:selected="${param.status == 'PENDING'}" value="PENDING">PENDING</option>
+                        <option th:selected="${param.status == 'DONE'}" value="DONE">DONE</option>
+                        <option th:selected="${param.status == 'REJECT'}" value="REJECT">REJECT</option>
+                        <option th:selected="${param.status == 'SIGNUP'}" value="SIGNUP">SIGNUP</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-search"></i> 검색</button>
+                    <button class="btn btn-primary" type="submit"><i class="fa-solid fa-search"></i> 검색</button>
                 </div>
             </form>
             <!-- 회원 목록 탭 -->
             <ul class="nav nav-tabs mb-3">
                 <li class="nav-item">
-                    <a class="nav-link" th:classappend="${param.status} == '' ? 'active'" th:href="@{/v1/admin/members}">전체 회원</a>
+                    <a class="nav-link" th:classappend="${param.status} == '' ? 'active'"
+                       th:href="@{/v1/admin/members}">전체 회원</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" th:classappend="${param.status} == 'PENDING' ? 'active'" th:href="@{/v1/admin/members(status='PENDING')}">대기 중인 회원</a>
+                    <a class="nav-link" th:classappend="${param.status} == 'PENDING' ? 'active'"
+                       th:href="@{/v1/admin/members(status='PENDING')}">대기 중인 회원</a>
                 </li>
             </ul>
             <!-- 페이지 정보 -->
@@ -90,36 +127,40 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="member : ${members}" style="cursor:pointer;"
+                    <tr style="cursor:pointer;" th:each="member : ${members}"
                         th:onclick="|location.href='/v1/admin/member/' + ${member.id}|">
                         <td th:text="${member.id}"></td>
                         <td th:text="${member.email}"></td>
                         <td th:text="${member.profile.codeName}"></td>
                         <td>
                             <span th:switch="${member.memberStatus.name()}">
-                                <span th:case="'PENDING'" class="badge badge-pending">PENDING</span>
-                                <span th:case="'DONE'" class="badge badge-done">DONE</span>
-                                <span th:case="'REJECT'" class="badge badge-reject">REJECT</span>
-                                <span th:case="'SIGNUP'" class="badge badge-signup">SIGNUP</span>
-                                <span th:case="*" class="badge bg-light text-dark" th:text="${member.memberStatus}"></span>
+                                <span class="badge badge-pending" th:case="'PENDING'">PENDING</span>
+                                <span class="badge badge-done" th:case="'DONE'">DONE</span>
+                                <span class="badge badge-reject" th:case="'REJECT'">REJECT</span>
+                                <span class="badge badge-signup" th:case="'SIGNUP'">SIGNUP</span>
+                                <span class="badge bg-light text-dark" th:case="*"
+                                      th:text="${member.memberStatus}"></span>
                             </span>
                         </td>
                     </tr>
                     </tbody>
                 </table>
                 <!-- 페이지네이션 UI -->
-                <nav th:if="${members.totalPages > 1}" class="mt-4">
+                <nav class="mt-4" th:if="${members.totalPages > 1}">
                     <ul class="pagination justify-content-center">
                         <li class="page-item" th:classappend="${members.first} ? 'disabled'">
-                            <a class="page-link" th:href="@{/v1/admin/members(page=${members.number - 1}, size=${members.size}, keyword=${param.keyword}, status=${param.status})}">이전</a>
+                            <a class="page-link"
+                               th:href="@{/v1/admin/members(page=${members.number - 1}, size=${members.size}, keyword=${param.keyword}, status=${param.status})}">이전</a>
                         </li>
-                        <li class="page-item" th:each="pageNum : ${#numbers.sequence(0, members.totalPages - 1)}"
-                            th:classappend="${members.number == pageNum} ? 'active'">
-                            <a class="page-link" th:href="@{/v1/admin/members(page=${pageNum}, size=${members.size}, keyword=${param.keyword}, status=${param.status})}"
+                        <li class="page-item" th:classappend="${members.number == pageNum} ? 'active'"
+                            th:each="pageNum : ${#numbers.sequence(0, members.totalPages - 1)}">
+                            <a class="page-link"
+                               th:href="@{/v1/admin/members(page=${pageNum}, size=${members.size}, keyword=${param.keyword}, status=${param.status})}"
                                th:text="${pageNum + 1}"></a>
                         </li>
                         <li class="page-item" th:classappend="${members.last} ? 'disabled'">
-                            <a class="page-link" th:href="@{/v1/admin/members(page=${members.number + 1}, size=${members.size}, keyword=${param.keyword}, status=${param.status})}">다음</a>
+                            <a class="page-link"
+                               th:href="@{/v1/admin/members(page=${members.number + 1}, size=${members.size}, keyword=${param.keyword}, status=${param.status})}">다음</a>
                         </li>
                     </ul>
                 </nav>

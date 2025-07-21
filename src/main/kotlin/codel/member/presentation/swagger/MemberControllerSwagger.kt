@@ -47,8 +47,10 @@ interface MemberControllerSwagger {
         @RequestBody request: ProfileSavedRequest,
     ): ResponseEntity<Unit>
 
-    @Operation(summary = "코드 프로필 이미지 받기",
-        description = "코드 프로필 이미지 받습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)")
+    @Operation(
+        summary = "코드 프로필 이미지 받기",
+        description = "코드 프로필 이미지 받습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
+    )
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "코드 프로필 이미지 성공적으로 저장됨"),
@@ -61,8 +63,10 @@ interface MemberControllerSwagger {
         @RequestPart files: List<MultipartFile>,
     ): ResponseEntity<Unit>
 
-    @Operation(summary = "페이지 이미지 받기",
-        description = "페이즈 이미지를 3장 받습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)")
+    @Operation(
+        summary = "페이지 이미지 받기",
+        description = "페이즈 이미지를 3장 받습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
+    )
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "페이스 이미지 성공적으로 저장됨"),
@@ -75,8 +79,10 @@ interface MemberControllerSwagger {
         @RequestPart files: List<MultipartFile>,
     ): ResponseEntity<Unit>
 
-    @Operation(summary = "사용자별 fcm 토큰 받기",
-        description = "사용자의 디바이스 별 fcm 토큰을 저장합니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)")
+    @Operation(
+        summary = "사용자별 fcm 토큰 받기",
+        description = "사용자의 디바이스 별 fcm 토큰을 저장합니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
+    )
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "fcm 토큰 저장됨"),
@@ -89,8 +95,10 @@ interface MemberControllerSwagger {
         @RequestBody fcmToken: String,
     ): ResponseEntity<Unit>
 
-    @Operation(summary = "작성된 사용자의 코드 프로필 확인",
-        description = "작성된 사용자의 코드 프로필 정보를 받을 수 있습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)")
+    @Operation(
+        summary = "작성된 사용자의 코드 프로필 확인",
+        description = "작성된 사용자의 코드 프로필 정보를 받을 수 있습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
+    )
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "사용자 프로필을 성공적으로 가져옴"),
@@ -102,8 +110,10 @@ interface MemberControllerSwagger {
         @Parameter(hidden = true) @LoginMember member: Member,
     ): ResponseEntity<MemberProfileResponse>
 
-    @Operation(summary = "홈 코드 추천 매칭 조회",
-        description = "코드 추천 매칭 목록을 받습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)")
+    @Operation(
+        summary = "홈 코드 추천 매칭 조회",
+        description = "코드 추천 매칭 목록을 받습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
+    )
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "코드 추천 매칭 조회 성공"),
@@ -115,8 +125,10 @@ interface MemberControllerSwagger {
         @Parameter(hidden = true) @LoginMember member: Member,
     ): ResponseEntity<MemberRecommendResponses>
 
-    @Operation(summary = "홈 파도타기 조회",
-        description = "홈 파도 타기 목록을 받습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)")
+    @Operation(
+        summary = "홈 파도타기 조회",
+        description = "홈 파도 타기 목록을 받습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
+    )
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "홈 파도 타기 목록 조회 성공"),
@@ -125,7 +137,7 @@ interface MemberControllerSwagger {
         ],
     )
     fun getDailyRecommendMembers(
-        @Parameter(hidden = true)@LoginMember member: Member,
+        @Parameter(hidden = true) @LoginMember member: Member,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
     ): ResponseEntity<Page<MemberResponse>>

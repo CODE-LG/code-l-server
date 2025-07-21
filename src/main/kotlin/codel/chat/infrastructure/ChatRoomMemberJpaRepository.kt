@@ -24,7 +24,8 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMember, Long> {
         member: Member,
     ): ChatRoomMember?
 
-    @Query("""
+    @Query(
+        """
         SELECT crmOther
         FROM ChatRoomMember crmMe
         JOIN crmMe.chatRoom cr
@@ -34,7 +35,8 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMember, Long> {
         WHERE crmMe.member = :me
         AND cr.status = :status
         AND crmOther.member != :me
-    """)
+    """
+    )
     fun findUnlockedOpponentsWithProfile(
         @Param("me") me: Member,
         @Param("status") status: ChatRoomStatus,
