@@ -83,8 +83,8 @@ class SignalServiceTest {
         val toMemberId = 2L
         given(fromMember.id).willReturn(1L)
         val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.PENDING)
-        SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(1))
-        SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(1))
+        lastSignal.createdAt = LocalDateTime.now().minusDays(1)
+        lastSignal.updatedAt = LocalDateTime.now().minusDays(1)
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
         given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(
             lastSignal
@@ -107,8 +107,9 @@ class SignalServiceTest {
         val toMemberId = 2L
         given(fromMember.id).willReturn(1L)
         val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.APPROVED)
-        SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(1))
-        SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(1))
+
+        lastSignal.createdAt = LocalDateTime.now().minusDays(1)
+        lastSignal.updatedAt = LocalDateTime.now().minusDays(1)
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
         given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(
             lastSignal
@@ -131,8 +132,9 @@ class SignalServiceTest {
         val toMemberId = 2L
         given(fromMember.id).willReturn(1L)
         val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.REJECTED)
-        SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(8))
-        SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(6))
+
+        lastSignal.createdAt = LocalDateTime.now().minusDays(8)
+        lastSignal.updatedAt = LocalDateTime.now().minusDays(6)
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
         given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(
             lastSignal
@@ -155,8 +157,8 @@ class SignalServiceTest {
         val toMemberId = 2L
         given(fromMember.id).willReturn(1L)
         val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.REJECTED)
-        SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(10))
-        SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(8))
+        lastSignal.createdAt = LocalDateTime.now().minusDays(10)
+        lastSignal.updatedAt = LocalDateTime.now().minusDays(8)
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
         given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(
             lastSignal
