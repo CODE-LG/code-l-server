@@ -79,8 +79,8 @@ class SignalController(
     @GetMapping("/unlocked")
     fun getUnlockedSignal(
         @LoginMember me : Member,
-        @DefaultValue("0") page : Int,
-        @DefaultValue("10") size : Int,
+        @RequestParam(defaultValue = "0") page : Int,
+        @RequestParam(defaultValue = "10") size : Int,
     ) : ResponseEntity<Page<MemberProfileResponse>>{
         val members = signalService.getUnlockedSignal(me, page, size);
         return ResponseEntity.ok(members.map { MemberProfileResponse.toResponse(it)})
