@@ -95,7 +95,7 @@ class SignalService(
         size : Int
     ) : Page<Signal>{
         val pageable = PageRequest.of(page, size)
-        val acceptedSignals = signalJpaRepository.findByFromMemberAndStatus(me, SignalStatus.APPROVED)
+        val acceptedSignals = signalJpaRepository.findByMemberAndStatus(me, SignalStatus.APPROVED)
         return PageImpl(acceptedSignals, pageable, acceptedSignals.size.toLong())
     }
 }

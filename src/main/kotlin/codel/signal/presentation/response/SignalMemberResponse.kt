@@ -13,10 +13,16 @@ data class SignalMemberResponse(
     val createAt: LocalDateTime
 ) {
     companion object {
-        fun from(signal: Signal, member : Member): SignalMemberResponse {
+        fun from(signal: Signal, me : Member): SignalMemberResponse {
+            val opponent = when (me.id) {
+                signal.fromMember.id -> signal.toMember
+                signal.toMember.id -> signal.fromMember
+                else -> throw IllegalArgumentException("해당 Signal과 관련 없는 사용자입니다.")
+            }
+
             return SignalMemberResponse(
                 signalId = signal.id!!,
-                member = MemberProfileResponse.toResponse(member),
+                member = MemberProfileResponse.toResponse(opponent),
                 status = signal.status,
                 createAt = signal.createdAt
             )

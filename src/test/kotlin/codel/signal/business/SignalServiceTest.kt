@@ -254,7 +254,7 @@ class SignalServiceTest {
         val fromMember = mock(Member::class.java)
         val signalForMe = Signal(fromMember = fromMember, toMember = me, status = SignalStatus.PENDING)
         val signalForOther = Signal(fromMember = fromMember, toMember = notMe, status = SignalStatus.PENDING)
-        given(signalJpaRepository.findByFromMemberAndStatus(me, SignalStatus.PENDING)).willReturn(listOf(signalForMe))
+        given(signalJpaRepository.findByMemberAndStatus(me, SignalStatus.PENDING)).willReturn(listOf(signalForMe))
 
         // when
         val result = signalService.getSendSignalByMe(me, 0, 10)

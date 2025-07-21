@@ -33,7 +33,7 @@ class SignalController(
         @RequestParam(defaultValue = "10") size: Int,
     ) : ResponseEntity<Page<SignalMemberResponse>>{
         val signals = signalService.getReceivedSignals(me, page, size)
-        return ResponseEntity.ok(signals.map { SignalMemberResponse.from(it, it.fromMember)});
+        return ResponseEntity.ok(signals.map { SignalMemberResponse.from(it, me)});
     }
 
     @GetMapping("/send")
@@ -43,20 +43,20 @@ class SignalController(
         @RequestParam(defaultValue = "10") size: Int,
     ) : ResponseEntity<Page<SignalMemberResponse>>{
         val signals = signalService.getSendSignalByMe(me, page, size)
-        return ResponseEntity.ok(signals.map { SignalMemberResponse.from(it, it.toMember) })
+        return ResponseEntity.ok(signals.map { SignalMemberResponse.from(it, me) })
     }
 
-    @GetMapping("/accepted")
+    @GetMapping("/approved")
     override fun getAcceptedSignal(
         @LoginMember me : Member,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size : Int
     ) : ResponseEntity<Page<SignalMemberResponse>>{
         val acceptedSignals =  signalService.getAcceptedSignals(me, page, size);
-        return ResponseEntity.ok(acceptedSignals.map { SignalMemberResponse.from(it, it.fromMember) })
+        return ResponseEntity.ok(acceptedSignals.map { SignalMemberResponse.from(it, me) })
     }
 
-    @PostMapping("/{id}/accept")
+    @PostMapping("/{id}/approve")
     override fun acceptSignal(
         @LoginMember me : Member,
         @PathVariable id : Long
