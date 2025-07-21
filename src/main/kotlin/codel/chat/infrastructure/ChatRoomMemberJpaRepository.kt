@@ -25,14 +25,13 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMember, Long> {
     ): ChatRoomMember?
 
     @Query("""
-        SELECT crmMe
+        SELECT crmOther
         FROM ChatRoomMember crmMe
-        JOIN FETCH crmMe.chatRoom cr
-        JOIN FETCH crmMe.member me
-        JOIN ChatRoomMember crmOther ON crmOther.chatRoom = cr
+        JOIN crmMe.chatRoom cr
+        JOIN FETCH ChatRoomMember crmOther ON crmOther.chatRoom = cr
         JOIN FETCH crmOther.member m
         JOIN FETCH m.profile p
-        WHERE me = :me
+        WHERE crmMe.member = :me
         AND cr.status = :status
         AND crmOther.member != :me
     """)
