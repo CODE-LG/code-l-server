@@ -62,4 +62,30 @@ class Signal(
             throw SignalException(HttpStatus.BAD_REQUEST, msg)
         }
     }
+
+    fun hide(memberId : Long) {
+        validateHidable(memberId)
+        status = when (status) {
+            SignalStatus.APPROVED -> SignalStatus.APPROVED_HIDDEN
+            SignalStatus.PENDING -> SignalStatus.PENDING_HIDDEN
+            else -> status  // 변경 없는 상태 유지
+        }
+    }
+
+    private fun validateHidable(memberId : Long) {
+        validateAccessRight(memberId)
+        validateHideAcceptable()
+    }
+
+    private fun validateAccessRight(memberId : Long) {
+        if(memberId != fromMember.id && memberId != toMember.id){
+            throw SignalException(HttpStatus.BAD_REQUEST, "자신과 관련된 시그널이 아닙니다.")
+        }
+    }
+
+    private fun validateHideAcceptable() {
+        status.canHide()?.let { msg ->
+            throw SignalException(HttpStatus.BAD_REQUEST, msg)
+        }
+    }
 }

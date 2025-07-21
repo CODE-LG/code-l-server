@@ -86,4 +86,13 @@ class SignalController(
         val members = signalService.getUnlockedSignal(me, page, size);
         return ResponseEntity.ok(members.map { MemberProfileResponse.toResponse(it)})
     }
+
+    @PatchMapping("/{id}/hide")
+    fun hideSignal(
+        @LoginMember me : Member,
+        @PathVariable id : Long,
+    ) : ResponseEntity<Unit>{
+        signalService.hideSignal(me, id);
+        return ResponseEntity.ok().build()
+    }
 }

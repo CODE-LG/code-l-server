@@ -13,4 +13,10 @@ enum class SignalStatus(val statusName: String) {
         APPROVED, APPROVED_HIDDEN -> "이미 시그널 승인된 상대입니다."
         else -> null
     }
+
+    fun canHide() : String? = when (this){
+        REJECTED -> "거절된 시그널은 숨김처리가 불가능합니다."
+        APPROVED_HIDDEN, PENDING_HIDDEN -> "이미 숨김처리가 되었습니다."
+        else -> null
+    }
 } 
