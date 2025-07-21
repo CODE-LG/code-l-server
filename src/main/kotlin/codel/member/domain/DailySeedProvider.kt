@@ -1,7 +1,7 @@
 package codel.member.domain
 
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 import kotlin.math.absoluteValue
 
 class DailySeedProvider {

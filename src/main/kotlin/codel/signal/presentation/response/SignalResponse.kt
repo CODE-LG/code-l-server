@@ -6,7 +6,7 @@ data class SignalResponse(
     val id: Long,
     val fromMemberId: Long,
     val toMemberId: Long,
-    val status : String,
+    val status: String,
     val toMemberFcmToken: String?,
 ) {
     companion object {

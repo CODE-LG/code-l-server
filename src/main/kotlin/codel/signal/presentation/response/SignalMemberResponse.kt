@@ -13,7 +13,7 @@ data class SignalMemberResponse(
     val createAt: LocalDateTime
 ) {
     companion object {
-        fun from(signal: Signal, me : Member): SignalMemberResponse {
+        fun from(signal: Signal, me: Member): SignalMemberResponse {
             val opponent = when (me.id) {
                 signal.fromMember.id -> signal.toMember
                 signal.toMember.id -> signal.fromMember

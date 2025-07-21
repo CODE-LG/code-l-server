@@ -5,32 +5,35 @@ import codel.member.domain.Member
 import codel.member.domain.MemberRepository
 import codel.signal.domain.Signal
 import codel.signal.domain.SignalStatus
-import codel.signal.infrastructure.SignalJpaRepository
+import codel.signal.domain.SignalTestHelper
 import codel.signal.exception.SignalException
+import codel.signal.infrastructure.SignalJpaRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentMatchers.any
 import org.mockito.BDDMockito.given
-import org.mockito.Mockito.mock
-import org.springframework.http.HttpStatus
-import java.time.LocalDateTime
-import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
+import org.mockito.Mockito.mock
 import org.mockito.junit.jupiter.MockitoExtension
-import codel.signal.domain.SignalTestHelper
-import java.util.Optional
+import org.springframework.http.HttpStatus
+import java.time.LocalDateTime
+import java.util.*
 
 @ExtendWith(MockitoExtension::class)
 class SignalServiceTest {
     @Mock
     lateinit var memberRepository: MemberRepository
+
     @Mock
     lateinit var signalJpaRepository: SignalJpaRepository
+
     @Mock
     lateinit var chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository
+
     @InjectMocks
     lateinit var signalService: SignalService
 
@@ -83,7 +86,9 @@ class SignalServiceTest {
         SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(1))
         SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(1))
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
-        given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
+        given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(
+            lastSignal
+        )
 
         // when & then
         val exception = assertThrows<SignalException> {
@@ -105,7 +110,9 @@ class SignalServiceTest {
         SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(1))
         SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(1))
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
-        given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
+        given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(
+            lastSignal
+        )
 
         // when & then
         val exception = assertThrows<SignalException> {
@@ -127,7 +134,9 @@ class SignalServiceTest {
         SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(8))
         SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(6))
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
-        given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
+        given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(
+            lastSignal
+        )
 
         // when & then
         val exception = assertThrows<SignalException> {
@@ -149,7 +158,9 @@ class SignalServiceTest {
         SignalTestHelper.setCreatedAt(lastSignal, LocalDateTime.now().minusDays(10))
         SignalTestHelper.setUpdatedAt(lastSignal, LocalDateTime.now().minusDays(8))
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
-        given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(lastSignal)
+        given(signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)).willReturn(
+            lastSignal
+        )
         val savedSignal = Signal(fromMember = fromMember, toMember = toMember)
         given(signalJpaRepository.save(any())).willReturn(savedSignal)
 

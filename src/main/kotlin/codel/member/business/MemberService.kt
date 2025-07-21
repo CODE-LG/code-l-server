@@ -1,14 +1,6 @@
 package codel.member.business
 
-import codel.member.domain.CodeImage
-import codel.member.domain.DailySeedProvider
-import codel.member.domain.FaceImage
-import codel.member.domain.ImageUploader
-import codel.member.domain.Member
-import codel.member.domain.MemberRepository
-import codel.member.domain.MemberStatus
-import codel.member.domain.OauthType
-import codel.member.domain.Profile
+import codel.member.domain.*
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
@@ -30,7 +22,7 @@ class MemberService(
     private val memberRepository: MemberRepository,
     private val imageUploader: ImageUploader,
     private val memberJpaRepository: MemberJpaRepository,
-    private val profileJpaRepository : ProfileJpaRepository,
+    private val profileJpaRepository: ProfileJpaRepository,
     private val signalJpaRepository: SignalJpaRepository,
 ) {
     fun loginMember(member: Member): Member {
@@ -44,10 +36,10 @@ class MemberService(
         profile: Profile,
     ) {
         val existingProfile = member.profile
-        if(existingProfile == null){
+        if (existingProfile == null) {
             val newProfile = profileJpaRepository.save(profile)
             member.registerProfile(newProfile)
-        }else{
+        } else {
             existingProfile.update(profile)
         }
         memberJpaRepository.save(member)
@@ -76,7 +68,8 @@ class MemberService(
         memberRepository.updateMemberCodeImage(profile, serializeCodeImages)
     }
 
-    private fun uploadCodeImage(files: List<MultipartFile>): CodeImage = CodeImage(files.map { file -> imageUploader.uploadFile(file) })
+    private fun uploadCodeImage(files: List<MultipartFile>): CodeImage =
+        CodeImage(files.map { file -> imageUploader.uploadFile(file) })
 
     fun saveFaceImage(
         member: Member,
@@ -92,7 +85,8 @@ class MemberService(
         memberRepository.updateMemberFaceImage(profile, serializeCodeImages)
     }
 
-    private fun uploadFaceImage(files: List<MultipartFile>): FaceImage = FaceImage(files.map { file -> imageUploader.uploadFile(file) })
+    private fun uploadFaceImage(files: List<MultipartFile>): FaceImage =
+        FaceImage(files.map { file -> imageUploader.uploadFile(file) })
 
     fun saveFcmToken(
         member: Member,

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>회원 상세 정보</title>
-    <link rel="icon" type="image/png" th:href="@{/image/favicon.png}">
+    <link rel="icon" th:href="@{/image/favicon.png}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
@@ -16,8 +16,8 @@
             <h4>코드 이미지</h4>
             <div class="row">
                 <div class="col-md-4 mb-3" th:each="url : ${member.profile.codeImage}">
-                    <img th:src="${url}" class="img-fluid rounded shadow-sm"
-                         style="height: 300px; object-fit: cover; width: 100%;"/>
+                    <img class="img-fluid rounded shadow-sm" style="height: 300px; object-fit: cover; width: 100%;"
+                         th:src="${url}"/>
                 </div>
             </div>
         </div>
@@ -26,8 +26,8 @@
             <h4>페이스 이미지</h4>
             <div class="row">
                 <div class="col-md-4 mb-3" th:each="url : ${member.profile.faceImage}">
-                    <img th:src="${url}" class="img-fluid rounded shadow-sm"
-                         style="height: 300px; object-fit: cover; width: 100%;"/>
+                    <img class="img-fluid rounded shadow-sm" style="height: 300px; object-fit: cover; width: 100%;"
+                         th:src="${url}"/>
                 </div>
             </div>
         </div>
@@ -40,33 +40,35 @@
     </div>
 
     <div class="d-flex justify-content-center gap-3">
-        <a href="/v1/admin/home" class="btn btn-outline-secondary">목록으로</a>
+        <a class="btn btn-outline-secondary" href="/v1/admin/home">목록으로</a>
         <th:block th:if="${member.memberStatus.name()} == 'PENDING'">
-            <form id="approvalForm" th:action="@{'/v1/admin/approval/' + ${member.id}}" method="post" th:object="${member}">
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal">
+            <form id="approvalForm" method="post" th:action="@{'/v1/admin/approval/' + ${member.id}}"
+                  th:object="${member}">
+                <button class="btn btn-success" data-bs-target="#approveModal" data-bs-toggle="modal" type="button">
                     심사 승인
                 </button>
             </form>
-            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">심사 거절</button>
+            <button class="btn btn-danger" data-bs-target="#rejectModal" data-bs-toggle="modal" type="button">심사 거절
+            </button>
         </th:block>
     </div>
 </div>
 <!-- 거절 확인 모달 -->
-<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+<div aria-hidden="true" aria-labelledby="rejectModalLabel" class="modal fade" id="rejectModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">심사 거절 확인</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button class="btn-close" data-bs-dismiss="modal" type="button"></button>
             </div>
-            <form th:action="@{'/v1/admin/reject/' + ${member.id}}" method="post" th:object="${member}">
+            <form method="post" th:action="@{'/v1/admin/reject/' + ${member.id}}" th:object="${member}">
                 <div class="modal-body text-end">
-                    <input type="text" class="form-control w-100" id="rejectReasonInput" name="rejectReason"
-                           placeholder="거절 사유를 입력하세요">
+                    <input class="form-control w-100" id="rejectReasonInput" name="rejectReason" placeholder="거절 사유를 입력하세요"
+                           type="text">
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                    <button type="submit" class="btn btn-danger">거절</button>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">취소</button>
+                    <button class="btn btn-danger" type="submit">거절</button>
                 </div>
             </form>
         </div>
@@ -74,20 +76,20 @@
 </div>
 
 <!-- 승인 확인 모달 -->
-<div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
+<div aria-hidden="true" aria-labelledby="approveModalLabel" class="modal fade" id="approveModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="approveModalLabel">심사 승인 확인</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                <button aria-label="닫기" class="btn-close" data-bs-dismiss="modal" type="button"></button>
             </div>
             <div class="modal-body text-center">
                 <p class="mb-0">정말로 이 회원을 승인하시겠습니까?</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                <button type="button" class="btn btn-success"
-                        onclick="document.getElementById('approvalForm').submit();">
+                <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">취소</button>
+                <button class="btn btn-success" onclick="document.getElementById('approvalForm').submit();"
+                        type="button">
                     승인
                 </button>
             </div>
@@ -95,9 +97,9 @@
     </div>
 </div>
 </body>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+<script crossorigin="anonymous"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-        crossorigin="anonymous"></script>
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // $("#rejectModal").show(); // Not needed for Bootstrap modal
 </script>

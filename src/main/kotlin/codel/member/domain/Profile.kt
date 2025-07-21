@@ -1,15 +1,7 @@
 package codel.member.domain
 
 import codel.member.exception.MemberException
-import jakarta.persistence.CascadeType
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.OneToOne
+import jakarta.persistence.*
 import org.springframework.http.HttpStatus
 
 @Entity
@@ -28,8 +20,8 @@ class Profile(
     var smallCity: String,
     var mbti: String,
     var introduce: String,
-    var question : String,
-    var answer : String,
+    var question: String,
+    var answer: String,
     @Column(length = 1000)
     var codeImage: String? = null, // 복수
     @Column(length = 1000)

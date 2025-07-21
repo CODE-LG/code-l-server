@@ -42,7 +42,7 @@ class SignalService(
         me: Member,
         page: Int,
         size: Int
-    ): Page<Signal>{
+    ): Page<Signal> {
         val pageable = PageRequest.of(page, size)
         val receivedSignals = signalJpaRepository.findByToMemberAndStatus(me, SignalStatus.PENDING)
         return PageImpl(receivedSignals, pageable, receivedSignals.size.toLong())
@@ -53,7 +53,8 @@ class SignalService(
     fun getSendSignalByMe(
         me: Member,
         page: Int,
-        size: Int) : Page<Signal>{
+        size: Int
+    ): Page<Signal> {
         val pageable = PageRequest.of(page, size)
         val sendSignals = signalJpaRepository.findByFromMemberAndStatus(me, SignalStatus.PENDING)
         return PageImpl(sendSignals, pageable, sendSignals.size.toLong())
@@ -66,7 +67,7 @@ class SignalService(
         id: Long
     ) {
         val findSignal = signalJpaRepository.findById(id)
-            .orElseThrow{ SignalException(HttpStatus.NOT_FOUND, "해당 시그널을 찾을 수 없습니다.")}
+            .orElseThrow { SignalException(HttpStatus.NOT_FOUND, "해당 시그널을 찾을 수 없습니다.") }
 
         validateMySignal(findSignal, me)
         findSignal.accept()
@@ -85,7 +86,7 @@ class SignalService(
         id: Long
     ) {
         val findSignal = signalJpaRepository.findById(id)
-            .orElseThrow{ SignalException(HttpStatus.NOT_FOUND, "해당 시그널을 찾을 수 없습니다.")}
+            .orElseThrow { SignalException(HttpStatus.NOT_FOUND, "해당 시그널을 찾을 수 없습니다.") }
 
         validateMySignal(findSignal, me)
         findSignal.reject()
@@ -95,20 +96,21 @@ class SignalService(
 
     @Transactional(readOnly = true)
     fun getAcceptedSignals(
-        me : Member,
-        page : Int,
-        size : Int
-    ) : Page<Signal>{
+        me: Member,
+        page: Int,
+        size: Int
+    ): Page<Signal> {
         val pageable = PageRequest.of(page, size)
         val acceptedSignals = signalJpaRepository.findByMemberAndStatus(me, SignalStatus.APPROVED)
         return PageImpl(acceptedSignals, pageable, acceptedSignals.size.toLong())
     }
 
     @Transactional(readOnly = true)
-    fun getUnlockedSignal(member : Member, page : Int, size : Int) : Page<Member>{
+    fun getUnlockedSignal(member: Member, page: Int, size: Int): Page<Member> {
         val pageable = PageRequest.of(page, size)
 
-        val chatRoomMembers = chatRoomMemberJpaRepository.findUnlockedOpponentsWithProfile(member, ChatRoomStatus.UNLOCKED, pageable)
+        val chatRoomMembers =
+            chatRoomMemberJpaRepository.findUnlockedOpponentsWithProfile(member, ChatRoomStatus.UNLOCKED, pageable)
         // 챗룸멤버를 멤버로 찾아온다.
         return chatRoomMembers.map { chatRoomMember -> chatRoomMember.member }
         // 챗룸멤버라는 리스트를 가져온 상태에서 챗룸의 정보를 가져온다.
@@ -116,9 +118,9 @@ class SignalService(
     }
 
     @Transactional
-    fun hideSignal(me : Member, id: Long){
+    fun hideSignal(me: Member, id: Long) {
         val findSignal = signalJpaRepository.findById(id)
-            .orElseThrow{ SignalException(HttpStatus.NOT_FOUND, "해당 시그널을 찾을 수 없습니다.")}
+            .orElseThrow { SignalException(HttpStatus.NOT_FOUND, "해당 시그널을 찾을 수 없습니다.") }
 
         findSignal.hide(me.getIdOrThrow())
     }

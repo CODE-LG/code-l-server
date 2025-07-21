@@ -2,7 +2,6 @@ package codel.member.presentation.response
 
 import codel.member.domain.Member
 import codel.member.domain.Profile
-import org.springframework.http.HttpStatus.*
 
 data class MemberProfileResponse(
     val codeName: String,
@@ -16,8 +15,8 @@ data class MemberProfileResponse(
     val smallCity: String,
     val mbti: String,
     val introduce: String,
-    val question : String,
-    val answer : String,
+    val question: String,
+    val answer: String,
     val codeImages: List<String>,
     val faceImages: List<String>,
 ) {
