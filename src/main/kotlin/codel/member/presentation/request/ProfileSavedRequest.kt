@@ -1,6 +1,7 @@
 package codel.member.presentation.request
 
 import codel.member.domain.Profile
+import kotlin.String
 
 data class ProfileSavedRequest(
     val codeName: String,
@@ -14,6 +15,8 @@ data class ProfileSavedRequest(
     val smallCity: String,
     val mbti: String,
     val introduce: String,
+    val question : String,
+    val answer : String,
 ) {
     fun toProfile(): Profile {
         val serializeHobby = Profile.serializeAttribute(hobby)
@@ -30,6 +33,8 @@ data class ProfileSavedRequest(
             smallCity = this.smallCity,
             mbti = this.mbti,
             introduce = this.introduce,
+            question = this.question,
+            answer = this.answer,
         )
     }
 }
