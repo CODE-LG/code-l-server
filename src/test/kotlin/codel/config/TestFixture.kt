@@ -55,7 +55,9 @@ class TestFixture {
             bigCity = "경기도",
             smallCity = "성남시",
             mbti = "isfj",
-            introduce = "잘부탁드립니다!"
+            introduce = "잘부탁드립니다!",
+            question = "주로 여행은 어떤 스타일이신가요?",
+            answer = "계획 없이 즉흥적으로 돌아다니는 걸 좋아해요"
         )
         val member = Member(
             profile = profile,
@@ -81,7 +83,9 @@ class TestFixture {
             smallCity = "성남시",
             mbti = "isfj",
             introduce = "잘부탁드립니다!",
-            codeImage = "www.s3.aws.com1"
+            codeImage = "www.s3.aws.com1",
+            question = "주로 여행은 어떤 스타일이신가요?",
+            answer = "계획 없이 즉흥적으로 돌아다니는 걸 좋아해요"
         )
         val member = Member(
             profile = profile,
@@ -108,7 +112,9 @@ class TestFixture {
             mbti = "isfj",
             introduce = "잘부탁드립니다!",
             codeImage = "www.s3.aws.com1",
-            faceImage = "www.s3.aws1,www.s3.aws2,www.s3.aws3"
+            faceImage = "www.s3.aws1,www.s3.aws2,www.s3.aws3",
+            question = "주로 여행은 어떤 스타일이신가요?",
+            answer = "계획 없이 즉흥적으로 돌아다니는 걸 좋아해요"
         )
         val member = Member(
             profile = profile,
@@ -135,7 +141,9 @@ class TestFixture {
             mbti = "isfj",
             introduce = "잘부탁드립니다!",
             codeImage = "www.s3.aws.com1",
-            faceImage = "www.s3.aws1,www.s3.aws2,www.s3.aws3"
+            faceImage = "www.s3.aws1,www.s3.aws2,www.s3.aws3",
+            question = "주로 여행은 어떤 스타일이신가요?",
+            answer = "계획 없이 즉흥적으로 돌아다니는 걸 좋아해요"
         )
         val member = Member(
             profile = profile,
@@ -173,6 +181,8 @@ class TestFixture {
         smallCity = "성남시",
         mbti = "isfj",
         introduce = "잘부탁드립니다!",
+        question = "주로 여행은 어떤 스타일이신가요?",
+        answer = "계획 없이 즉흥적으로 돌아다니는 걸 좋아해요"
     )
 
     fun createMockFile(
