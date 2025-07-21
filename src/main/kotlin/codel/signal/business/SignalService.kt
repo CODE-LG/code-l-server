@@ -92,6 +92,8 @@ class SignalService(
         signalJpaRepository.save(findSignal)
     }
 
+
+    @Transactional(readOnly = true)
     fun getAcceptedSignals(
         me : Member,
         page : Int,
@@ -102,6 +104,7 @@ class SignalService(
         return PageImpl(acceptedSignals, pageable, acceptedSignals.size.toLong())
     }
 
+    @Transactional(readOnly = true)
     fun getUnlockedSignal(member : Member, page : Int, size : Int) : Page<Member>{
         val pageable = PageRequest.of(page, size)
 
@@ -110,5 +113,13 @@ class SignalService(
         return chatRoomMembers.map { chatRoomMember -> chatRoomMember.member }
         // 챗룸멤버라는 리스트를 가져온 상태에서 챗룸의 정보를 가져온다.
         // 챗룸 상태가 코드해제된 방에 대해서 알아오고, 코드해제된 방 중 상대방에 대한 멤버 정보 + 프로필 정보를 함꼐 가져온다.
+    }
+
+    @Transactional
+    fun hideSignal(me : Member, id: Long){
+        val findSignal = signalJpaRepository.findById(id)
+            .orElseThrow{ SignalException(HttpStatus.NOT_FOUND, "해당 시그널을 찾을 수 없습니다.")}
+
+        findSignal.hide(me.getIdOrThrow())
     }
 }
