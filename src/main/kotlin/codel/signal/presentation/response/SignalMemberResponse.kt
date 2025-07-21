@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 
 data class SignalMemberResponse(
     val signalId: Long,
-    val fromMember: MemberProfileResponse,
+    val member: MemberProfileResponse,
     val status: SignalStatus,
     val createAt: LocalDateTime
 ) {
@@ -15,7 +15,7 @@ data class SignalMemberResponse(
         fun from(signal: Signal): SignalMemberResponse {
             return SignalMemberResponse(
                 signalId = signal.id!!,
-                fromMember = MemberProfileResponse.toResponse(signal.fromMember),
+                member = MemberProfileResponse.toResponse(signal.fromMember),
                 status = signal.status,
                 createAt = signal.createdAt
             )
