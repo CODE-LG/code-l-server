@@ -2,6 +2,7 @@ package codel.signal.presentation.swagger
 
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
+import codel.member.presentation.response.MemberProfileResponse
 import codel.signal.presentation.request.SendSignalRequest
 import codel.signal.presentation.response.SignalMemberResponse
 import codel.signal.presentation.response.SignalResponse
@@ -123,6 +124,42 @@ interface SignalControllerSwagger {
         ]
     )
     fun rejectSignal(
+        @Parameter(hidden = true) @LoginMember me: Member,
+        @PathVariable id: Long
+    ): ResponseEntity<Unit>
+
+
+    @Operation(
+        summary = "시그널 코드해제 조회",
+        description = "코드 해제된 시그널을 조회합니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "거절 성공"),
+            ApiResponse(responseCode = "400", description = "잘못된 요청 또는 이미 처리된 시그널"),
+            ApiResponse(responseCode = "404", description = "시그널 없음"),
+            ApiResponse(responseCode = "500", description = "서버 오류")
+        ]
+    )
+    fun getUnlockedSignal(
+        @Parameter(hidden = true) @LoginMember me: Member,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "10") size: Int
+    ): ResponseEntity<Page<MemberProfileResponse>>
+
+    @Operation(
+        summary = "시그널 숨김",
+        description = "나와 관련된 시그널을 숨김 처리합니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "숨김 성공"),
+            ApiResponse(responseCode = "400", description = "잘못된 요청 또는 이미 처리된 시그널"),
+            ApiResponse(responseCode = "404", description = "시그널 없음"),
+            ApiResponse(responseCode = "500", description = "서버 오류")
+        ]
+    )
+    fun hideSignal(
         @Parameter(hidden = true) @LoginMember me: Member,
         @PathVariable id: Long
     ): ResponseEntity<Unit>

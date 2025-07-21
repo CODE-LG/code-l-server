@@ -78,7 +78,7 @@ class SignalController(
     }
 
     @GetMapping("/unlocked")
-    fun getUnlockedSignal(
+    override fun getUnlockedSignal(
         @LoginMember me : Member,
         @RequestParam(defaultValue = "0") page : Int,
         @RequestParam(defaultValue = "10") size : Int,
@@ -88,7 +88,7 @@ class SignalController(
     }
 
     @PatchMapping("/{id}/hide")
-    fun hideSignal(
+    override fun hideSignal(
         @LoginMember me : Member,
         @PathVariable id : Long,
     ) : ResponseEntity<Unit>{
