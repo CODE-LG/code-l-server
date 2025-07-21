@@ -8,6 +8,7 @@ import codel.config.argumentresolver.LoginMember
 import codel.signal.presentation.response.SignalMemberResponse
 import codel.signal.presentation.swagger.SignalControllerSwagger
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -32,7 +33,7 @@ class SignalController(
         @RequestParam(defaultValue = "10") size: Int,
     ) : ResponseEntity<Page<SignalMemberResponse>>{
         val signals = signalService.getReceivedSignals(me, page, size)
-        return ResponseEntity.ok(signals.map { SignalMemberResponse.from(it)});
+        return ResponseEntity.ok(signals.map { SignalMemberResponse.from(it, it.fromMember)});
     }
 
     @GetMapping("/send")
@@ -42,7 +43,7 @@ class SignalController(
         @RequestParam(defaultValue = "10") size: Int,
     ) : ResponseEntity<Page<SignalMemberResponse>>{
         val signals = signalService.getSendSignalByMe(me, page, size)
-        return ResponseEntity.ok(signals.map { SignalMemberResponse.from(it) })
+        return ResponseEntity.ok(signals.map { SignalMemberResponse.from(it, it.toMember) })
     }
 
     @GetMapping("/accepted")
@@ -52,7 +53,7 @@ class SignalController(
         @RequestParam(defaultValue = "10") size : Int
     ) : ResponseEntity<Page<SignalMemberResponse>>{
         val acceptedSignals =  signalService.getAcceptedSignals(me, page, size);
-        return ResponseEntity.ok(acceptedSignals.map { SignalMemberResponse.from(it) })
+        return ResponseEntity.ok(acceptedSignals.map { SignalMemberResponse.from(it, it.fromMember) })
     }
 
     @PostMapping("/{id}/accept")
