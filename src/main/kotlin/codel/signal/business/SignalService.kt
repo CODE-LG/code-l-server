@@ -1,7 +1,6 @@
 package codel.signal.business
 
 import codel.chat.domain.ChatRoomStatus
-import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
@@ -20,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional
 class SignalService(
     private val memberRepository: MemberRepository,
     private val signalJpaRepository: SignalJpaRepository,
-    private val chatRoomJpaRepository: ChatRoomJpaRepository,
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
 ) {
     @Transactional
