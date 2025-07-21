@@ -11,9 +11,9 @@ data class SignalResponse(
 ) {
     companion object {
         fun from(signal: Signal) = SignalResponse(
-            id = signal.id!!,
-            fromMemberId = signal.fromMember.id!!,
-            toMemberId = signal.toMember.id!!,
+            id = signal.getIdOrThrow(),
+            fromMemberId = signal.fromMember.getIdOrThrow(),
+            toMemberId = signal.toMember.getIdOrThrow(),
             status = signal.status.toString(),
             toMemberFcmToken = signal.toMember.fcmToken
         )

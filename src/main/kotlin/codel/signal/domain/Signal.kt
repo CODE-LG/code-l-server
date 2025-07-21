@@ -2,6 +2,7 @@ package codel.signal.domain
 
 import codel.common.domain.BaseTimeEntity
 import codel.member.domain.Member
+import codel.member.exception.MemberException
 import codel.signal.exception.SignalException
 import jakarta.persistence.*
 import org.springframework.http.HttpStatus
@@ -20,6 +21,7 @@ class Signal(
     @Enumerated(EnumType.STRING)
     var status: SignalStatus = SignalStatus.PENDING
 ) : BaseTimeEntity() {
+    fun getIdOrThrow(): Long = id ?: throw SignalException(HttpStatus.BAD_REQUEST, "id가 없는 시그널 입니다.")
 
     fun validateSendable(now: LocalDateTime = LocalDateTime.now()) {
         if (!canSendNewSignal(now)) {
