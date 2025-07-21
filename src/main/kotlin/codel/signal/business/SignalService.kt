@@ -26,7 +26,9 @@ class SignalService(
         validateNotSelf(fromMember, toMemberId)
         val toMember = memberRepository.findMember(toMemberId)
         val lastSignal = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)
-        lastSignal?.validateSendable()
+            ?: throw SignalException(HttpStatus.BAD_REQUEST, "시그널 정보를 찾을 수 없습니다.")
+
+        lastSignal.validateSendable()
         val signal = Signal(fromMember = fromMember, toMember = toMember)
         return signalJpaRepository.save(signal)
     }
