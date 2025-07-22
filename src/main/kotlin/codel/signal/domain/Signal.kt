@@ -18,8 +18,12 @@ class Signal(
     val fromMember: Member,
     @ManyToOne(fetch = FetchType.LAZY)
     val toMember: Member,
+
+    var message : String = "",
+
     @Enumerated(EnumType.STRING)
     var status: SignalStatus = SignalStatus.PENDING
+
 ) : BaseTimeEntity() {
     fun getIdOrThrow(): Long = id ?: throw SignalException(HttpStatus.BAD_REQUEST, "id가 없는 시그널 입니다.")
 

@@ -44,6 +44,8 @@ class SignalServiceTest {
         val fromMember = mock(Member::class.java)
         val toMember = mock(Member::class.java)
         val toMemberId = 2L
+
+        val message = "저는 이렇게 생각해요!"
         val savedSignal = Signal(fromMember = fromMember, toMember = toMember)
 
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
@@ -51,7 +53,7 @@ class SignalServiceTest {
 
 
         // when
-        val result = signalService.sendSignal(fromMember, toMemberId)
+        val result = signalService.sendSignal(fromMember, toMemberId, message)
 
         // then
         assertThat(result.fromMember).isEqualTo(fromMember)
@@ -65,11 +67,13 @@ class SignalServiceTest {
         // given
         val fromMember = mock(Member::class.java)
         val toMemberId = 1L
-        given(fromMember.getIdOrThrow()).willReturn(1L)
+
+        val message = "저는 이렇게 생각해요!"
+        given(fromMember.id).willReturn(1L)
 
         // when & then
         val exception = assertThrows<SignalException> {
-            signalService.sendSignal(fromMember, toMemberId)
+            signalService.sendSignal(fromMember, toMemberId, message)
         }
         assertThat(exception.status).isEqualTo(HttpStatus.BAD_REQUEST)
         assertThat(exception.message).contains("자기 자신에게는 시그널을 보낼 수 없습니다.")
@@ -82,6 +86,9 @@ class SignalServiceTest {
         val fromMember = mock(Member::class.java)
         val toMember = mock(Member::class.java)
         val toMemberId = 2L
+
+        val message = "저는 이렇게 생각해요!"
+        given(fromMember.id).willReturn(1L)
         val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.PENDING)
         lastSignal.createdAt = LocalDateTime.now().minusDays(1)
         lastSignal.updatedAt = LocalDateTime.now().minusDays(1)
@@ -92,7 +99,7 @@ class SignalServiceTest {
 
         // when & then
         val exception = assertThrows<SignalException> {
-            signalService.sendSignal(fromMember, toMemberId)
+            signalService.sendSignal(fromMember, toMemberId, message)
         }
         assertThat(exception.status).isEqualTo(HttpStatus.BAD_REQUEST)
         assertThat(exception.message).contains("이미 시그널을 보낸 상대입니다.")
@@ -105,6 +112,9 @@ class SignalServiceTest {
         val fromMember = mock(Member::class.java)
         val toMember = mock(Member::class.java)
         val toMemberId = 2L
+
+        val message = "저는 이렇게 생각해요!"
+        given(fromMember.id).willReturn(1L)
         val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.APPROVED)
 
         lastSignal.createdAt = LocalDateTime.now().minusDays(1)
@@ -116,7 +126,7 @@ class SignalServiceTest {
 
         // when & then
         val exception = assertThrows<SignalException> {
-            signalService.sendSignal(fromMember, toMemberId)
+            signalService.sendSignal(fromMember, toMemberId, message)
         }
         assertThat(exception.status).isEqualTo(HttpStatus.BAD_REQUEST)
         assertThat(exception.message).contains("이미 시그널을 보낸 상대입니다.")
@@ -128,6 +138,7 @@ class SignalServiceTest {
         // given
         val fromMember = mock(Member::class.java)
         val toMember = mock(Member::class.java)
+        val message = "저는 이렇게 생각해요!"
         val toMemberId = 2L
         val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.REJECTED)
 
@@ -140,7 +151,7 @@ class SignalServiceTest {
 
         // when & then
         val exception = assertThrows<SignalException> {
-            signalService.sendSignal(fromMember, toMemberId)
+            signalService.sendSignal(fromMember, toMemberId, message)
         }
         assertThat(exception.status).isEqualTo(HttpStatus.BAD_REQUEST)
         assertThat(exception.message).contains("거절된 상대에게는 7일 후에 다시 시그널을 보낼 수 있습니다.")
@@ -152,6 +163,7 @@ class SignalServiceTest {
         // given
         val fromMember = mock(Member::class.java)
         val toMember = mock(Member::class.java)
+        val message = "저는 이렇게 생각해요!"
         val toMemberId = 2L
         val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.REJECTED)
         lastSignal.createdAt = LocalDateTime.now().minusDays(10)
@@ -164,7 +176,7 @@ class SignalServiceTest {
         given(signalJpaRepository.save(any())).willReturn(savedSignal)
 
         // when & then
-        val sendSignal = signalService.sendSignal(fromMember, toMemberId)
+        val sendSignal = signalService.sendSignal(fromMember, toMemberId, message)
         assertThat(sendSignal.status).isEqualTo(SignalStatus.PENDING)
     }
 

@@ -22,13 +22,13 @@ class SignalService(
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
 ) {
     @Transactional
-    fun sendSignal(fromMember: Member, toMemberId: Long): Signal {
-        validateNotSelf(fromMember.getIdOrThrow(), toMemberId)
-
+    fun sendSignal(fromMember: Member, toMemberId: Long, message: String): Signal {
+        validateNotSelf(fromMember, toMemberId)
         val toMember = memberRepository.findMember(toMemberId)
         val lastSignal = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)
-        lastSignal?.validateSendable(fromMember.getIdOrThrow(), toMemberId)
-        val signal = Signal(fromMember = fromMember, toMember = toMember)
+        lastSignal?.validateSendable()
+
+        val signal = Signal(fromMember = fromMember, toMember = toMember, message = message)
         return signalJpaRepository.save(signal)
     }
 
