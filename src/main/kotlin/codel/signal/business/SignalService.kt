@@ -23,7 +23,7 @@ class SignalService(
 ) {
     @Transactional
     fun sendSignal(fromMember: Member, toMemberId: Long, message: String): Signal {
-        validateNotSelf(fromMember, toMemberId)
+        validateNotSelf(fromMember.getIdOrThrow(), toMemberId)
         val toMember = memberRepository.findMember(toMemberId)
         val lastSignal = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)
         lastSignal?.validateSendable()
