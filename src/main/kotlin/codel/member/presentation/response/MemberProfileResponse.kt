@@ -4,6 +4,7 @@ import codel.member.domain.Member
 import codel.member.domain.Profile
 
 data class MemberProfileResponse(
+    val memberId : Long,
     val codeName: String,
     val age: Int,
     val job: String,
@@ -27,6 +28,7 @@ data class MemberProfileResponse(
             val deserializeHobby = Profile.deserializeAttribute(profile.hobby)
             val deserializeStyle = Profile.deserializeAttribute(profile.style)
             return MemberProfileResponse(
+                memberId = member.getIdOrThrow(),
                 codeName = profile.codeName,
                 age = profile.age,
                 job = profile.job,
