@@ -17,8 +17,12 @@ class Signal(
     val fromMember: Member,
     @ManyToOne(fetch = FetchType.LAZY)
     val toMember: Member,
+
+    var message : String = "",
+
     @Enumerated(EnumType.STRING)
     var status: SignalStatus = SignalStatus.PENDING
+
 ) : BaseTimeEntity() {
 
     fun validateSendable(now: LocalDateTime = LocalDateTime.now()) {

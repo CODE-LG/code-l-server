@@ -22,7 +22,7 @@ class SignalController(
         @LoginMember fromMember: Member,
         @RequestBody request: SendSignalRequest
     ): ResponseEntity<SignalResponse> {
-        val signal = signalService.sendSignal(fromMember, request.toMemberId)
+        val signal = signalService.sendSignal(fromMember, request.toMemberId, request.message)
         return ResponseEntity.ok(SignalResponse.from(signal))
     }
 
