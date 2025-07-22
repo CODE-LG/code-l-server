@@ -69,7 +69,8 @@ class SignalServiceTest {
         val toMemberId = 1L
 
         val message = "저는 이렇게 생각해요!"
-        given(fromMember.id).willReturn(1L)
+        given(fromMember.getIdOrThrow()).willReturn(1L)
+
 
         // when & then
         val exception = assertThrows<SignalException> {
@@ -88,7 +89,7 @@ class SignalServiceTest {
         val toMemberId = 2L
 
         val message = "저는 이렇게 생각해요!"
-        given(fromMember.id).willReturn(1L)
+        given(fromMember.getIdOrThrow()).willReturn(1L)
         val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.PENDING)
         lastSignal.createdAt = LocalDateTime.now().minusDays(1)
         lastSignal.updatedAt = LocalDateTime.now().minusDays(1)
@@ -114,7 +115,7 @@ class SignalServiceTest {
         val toMemberId = 2L
 
         val message = "저는 이렇게 생각해요!"
-        given(fromMember.id).willReturn(1L)
+        given(fromMember.getIdOrThrow()).willReturn(1L)
         val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.APPROVED)
 
         lastSignal.createdAt = LocalDateTime.now().minusDays(1)
