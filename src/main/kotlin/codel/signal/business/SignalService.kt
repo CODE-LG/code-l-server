@@ -1,6 +1,12 @@
 package codel.signal.business
 
+import codel.chat.domain.Chat
+import codel.chat.domain.ChatRoom
+import codel.chat.domain.ChatRoomMember
 import codel.chat.domain.ChatRoomStatus
+import codel.chat.domain.ChatType
+import codel.chat.infrastructure.ChatJpaRepository
+import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
@@ -14,12 +20,15 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 @Service
 class SignalService(
     private val memberRepository: MemberRepository,
     private val signalJpaRepository: SignalJpaRepository,
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
+    private val chatRoomJpaRepository: ChatRoomJpaRepository,
+    private val chatJpaRepository: ChatJpaRepository,
 ) {
     @Transactional
     fun sendSignal(fromMember: Member, toMemberId: Long, message: String): Signal {
@@ -72,7 +81,19 @@ class SignalService(
 
         validateMySignal(findSignal, me)
         findSignal.accept()
+
         signalJpaRepository.save(findSignal)
+
+        val partner = findSignal.fromMember
+        val newChatRoom = ChatRoom()
+        val savedChatRoom = chatRoomJpaRepository.save(newChatRoom)
+        val chatRoomMemberForApproveMember = ChatRoomMember(chatRoom = savedChatRoom, member = me)
+        val chatRoomMemberForSendMember = ChatRoomMember(chatRoom = savedChatRoom, member = partner)
+        val savedChatRoomMemberByApprover = chatRoomMemberJpaRepository.save(chatRoomMemberForApproveMember)
+        val savedChatRoomMemberBySender = chatRoomMemberJpaRepository.save(chatRoomMemberForSendMember)
+        chatJpaRepository.save(Chat(chatRoom = savedChatRoom, fromChatRoomMember = savedChatRoomMemberByApprover, chatType = ChatType.CONVERSATION, message = me.getProfileOrThrow().question, sentAt = LocalDateTime.now()))
+        chatJpaRepository.save(Chat(chatRoom = savedChatRoom, fromChatRoomMember = savedChatRoomMemberByApprover, chatType = ChatType.CONVERSATION, message = me.getProfileOrThrow().answer, sentAt = LocalDateTime.now()))
+        chatJpaRepository.save(Chat(chatRoom = savedChatRoom, fromChatRoomMember = savedChatRoomMemberBySender, chatType = ChatType.CONVERSATION, message = findSignal.message, sentAt = LocalDateTime.now()))
     }
 
     private fun validateMySignal(findSignal: Signal, me: Member) {
