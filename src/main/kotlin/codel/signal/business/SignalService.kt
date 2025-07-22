@@ -32,8 +32,8 @@ class SignalService(
         return signalJpaRepository.save(signal)
     }
 
-    private fun validateNotSelf(fromMember: Member, toMemberId: Long) {
-        if (fromMember.id == toMemberId) {
+    private fun validateNotSelf(fromMemberId: Long, toMemberId: Long) {
+        if (fromMemberId == toMemberId) {
             throw SignalException(HttpStatus.BAD_REQUEST, "자기 자신에게는 시그널을 보낼 수 없습니다.")
         }
     }

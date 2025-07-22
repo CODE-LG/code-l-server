@@ -51,7 +51,7 @@ class MemberServiceTest : TestFixture() {
     @Test
     fun upsertProfile_update() {
         // given
-        val member = memberJpaRepository.findById(memberCodeSurvey.id!!).get()
+        val member = memberJpaRepository.findById(memberCodeSurvey.getIdOrThrow()).get()
         val updatedProfile = createProfile(codeName = "updateName").apply {
             age = 22
             job = "운동선수"
@@ -69,12 +69,12 @@ class MemberServiceTest : TestFixture() {
         memberService.upsertProfile(member, updatedProfile)
 
         // then
-        val updatedMember = memberJpaRepository.findById(member.id!!).get()
+        val updatedMember = memberJpaRepository.findById(member.getIdOrThrow()).get()
         assertAll(
             { assertThat(updatedMember.profile).isNotNull },
-            { assertThat(updatedMember.profile!!.codeName).isEqualTo("updateName") },
-            { assertThat(updatedMember.profile!!.job).isEqualTo("운동선수") },
-            { assertThat(updatedMember.profile!!.introduce).isEqualTo("연락 주세요") }
+            { assertThat(updatedMember.getProfileOrThrow().codeName).isEqualTo("updateName") },
+            { assertThat(updatedMember.getProfileOrThrow().job).isEqualTo("운동선수") },
+            { assertThat(updatedMember.getProfileOrThrow().introduce).isEqualTo("연락 주세요") }
         )
     }
 
@@ -106,8 +106,8 @@ class MemberServiceTest : TestFixture() {
         memberService.saveCodeImage(member, files)
 
         // then
-        val updatedMember = memberJpaRepository.findById(member.id!!).get()
-        val savedProfile = updatedMember.profile!!
+        val updatedMember = memberJpaRepository.findById(member.getIdOrThrow()).get()
+        val savedProfile = updatedMember.getProfileOrThrow()
         assertThat(updatedMember.memberStatus).isEqualTo(MemberStatus.CODE_PROFILE_IMAGE)
         assertThat(savedProfile.codeImage).isNotNull
         assertThat(savedProfile.getCodeImageOrThrow()).contains("https://test-bucket.s3.amazonaws.com/image1.png")
@@ -131,8 +131,8 @@ class MemberServiceTest : TestFixture() {
         memberService.saveFaceImage(member, faceFiles)
 
         // then
-        val updatedMember = memberJpaRepository.findById(member.id!!).get()
-        val savedProfile = updatedMember.profile!!
+        val updatedMember = memberJpaRepository.findById(member.getIdOrThrow()).get()
+        val savedProfile = updatedMember.getProfileOrThrow()
         assertThat(updatedMember.memberStatus).isEqualTo(MemberStatus.PENDING)
         assertThat(savedProfile.faceImage).isNotNull
         assertThat(savedProfile.getFaceImageOrThrow()).contains("https://test-bucket.s3.amazonaws.com/faceImage1.png")
@@ -148,10 +148,10 @@ class MemberServiceTest : TestFixture() {
         val member = memberPending
         val reason = "이미지를 다시 업로드 부탁드립니다."
         //when
-        memberService.rejectMember(member.id!!, reason)
+        memberService.rejectMember(member.getIdOrThrow(), reason)
 
         //then
-        val rejectMember = memberJpaRepository.findById(member.id!!).get()
+        val rejectMember = memberJpaRepository.findById(member.getIdOrThrow()).get()
         assertThat(rejectMember.memberStatus).isEqualTo(MemberStatus.REJECT)
     }
 
@@ -162,10 +162,10 @@ class MemberServiceTest : TestFixture() {
         val member = memberPending
         val reason = "이미지를 다시 업로드 부탁드립니다."
         //when
-        memberService.approveMember(member.id!!)
+        memberService.approveMember(member.getIdOrThrow())
 
         //then
-        val rejectMember = memberJpaRepository.findById(member.id!!).get()
+        val rejectMember = memberJpaRepository.findById(member.getIdOrThrow()).get()
         assertThat(rejectMember.memberStatus).isEqualTo(MemberStatus.DONE)
     }
 }
