@@ -23,13 +23,19 @@ class SignalService(
 ) {
     @Transactional
     fun sendSignal(fromMember: Member, toMemberId: Long): Signal {
+        validateNotSelf(fromMember.getIdOrThrow(), toMemberId)
+
         val toMember = memberRepository.findMember(toMemberId)
         val lastSignal = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)
-            ?: throw SignalException(HttpStatus.BAD_REQUEST, "시그널 정보를 찾을 수 없습니다.")
-
-        lastSignal.validateSendable(fromMember.getIdOrThrow(), toMemberId)
+        lastSignal?.validateSendable(fromMember.getIdOrThrow(), toMemberId)
         val signal = Signal(fromMember = fromMember, toMember = toMember)
         return signalJpaRepository.save(signal)
+    }
+
+    private fun validateNotSelf(fromMemberId: Long, toMemberId: Long) {
+        if (fromMemberId == toMemberId) {
+            throw SignalException(HttpStatus.BAD_REQUEST, "자기 자신에게는 시그널을 보낼 수 없습니다.")
+        }
     }
 
     @Transactional(readOnly = true)

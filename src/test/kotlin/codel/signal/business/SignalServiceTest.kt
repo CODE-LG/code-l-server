@@ -49,6 +49,7 @@ class SignalServiceTest {
         given(memberRepository.findMember(toMemberId)).willReturn(toMember)
         given(signalJpaRepository.save(any())).willReturn(savedSignal)
 
+
         // when
         val result = signalService.sendSignal(fromMember, toMemberId)
 
@@ -64,7 +65,7 @@ class SignalServiceTest {
         // given
         val fromMember = mock(Member::class.java)
         val toMemberId = 1L
-        given(fromMember.id).willReturn(1L)
+        given(fromMember.getIdOrThrow()).willReturn(1L)
 
         // when & then
         val exception = assertThrows<SignalException> {
@@ -81,7 +82,6 @@ class SignalServiceTest {
         val fromMember = mock(Member::class.java)
         val toMember = mock(Member::class.java)
         val toMemberId = 2L
-        given(fromMember.id).willReturn(1L)
         val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.PENDING)
         lastSignal.createdAt = LocalDateTime.now().minusDays(1)
         lastSignal.updatedAt = LocalDateTime.now().minusDays(1)
@@ -105,7 +105,6 @@ class SignalServiceTest {
         val fromMember = mock(Member::class.java)
         val toMember = mock(Member::class.java)
         val toMemberId = 2L
-        given(fromMember.id).willReturn(1L)
         val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.APPROVED)
 
         lastSignal.createdAt = LocalDateTime.now().minusDays(1)
@@ -130,7 +129,6 @@ class SignalServiceTest {
         val fromMember = mock(Member::class.java)
         val toMember = mock(Member::class.java)
         val toMemberId = 2L
-        given(fromMember.id).willReturn(1L)
         val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.REJECTED)
 
         lastSignal.createdAt = LocalDateTime.now().minusDays(8)
@@ -155,7 +153,6 @@ class SignalServiceTest {
         val fromMember = mock(Member::class.java)
         val toMember = mock(Member::class.java)
         val toMemberId = 2L
-        given(fromMember.id).willReturn(1L)
         val lastSignal = Signal(fromMember = fromMember, toMember = toMember, status = SignalStatus.REJECTED)
         lastSignal.createdAt = LocalDateTime.now().minusDays(10)
         lastSignal.updatedAt = LocalDateTime.now().minusDays(8)
