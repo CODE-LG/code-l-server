@@ -111,7 +111,7 @@ class MemberController(
     }
 
     @GetMapping("/v1/members/{id}")
-    fun findMemberProfile(
+    override fun getMemberProfileDetail(
         @LoginMember me : Member,
         @PathVariable id: Long,
     ) : ResponseEntity<MemberProfileDetailResponse>{
