@@ -150,7 +150,7 @@ interface MemberControllerSwagger {
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "홈 파도 타기 목록 조회 성공"),
+            ApiResponse(responseCode = "200", description = "회원 상세 조회 성공"),
             ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
             ApiResponse(responseCode = "500", description = "서버 내부 오류"),
         ],
