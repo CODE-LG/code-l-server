@@ -1,6 +1,7 @@
 package codel.signal.domain
 
 enum class SignalStatus(val statusName: String) {
+    NONE("상태없음"),
     PENDING("매칭대기"),
     PENDING_HIDDEN("매칭대기_숨김"),
     APPROVED("매칭성공"),

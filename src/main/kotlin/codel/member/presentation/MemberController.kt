@@ -7,6 +7,7 @@ import codel.member.domain.Member
 import codel.member.presentation.request.MemberLoginRequest
 import codel.member.presentation.request.ProfileSavedRequest
 import codel.member.presentation.response.MemberLoginResponse
+import codel.member.presentation.response.MemberProfileDetailResponse
 import codel.member.presentation.response.MemberProfileResponse
 import codel.member.presentation.response.MemberRecommendResponses
 import codel.member.presentation.response.MemberResponse
@@ -107,5 +108,15 @@ class MemberController(
                 MemberResponse.toResponse(member)
             },
         )
+    }
+
+    @GetMapping("/v1/members/{id}")
+    fun findMemberProfile(
+        @LoginMember me : Member,
+        @PathVariable id: Long,
+    ) : ResponseEntity<MemberProfileDetailResponse>{
+        val memberProfileDetail = memberService.findMemberProfile(me, id)
+
+        return ResponseEntity.ok(memberProfileDetail)
     }
 }
