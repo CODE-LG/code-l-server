@@ -5,6 +5,7 @@ import codel.member.domain.Member
 import codel.member.presentation.request.MemberLoginRequest
 import codel.member.presentation.request.ProfileSavedRequest
 import codel.member.presentation.response.MemberLoginResponse
+import codel.member.presentation.response.MemberProfileDetailResponse
 import codel.member.presentation.response.MemberProfileResponse
 import codel.member.presentation.response.MemberRecommendResponses
 import codel.member.presentation.response.MemberResponse
@@ -15,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestPart
@@ -141,4 +143,20 @@ interface MemberControllerSwagger {
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
     ): ResponseEntity<Page<MemberResponse>>
+
+    @Operation(
+        summary = "회원 상세 조회",
+        description = "회원 정보를 상세 조회합니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "홈 파도 타기 목록 조회 성공"),
+            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
+        ],
+    )
+    fun getMemberProfileDetail(
+        @Parameter(hidden = true) @LoginMember me: Member,
+        @PathVariable id: Long,
+    ): ResponseEntity<MemberProfileDetailResponse>
 }
