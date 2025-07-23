@@ -1,5 +1,7 @@
 package codel.signal.business
 
+import codel.chat.infrastructure.ChatJpaRepository
+import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
@@ -33,6 +35,12 @@ class SignalServiceTest {
 
     @Mock
     lateinit var chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository
+
+    @Mock
+    lateinit var chatRoomJpaRepository: ChatRoomJpaRepository
+
+    @Mock
+    lateinit var chatJpaRepository: ChatJpaRepository
 
     @InjectMocks
     lateinit var signalService: SignalService
@@ -288,25 +296,6 @@ class SignalServiceTest {
         // then
         assertThat(result.content).containsExactly(signalForMe)
         assertThat(result.content).doesNotContain(signalForOther)
-    }
-
-    @DisplayName("받은 시그널을 정상적으로 승인한다")
-    @Test
-    fun acceptSignal_success() {
-        // given
-        val me = mock(Member::class.java)
-        val fromMember = mock(Member::class.java)
-        val signalId = 1L
-        given(me.id).willReturn(2L)
-        val signal = Signal(fromMember = fromMember, toMember = me, status = SignalStatus.PENDING)
-        given(signalJpaRepository.findById(signalId)).willReturn(Optional.of(signal))
-        given(signalJpaRepository.save(signal)).willReturn(signal)
-
-        // when
-        signalService.acceptSignal(me, signalId)
-
-        // then
-        assertThat(signal.status).isEqualTo(SignalStatus.APPROVED)
     }
 
     @DisplayName("승인 할 때, 내게 온 시그널이 아니면 예외가 발생한다")

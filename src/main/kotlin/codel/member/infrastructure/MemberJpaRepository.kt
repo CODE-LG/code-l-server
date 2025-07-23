@@ -83,4 +83,8 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
         @Param("status") status: MemberStatus?,
         pageable: Pageable
     ): Page<Member>
+
+
+    @Query("SELECT m FROM Member m JOIN FETCH m.profile WHERE m.id = :memberId")
+    fun findByMemberId(memberId: Long) : Member?
 }

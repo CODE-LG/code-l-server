@@ -4,17 +4,23 @@ import codel.member.domain.*
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
+import codel.member.presentation.response.MemberProfileDetailResponse
+import codel.member.presentation.response.MemberProfileResponse
+import codel.signal.domain.SignalStatus
+import codel.signal.domain.SignalStatus.*
 import codel.signal.infrastructure.SignalJpaRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 @Transactional
 @Service
@@ -178,4 +184,29 @@ class MemberService(
 
     fun countAllMembers(): Long = memberJpaRepository.count()
     fun countPendingMembers(): Long = memberJpaRepository.countByMemberStatus(MemberStatus.PENDING)
+
+    fun findMemberProfile(me : Member, memberId: Long) : MemberProfileDetailResponse{
+        val member = memberJpaRepository.findByMemberId(memberId) ?: throw MemberException(
+            HttpStatus.BAD_REQUEST,
+            "해당 id에 일치하는 멤버가 없습니다.",
+        )
+
+        val findTopByFromMemberAndToMemberOrderByIdDesc =
+            signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(me, member)
+
+        if(findTopByFromMemberAndToMemberOrderByIdDesc != null){
+            val status = findTopByFromMemberAndToMemberOrderByIdDesc.status
+            if(status == REJECTED){
+                val updatedAt = findTopByFromMemberAndToMemberOrderByIdDesc.updatedAt.toLocalDate()
+                val now = LocalDate.now()
+                val daysBetween = ChronoUnit.DAYS.between(updatedAt, now)
+
+                if(daysBetween > 7){
+                    return MemberProfileDetailResponse.toResponse(member, NONE)
+                }
+            }
+            return MemberProfileDetailResponse.toResponse(member, status)
+        }
+        return MemberProfileDetailResponse.toResponse(member, NONE)
+    }
 }

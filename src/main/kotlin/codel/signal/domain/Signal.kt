@@ -35,6 +35,8 @@ class Signal(
 
                 SignalStatus.REJECTED ->
                     throw SignalException(HttpStatus.BAD_REQUEST, "거절된 상대에게는 7일 후에 다시 시그널을 보낼 수 있습니다.")
+
+                SignalStatus.NONE -> return
             }
         }
     }
@@ -43,6 +45,7 @@ class Signal(
         return when (status) {
             SignalStatus.PENDING, SignalStatus.APPROVED, SignalStatus.PENDING_HIDDEN, SignalStatus.APPROVED_HIDDEN -> false
             SignalStatus.REJECTED -> updatedAt.plusDays(7).isBefore(now)
+            else -> true
         }
     }
 
