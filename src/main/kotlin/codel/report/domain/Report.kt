@@ -12,7 +12,7 @@ import jakarta.persistence.ManyToOne
 
 @Entity
 class Report(
-    @Id @GeneratedValue(GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id : Long? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
