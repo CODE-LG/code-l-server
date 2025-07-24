@@ -44,4 +44,19 @@ class Member(
         profile.member = this
         this.memberStatus = MemberStatus.CODE_SURVEY
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Member) return false
+
+        if (id != other.id) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return id?.hashCode() ?: 0
+    }
+
+
 }

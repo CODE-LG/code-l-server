@@ -17,7 +17,7 @@ class BlockController(
 ) {
 
     @PostMapping
-    fun block(
+    fun blockMember(
         @LoginMember blocker : Member,
         @RequestBody blockMemberRequest : BlockMemberRequest
     ) : ResponseEntity<Unit>{
