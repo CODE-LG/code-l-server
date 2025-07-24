@@ -1,7 +1,7 @@
 package codel.chat.presentation.swagger
 
 import codel.chat.presentation.request.CreateChatRoomRequest
-import codel.chat.presentation.request.UpdateLastChatRequest
+import codel.chat.presentation.request.ChatLogRequest
 import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.config.argumentresolver.LoginMember
@@ -65,6 +65,7 @@ interface ChatControllerSwagger {
     fun getChats(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
+        @RequestBody chatLogRequest: ChatLogRequest,
         @PageableDefault(size = 10, page = 0) pageable: Pageable,
     ): ResponseEntity<Page<ChatResponse>>
 
@@ -82,6 +83,6 @@ interface ChatControllerSwagger {
     fun updateLastChat(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
-        @RequestBody updateLastChatRequest: UpdateLastChatRequest,
+        @RequestBody chatLogRequest: ChatLogRequest,
     ): ResponseEntity<Unit>
 }

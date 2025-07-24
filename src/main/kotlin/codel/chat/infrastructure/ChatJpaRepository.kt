@@ -34,4 +34,29 @@ interface ChatJpaRepository : JpaRepository<Chat, Long> {
         chatRoom: ChatRoom,
         afterTime: LocalDateTime,
     ): Int
+
+    @Query("""
+    SELECT c
+        FROM Chat c
+        WHERE c.chatRoom = :chatRoom
+        AND c.id >= :lastChatId
+        ORDER BY c.id ASC
+    """)
+    fun findNextChats(
+        chatRoom: ChatRoom,
+        lastChatId: Long,
+        pageable: Pageable
+    ): Page<Chat>
+
+    @Query("""
+    SELECT c
+        FROM Chat c
+        WHERE c.chatRoom = :chatRoom
+        AND c.id >= :lastChatId
+        ORDER BY c.id ASC
+    """)
+    fun findNextChats(
+        chatRoom: ChatRoom,
+        pageable: Pageable
+    ): Page<Chat>
 }

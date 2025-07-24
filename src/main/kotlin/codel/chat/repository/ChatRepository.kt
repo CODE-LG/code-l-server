@@ -33,8 +33,9 @@ class ChatRepository(
         return chatJpaRepository.save(Chat.of(requesterChatRoomMember, chatRequest))
     }
 
-    fun findChats(
+    fun findNextChats(
         chatRoomId: Long,
+        lastChatId: Long?,
         pageable: Pageable,
     ): Page<Chat> {
         val pageableWithSort: Pageable = PageRequest.of(pageable.pageNumber, pageable.pageSize, getChatDefaultSort())
@@ -44,7 +45,11 @@ class ChatRepository(
                 "채팅방을 찾을 수 없습니다.",
             )
 
-        return chatJpaRepository.findAllByFromChatRoom(chatRoom, pageableWithSort)
+        if(lastChatId == null){
+            return chatJpaRepository.findNextChats(chatRoom, pageableWithSort)
+        }
+
+        return chatJpaRepository.findNextChats(chatRoom, lastChatId, pageableWithSort)
     }
 
     fun findChat(chatId: Long): Chat =

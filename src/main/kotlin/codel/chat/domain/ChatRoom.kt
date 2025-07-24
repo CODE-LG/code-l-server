@@ -15,6 +15,7 @@ class ChatRoom(
     @JoinColumn(name = "chat_id")
     var recentChat: Chat? = null,
 
+    @Enumerated(EnumType.STRING)
     var status: ChatRoomStatus = ChatRoomStatus.LOCKED,
 
     var unlockedRequestedBy: Long? = null,
