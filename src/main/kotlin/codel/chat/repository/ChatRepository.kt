@@ -75,11 +75,14 @@ class ChatRepository(
         val requesterChatRoomMember =
             chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoom.getIdOrThrow(), requester)
                 ?: throw ChatException(HttpStatus.BAD_REQUEST, "해당 채팅방에 속해있는 사용자가 아닙니다.")
+        
+        if(requesterChatRoomMember.lastReadChat == null){
+            return chatJpaRepository.countByChatRoomAfterLastChat(chatRoom)
+        }
 
-        val lastChat = requesterChatRoomMember.lastReadChat ?: return 0
         return chatJpaRepository.countByChatRoomAfterLastChat(
             chatRoom,
-            lastChat.getSentAtOrThrow(),
+            requesterChatRoomMember.lastReadChat!!.getSentAtOrThrow(),
         )
     }
 

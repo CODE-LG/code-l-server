@@ -35,6 +35,13 @@ interface ChatJpaRepository : JpaRepository<Chat, Long> {
         afterTime: LocalDateTime,
     ): Int
 
+    @Query(
+        """
+        SELECT count(c) from Chat c
+        WHERE c.fromChatRoomMember.chatRoom = :chatRoom
+    """)
+    fun countByChatRoomAfterLastChat(chatRoom: ChatRoom): Int
+
     @Query("""
     SELECT c
         FROM Chat c
