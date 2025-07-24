@@ -111,7 +111,11 @@ class MemberController(
     }
 
     @GetMapping("/v1/members/{id}")
+<<<<<<< Updated upstream
     override fun getMemberProfileDetail(
+=======
+    override fun findMemberProfile(
+>>>>>>> Stashed changes
         @LoginMember me : Member,
         @PathVariable id: Long,
     ) : ResponseEntity<MemberProfileDetailResponse>{

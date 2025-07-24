@@ -9,6 +9,7 @@ data class ChatRoomResponse(
     val chatRoomId: Long,
     val unReadMessageCount: Int,
     val partner: MemberResponse,
+    val lastChatId : Long?,
     val recentChat: ChatResponse?,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
@@ -17,12 +18,14 @@ data class ChatRoomResponse(
         fun toResponse(
             chatRoom: ChatRoom,
             requester: Member,
+            lastChatId: Long?,
             partner: Member,
             unReadMessageCount: Int,
         ): ChatRoomResponse =
             ChatRoomResponse(
                 chatRoomId = chatRoom.getIdOrThrow(),
                 partner = MemberResponse.toResponse(partner),
+                lastChatId = lastChatId,
                 recentChat = chatRoom.recentChat?.let { ChatResponse.toResponse(requester, it) },
                 unReadMessageCount = unReadMessageCount,
                 createdAt = chatRoom.createdAt,

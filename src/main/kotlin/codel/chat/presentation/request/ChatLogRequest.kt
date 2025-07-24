@@ -1,5 +1,5 @@
 package codel.chat.presentation.request
 
-data class UpdateLastChatRequest(
+data class ChatLogRequest(
     val lastChatId: Long,
 )
