@@ -150,22 +150,13 @@ interface MemberControllerSwagger {
     )
     @ApiResponses(
         value = [
-<<<<<<< Updated upstream
             ApiResponse(responseCode = "200", description = "회원 상세 조회 성공"),
-=======
-            ApiResponse(responseCode = "200", description = "홈 파도 타기 목록 조회 성공"),
->>>>>>> Stashed changes
             ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
             ApiResponse(responseCode = "500", description = "서버 내부 오류"),
         ],
     )
-<<<<<<< Updated upstream
     fun getMemberProfileDetail(
         @Parameter(hidden = true) @LoginMember me: Member,
-=======
-    fun findMemberProfile(
-        @Parameter(hidden = true) @LoginMember member: Member,
->>>>>>> Stashed changes
         @PathVariable id: Long,
     ): ResponseEntity<MemberProfileDetailResponse>
 }
