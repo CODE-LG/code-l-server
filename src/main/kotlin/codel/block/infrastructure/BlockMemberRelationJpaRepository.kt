@@ -9,5 +9,6 @@ interface BlockMemberRelationJpaRepository : JpaRepository<BlockMemberRelation, 
     @Query("SELECT bmr FROM BlockMemberRelation bmr WHERE bmr.blockerMember.id = :blockerId")
     fun findBlockMembersBy(blockerId: Long) : List<BlockMemberRelation>
 
+    @Query("SELECT bmr FROM BlockMemberRelation bmr WHERE bmr.blockerMember.id = :blockerMemberId AND bmr.blockedMember.id = :blockedMemberId")
     fun findByBlockerMemberAndBlockedMember(blockerMemberId : Long, blockedMemberId: Long) : BlockMemberRelation?
 }
