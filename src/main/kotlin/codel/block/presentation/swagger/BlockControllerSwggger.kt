@@ -37,7 +37,7 @@ interface BlockControllerSwagger {
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "차단 해제 성공"),
+            ApiResponse(responseCode = "204", description = "차단 해제 성공"),
             ApiResponse(responseCode = "400", description = "잘못된 요청 (자기 자신 차단, 중복 차단 등)"),
             ApiResponse(responseCode = "500", description = "서버 내부 오류"),
         ],
