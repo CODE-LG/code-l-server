@@ -29,7 +29,7 @@ class BlockController(
     }
 
     @DeleteMapping("/{memberId}")
-    fun unblockMember(
+    override fun unBlockMember(
         @LoginMember blocker : Member,
         @PathVariable memberId : Long
     ) : ResponseEntity<Unit>{
