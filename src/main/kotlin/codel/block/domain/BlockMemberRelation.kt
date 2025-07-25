@@ -11,7 +11,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.ManyToOne
 
 @Entity
-class BlockMember(
+class BlockMemberRelation(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
@@ -22,4 +22,9 @@ class BlockMember(
 
     @Enumerated(EnumType.STRING)
     var status : BlockStatus = BlockStatus.BLOCKED,
-) : BaseTimeEntity()
+) : BaseTimeEntity() {
+
+    fun unblock() {
+        status = BlockStatus.UNBLOCKED
+    }
+}

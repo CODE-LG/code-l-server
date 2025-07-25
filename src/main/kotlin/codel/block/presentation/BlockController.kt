@@ -6,6 +6,8 @@ import codel.block.presentation.swagger.BlockControllerSwagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -24,5 +26,14 @@ class BlockController(
     ) : ResponseEntity<Unit>{
         blockService.blockMember(blocker, blockMemberRequest.blockedMemberId)
         return ResponseEntity.ok().build()
+    }
+
+    @DeleteMapping("/{memberId}")
+    fun unblockMember(
+        @LoginMember blocker : Member,
+        @PathVariable memberId : Long
+    ) : ResponseEntity<Unit>{
+        blockService.unBlockMember(blocker, memberId)
+        return ResponseEntity.noContent().build()
     }
 }

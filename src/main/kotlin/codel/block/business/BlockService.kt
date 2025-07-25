@@ -1,8 +1,8 @@
 package codel.block.business
 
-import codel.block.domain.BlockMember
+import codel.block.domain.BlockMemberRelation
 import codel.block.exception.BlockException
-import codel.block.infrastructure.BlockMemberJpaRepository
+import codel.block.infrastructure.BlockMemberRelationJpaRepository
 import codel.member.domain.Member
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service
 @Transactional
 class BlockService(
     val memberJpaRepository : MemberJpaRepository,
-    val blockMemberJpaRepository : BlockMemberJpaRepository
+    val blockMemberRelationJpaRepository : BlockMemberRelationJpaRepository
 ) {
 
     fun blockMember(blocker: Member, blockedMemberId: Long) {
@@ -22,7 +22,7 @@ class BlockService(
             throw BlockException(HttpStatus.BAD_REQUEST, "자기 자신을 차단할 수 없습니다.")
         }
 
-        val blockedMemberIds = blockMemberJpaRepository.findBlockMembersBy(blocker.getIdOrThrow())
+        val blockedMemberIds = blockMemberRelationJpaRepository.findBlockMembersBy(blocker.getIdOrThrow())
             .map { it.blockedMember.id }
 
         val blockedMember = memberJpaRepository.findById(blockedMemberId)
@@ -31,7 +31,18 @@ class BlockService(
         if(blockedMemberIds.contains(blockedMember.getIdOrThrow())){
             throw BlockException(HttpStatus.BAD_REQUEST, "이미 차단한 회원입니다.")
         }
-        val blockMember = BlockMember(blockerMember = blocker, blockedMember = blockedMember)
-        blockMemberJpaRepository.save(blockMember)
+        val blockMemberRelation = BlockMemberRelation(blockerMember = blocker, blockedMember = blockedMember)
+        blockMemberRelationJpaRepository.save(blockMemberRelation)
+    }
+
+    fun unBlockMember(blocker: Member, blockedMemberId: Long) {
+        if(blocker.getIdOrThrow() == blockedMemberId){
+            throw BlockException(HttpStatus.BAD_REQUEST, "자기 자신을 차단 해제할 수 없습니다.")
+        }
+
+        val findBlockRelation = blockMemberRelationJpaRepository.findByBlockerMemberAndBlockedMember(blocker.getIdOrThrow(), blockedMemberId)
+            ?: throw BlockException(HttpStatus.BAD_REQUEST, "차단한 적이 없는 회원입니다.")
+
+        findBlockRelation.unblock()
     }
 }
