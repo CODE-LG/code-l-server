@@ -1,19 +1,20 @@
 package codel.member.business
 
+import codel.chat.domain.ChatRoomStatus
+import codel.chat.exception.ChatException
+import codel.chat.infrastructure.ChatRoomJpaRepository
+import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.member.domain.*
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
 import codel.member.presentation.response.MemberProfileDetailResponse
-import codel.member.presentation.response.MemberProfileResponse
-import codel.signal.domain.SignalStatus
 import codel.signal.domain.SignalStatus.*
 import codel.signal.infrastructure.SignalJpaRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -30,6 +31,8 @@ class MemberService(
     private val memberJpaRepository: MemberJpaRepository,
     private val profileJpaRepository: ProfileJpaRepository,
     private val signalJpaRepository: SignalJpaRepository,
+    private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
+    private val chatRoomJpaRepository : ChatRoomJpaRepository,
 ) {
     fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
@@ -185,8 +188,8 @@ class MemberService(
     fun countAllMembers(): Long = memberJpaRepository.count()
     fun countPendingMembers(): Long = memberJpaRepository.countByMemberStatus(MemberStatus.PENDING)
 
-    fun findMemberProfile(me : Member, memberId: Long) : MemberProfileDetailResponse{
-        val member = memberJpaRepository.findByMemberId(memberId) ?: throw MemberException(
+    fun findMemberProfile(me : Member, partnerId: Long) : MemberProfileDetailResponse{
+        val member = memberJpaRepository.findByMemberId(partnerId) ?: throw MemberException(
             HttpStatus.BAD_REQUEST,
             "해당 id에 일치하는 멤버가 없습니다.",
         )
@@ -204,6 +207,19 @@ class MemberService(
                 if(daysBetween > 7){
                     return MemberProfileDetailResponse.toResponse(member, NONE)
                 }
+            }
+
+            if(status == APPROVED || status == APPROVED_HIDDEN){
+                // 상대와 관련된 ChatRoom을 찾아와서 ChatRoomId값을 찾는다.
+                val findChatRoomByMembers =
+                    chatRoomJpaRepository.findChatRoomByMembers(member.getIdOrThrow(), partnerId)
+                        ?: throw ChatException(HttpStatus.BAD_REQUEST, "상대방과 관련된 채팅방을 찾을 수 없습니다.")
+
+                return when(findChatRoomByMembers.status){
+                    ChatRoomStatus.UNLOCKED -> MemberProfileDetailResponse.toResponse(member, status, true)
+                    else -> MemberProfileDetailResponse.toResponse(member, status, false)
+                }
+
             }
             return MemberProfileDetailResponse.toResponse(member, status)
         }
