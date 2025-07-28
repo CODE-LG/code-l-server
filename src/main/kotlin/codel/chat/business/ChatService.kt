@@ -1,5 +1,7 @@
 package codel.chat.business
 
+import codel.chat.exception.ChatException
+import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.chat.presentation.request.ChatRequest
 import codel.chat.presentation.request.CreateChatRoomRequest
@@ -11,8 +13,10 @@ import codel.chat.repository.ChatRepository
 import codel.chat.repository.ChatRoomRepository
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
+import codel.signal.infrastructure.SignalJpaRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -23,6 +27,8 @@ class ChatService(
     private val chatRepository: ChatRepository,
     private val memberRepository: MemberRepository,
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
+    private val signalJpaRepository: SignalJpaRepository,
+    private val chatRoomJpaRepository: ChatRoomJpaRepository,
 ) {
     fun createChatRoom(
         requester: Member,
@@ -93,6 +99,6 @@ class ChatService(
     fun updateUnlockChatRoom(requester: Member, chatRoomId: Long) {
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
 
-        chatRoom.unlock(requester.id!!)
+        chatRoom.unlock(requester.getIdOrThrow())
     }
 }
