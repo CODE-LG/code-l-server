@@ -64,6 +64,11 @@ jobs:
                 ddl-auto: create
               show-sql: true
               database-platform: org.hibernate.dialect.MySQL8Dialect
+          
+          discord:
+            webhook:
+              url: ${{ secrets.DEV_DISCORD_WEBHOOK_URL }}
+          
           springdoc:
             override-with-generic-response: false
           EOF

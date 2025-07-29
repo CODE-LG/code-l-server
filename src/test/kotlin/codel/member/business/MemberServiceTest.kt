@@ -6,6 +6,7 @@ import codel.member.domain.MemberStatus
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
+import codel.notification.business.NotificationService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -28,6 +29,9 @@ class MemberServiceTest : TestFixture() {
 
     @Autowired
     override lateinit var profileJpaRepository: ProfileJpaRepository
+
+    @Autowired
+    override lateinit var notificationService: NotificationService
 
     @MockBean
     lateinit var imageUploader: ImageUploader

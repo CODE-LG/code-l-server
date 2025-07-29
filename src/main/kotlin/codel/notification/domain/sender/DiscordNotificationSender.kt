@@ -2,6 +2,7 @@ package codel.notification.domain.sender
 
 import codel.notification.domain.NotificationType
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate
 import java.time.LocalDateTime
@@ -10,6 +11,7 @@ import java.time.format.DateTimeFormatter
 import codel.notification.domain.Notification as CodelNotification
 
 @Component
+@ConditionalOnProperty(name = ["discord.webhook.url"])
 class DiscordNotificationSender(
     private val restTemplate: RestTemplate,
     @Value("\${discord.webhook.url}")
