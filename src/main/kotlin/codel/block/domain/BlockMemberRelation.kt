@@ -32,4 +32,9 @@ class BlockMemberRelation(
         }
         status = BlockStatus.UNBLOCKED
     }
+
+    fun block() {
+        status = BlockStatus.BLOCKED
+    }
 }
+
