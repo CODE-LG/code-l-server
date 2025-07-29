@@ -14,20 +14,18 @@
     <div class="card mb-5 p-4 shadow-sm">
         <div class="mb-5">
             <h4>코드 이미지</h4>
-            <div class="row">
-                <div class="col-md-4 mb-3" th:each="url : ${member.profile.codeImage}">
-                    <img class="img-fluid rounded shadow-sm" style="height: 300px; object-fit: cover; width: 100%;"
-                         th:src="${url}"/>
+            <div class="d-flex flex-row gap-3">
+                <div th:each="url : ${codeImages}" class="card shadow-sm" style="width: 300px;">
+                    <img class="card-img-top" th:src="${url}" style="height: 300px; object-fit: cover;" alt="code image"/>
                 </div>
             </div>
         </div>
 
         <div class="mb-5">
             <h4>페이스 이미지</h4>
-            <div class="row">
-                <div class="col-md-4 mb-3" th:each="url : ${member.profile.faceImage}">
-                    <img class="img-fluid rounded shadow-sm" style="height: 300px; object-fit: cover; width: 100%;"
-                         th:src="${url}"/>
+            <div class="d-flex flex-row gap-3">
+                <div th:each="url : ${faceImages}" class="card shadow-sm" style="width: 300px;">
+                    <img class="card-img-top" th:src="${url}" style="height: 300px; object-fit: cover;" alt="face image"/>
                 </div>
             </div>
         </div>
