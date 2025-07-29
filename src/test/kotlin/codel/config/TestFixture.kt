@@ -6,10 +6,12 @@ import codel.member.domain.OauthType
 import codel.member.domain.Profile
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
+import codel.notification.business.NotificationService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.mock.web.MockMultipartFile
 
 @SpringBootTest
@@ -20,6 +22,9 @@ class TestFixture {
     lateinit var memberCodeProfileImage: Member
     lateinit var memberPending: Member
     lateinit var memberDone: Member
+
+    @MockBean
+    lateinit var notificationService: NotificationService
 
     @Autowired
     lateinit var profileJpaRepository: ProfileJpaRepository

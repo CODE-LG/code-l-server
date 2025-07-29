@@ -32,10 +32,10 @@ interface ChatRoomJpaRepository : JpaRepository<ChatRoom, Long> {
     JOIN ChatRoomMember crm2 ON crm2.chatRoom = cr
     WHERE crm1.member.id = :memberId
       AND crm2.member.id = :partnerId
-    """
+    """,
     )
     fun findChatRoomByMembers(
-        @Param("memberId") memberId : Long,
-        @Param("partnerId") partnerId : Long
+        @Param("memberId") memberId: Long,
+        @Param("partnerId") partnerId: Long,
     ): ChatRoom?
 }

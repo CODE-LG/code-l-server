@@ -9,6 +9,9 @@ import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
 import codel.member.presentation.response.MemberProfileDetailResponse
+import codel.notification.business.NotificationService
+import codel.notification.domain.Notification
+import codel.notification.domain.NotificationType
 import codel.signal.domain.SignalStatus.*
 import codel.signal.infrastructure.SignalJpaRepository
 import org.springframework.data.domain.Page
@@ -32,7 +35,8 @@ class MemberService(
     private val profileJpaRepository: ProfileJpaRepository,
     private val signalJpaRepository: SignalJpaRepository,
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
-    private val chatRoomJpaRepository : ChatRoomJpaRepository,
+    private val chatRoomJpaRepository: ChatRoomJpaRepository,
+    private val notificationService: NotificationService,
 ) {
     fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
@@ -67,8 +71,9 @@ class MemberService(
         member: Member,
         files: List<MultipartFile>,
     ) {
-        val profile = member.profile
-            ?: throw MemberException(HttpStatus.BAD_REQUEST, "프로필이 존재하지 않습니다. 먼저 프로필을 등록해주세요.")
+        val profile =
+            member.profile
+                ?: throw MemberException(HttpStatus.BAD_REQUEST, "프로필이 존재하지 않습니다. 먼저 프로필을 등록해주세요.")
         if (member.memberStatus == MemberStatus.CODE_SURVEY) {
             member.memberStatus = MemberStatus.CODE_PROFILE_IMAGE
         }
@@ -77,25 +82,36 @@ class MemberService(
         memberRepository.updateMemberCodeImage(profile, serializeCodeImages)
     }
 
-    private fun uploadCodeImage(files: List<MultipartFile>): CodeImage =
-        CodeImage(files.map { file -> imageUploader.uploadFile(file) })
+    private fun uploadCodeImage(files: List<MultipartFile>): CodeImage = CodeImage(files.map { file -> imageUploader.uploadFile(file) })
 
     fun saveFaceImage(
         member: Member,
         files: List<MultipartFile>,
     ) {
-        val profile = member.profile
-            ?: throw MemberException(HttpStatus.BAD_REQUEST, "프로필이 존재하지 않습니다. 먼저 프로필을 등록해주세요.")
+        val profile =
+            member.profile
+                ?: throw MemberException(HttpStatus.BAD_REQUEST, "프로필이 존재하지 않습니다. 먼저 프로필을 등록해주세요.")
         if (member.memberStatus == MemberStatus.CODE_PROFILE_IMAGE) {
             member.memberStatus = MemberStatus.PENDING
         }
         val faceImage = uploadFaceImage(files)
         val serializeCodeImages = faceImage.serializeAttribute()
         memberRepository.updateMemberFaceImage(profile, serializeCodeImages)
+        sendNotification(member)
     }
 
-    private fun uploadFaceImage(files: List<MultipartFile>): FaceImage =
-        FaceImage(files.map { file -> imageUploader.uploadFile(file) })
+    private fun sendNotification(member: Member) {
+        notificationService.send(
+            Notification(
+                type = NotificationType.DISCORD,
+                targetId = member.getIdOrThrow().toString(), // DISCORD는 없어도 됨
+                title = "[회원가입 요청]",
+                body = member.getProfileOrThrow().codeName + "님이 회원가입을 요청했습니다.",
+            ),
+        )
+    }
+
+    private fun uploadFaceImage(files: List<MultipartFile>): FaceImage = FaceImage(files.map { file -> imageUploader.uploadFile(file) })
 
     fun saveFcmToken(
         member: Member,
@@ -150,12 +166,19 @@ class MemberService(
         val sevenDaysAgo = now.minusDays(7)
 
         // 1. 00시 기준(오늘 00시 이전) 제외 조건 적용 → 5명만 고정
-        val excludeIds = signalJpaRepository.findExcludedToMemberIdsAtMidnight(
-            member, candidates, sevenDaysAgo, todayMidnight
-        ).toSet()
-        val dailyList = candidates.filter { candidate ->
-            candidate.id !in excludeIds
-        }.take(5) // 5명 고정
+        val excludeIds =
+            signalJpaRepository
+                .findExcludedToMemberIdsAtMidnight(
+                    member,
+                    candidates,
+                    sevenDaysAgo,
+                    todayMidnight,
+                ).toSet()
+        val dailyList =
+            candidates
+                .filter { candidate ->
+                    candidate.id !in excludeIds
+                }.take(5) // 5명 고정
 
         // 2. 하루 동안은 실시간으로 ACCEPTED/ACCEPTED_HIDDEN만 제외 (대체 없이)
         val realTimeExcludeIds = signalJpaRepository.findAcceptedToMemberIds(member, dailyList)
@@ -180,46 +203,54 @@ class MemberService(
         return PageImpl(members, pageable, total)
     }
 
-    fun findMembersWithFilter(keyword: String?, status: String?, pageable: Pageable): Page<Member> {
+    fun findMembersWithFilter(
+        keyword: String?,
+        status: String?,
+        pageable: Pageable,
+    ): Page<Member> {
         val statusEnum = status?.let { runCatching { MemberStatus.valueOf(it) }.getOrNull() }
         return memberJpaRepository.findMembersWithFilter(keyword, statusEnum, pageable)
     }
 
     fun countAllMembers(): Long = memberJpaRepository.count()
+
     fun countPendingMembers(): Long = memberJpaRepository.countByMemberStatus(MemberStatus.PENDING)
 
-    fun findMemberProfile(me : Member, partnerId: Long) : MemberProfileDetailResponse{
-        val member = memberJpaRepository.findByMemberId(partnerId) ?: throw MemberException(
-            HttpStatus.BAD_REQUEST,
-            "해당 id에 일치하는 멤버가 없습니다.",
-        )
+    fun findMemberProfile(
+        me: Member,
+        partnerId: Long,
+    ): MemberProfileDetailResponse {
+        val member =
+            memberJpaRepository.findByMemberId(partnerId) ?: throw MemberException(
+                HttpStatus.BAD_REQUEST,
+                "해당 id에 일치하는 멤버가 없습니다.",
+            )
 
         val findTopByFromMemberAndToMemberOrderByIdDesc =
             signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(me, member)
 
-        if(findTopByFromMemberAndToMemberOrderByIdDesc != null){
+        if (findTopByFromMemberAndToMemberOrderByIdDesc != null) {
             val status = findTopByFromMemberAndToMemberOrderByIdDesc.status
-            if(status == REJECTED){
+            if (status == REJECTED) {
                 val updatedAt = findTopByFromMemberAndToMemberOrderByIdDesc.updatedAt.toLocalDate()
                 val now = LocalDate.now()
                 val daysBetween = ChronoUnit.DAYS.between(updatedAt, now)
 
-                if(daysBetween > 7){
+                if (daysBetween > 7) {
                     return MemberProfileDetailResponse.toResponse(member, NONE)
                 }
             }
 
-            if(status == APPROVED || status == APPROVED_HIDDEN){
+            if (status == APPROVED || status == APPROVED_HIDDEN) {
                 // 상대와 관련된 ChatRoom을 찾아와서 ChatRoomId값을 찾는다.
                 val findChatRoomByMembers =
                     chatRoomJpaRepository.findChatRoomByMembers(member.getIdOrThrow(), partnerId)
                         ?: throw ChatException(HttpStatus.BAD_REQUEST, "상대방과 관련된 채팅방을 찾을 수 없습니다.")
 
-                return when(findChatRoomByMembers.status){
+                return when (findChatRoomByMembers.status) {
                     ChatRoomStatus.UNLOCKED -> MemberProfileDetailResponse.toResponse(member, status, true)
                     else -> MemberProfileDetailResponse.toResponse(member, status, false)
                 }
-
             }
             return MemberProfileDetailResponse.toResponse(member, status)
         }

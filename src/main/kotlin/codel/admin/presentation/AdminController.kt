@@ -65,7 +65,12 @@ class AdminController(
         @PathVariable memberId: Long,
     ): String {
         val member = adminService.findMember(memberId)
+        val codeImages = member.getProfileOrThrow().getCodeImageOrThrow()
+        val faceImages = member.getProfileOrThrow().getFaceImageOrThrow()
+
         model.addAttribute("member", member)
+        model.addAttribute("codeImages", codeImages)
+        model.addAttribute("faceImages", faceImages)
 
         return "memberDetail"
     }

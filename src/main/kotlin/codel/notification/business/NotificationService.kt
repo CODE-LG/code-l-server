@@ -1,33 +1,28 @@
 package codel.notification.business
 
-import codel.notification.exception.NotificationException
-import com.google.firebase.messaging.FirebaseMessaging
-import com.google.firebase.messaging.FirebaseMessagingException
-import com.google.firebase.messaging.Message
-import com.google.firebase.messaging.Notification
-import org.springframework.http.HttpStatus
+import codel.notification.domain.NotificationType
+import codel.notification.domain.sender.NotificationSender
 import org.springframework.stereotype.Service
 import codel.notification.domain.Notification as CodelNotification
 
 @Service
-class NotificationService {
-    fun sendPushNotification(notification: CodelNotification): String {
-        val message =
-            Message
-                .builder()
-                .setToken(notification.token)
-                .setNotification(
-                    Notification
-                        .builder()
-                        .setTitle(notification.title)
-                        .setBody(notification.body)
-                        .build(),
-                ).build()
+class NotificationService(
+    val senders: List<NotificationSender>,
+) {
+    fun send(notification: CodelNotification) {
+        val matchingSenders =
+            if (notification.type == NotificationType.ALL) {
+                senders
+            } else {
+                senders.filter { it.supports(notification.type) }
+            }
 
-        return try {
-            FirebaseMessaging.getInstance().send(message)
-        } catch (e: FirebaseMessagingException) {
-            throw NotificationException(HttpStatus.BAD_GATEWAY, "알림 전송중 오류가 발생했습니다.")
+        if (matchingSenders.isEmpty()) {
+            throw IllegalArgumentException("지원하지 않는 알림 타입입니다: ${notification.type}")
+        }
+
+        matchingSenders.forEach { sender ->
+            sender.send(notification)
         }
     }
 }
