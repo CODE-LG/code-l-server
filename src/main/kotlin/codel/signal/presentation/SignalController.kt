@@ -24,7 +24,7 @@ class SignalController(
         @RequestBody request: SendSignalRequest
     ): ResponseEntity<SignalResponse> {
         val signal = signalService.sendSignal(fromMember, request.toMemberId, request.message)
-        return ResponseEntity.ok(SignalResponse.from(signal))
+        return ResponseEntity.ok(SignalResponse.frstuom(signal))
     }
 
     @GetMapping("/received")

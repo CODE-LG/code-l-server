@@ -9,7 +9,8 @@ import java.time.LocalDateTime
 data class SignalMemberResponse(
     val signalId: Long,
     val member: MemberProfileResponse,
-    val status: SignalStatus,
+    val senderStatus: SignalStatus,
+    val receiverStatus: SignalStatus,
     val createAt: LocalDateTime
 ) {
     companion object {
@@ -23,7 +24,8 @@ data class SignalMemberResponse(
             return SignalMemberResponse(
                 signalId = signal.getIdOrThrow(),
                 member = MemberProfileResponse.toResponse(opponent),
-                status = signal.senderStatus,
+                senderStatus = signal.senderStatus,
+                receiverStatus = signal.receiverStatus,
                 createAt = signal.createdAt
             )
         }
