@@ -7,8 +7,7 @@ data class SignalResponse(
     val id: Long,
     val fromMemberId: Long,
     val toMemberId: Long,
-    val senderStatus: SignalStatus,
-    val receiverStatus : SignalStatus,
+    val status: SignalStatus,
     val toMemberFcmToken: String?,
 ) {
     companion object {
@@ -16,9 +15,18 @@ data class SignalResponse(
             id = signal.getIdOrThrow(),
             fromMemberId = signal.fromMember.getIdOrThrow(),
             toMemberId = signal.toMember.getIdOrThrow(),
-            senderStatus = signal.senderStatus,
-            receiverStatus = signal.receiverStatus,
+            status = signal.senderStatus,
             toMemberFcmToken = signal.toMember.fcmToken
         )
+
+        fun fromSend(signal: Signal): SignalResponse {
+            return SignalResponse(
+                id = signal.getIdOrThrow(),
+                fromMemberId = signal.fromMember.getIdOrThrow(),
+                toMemberId = signal.toMember.getIdOrThrow(),
+                status = signal.senderStatus,
+                toMemberFcmToken = signal.toMember.fcmToken  // 푸시는 받는 쪽에게 가야 하므로 유지
+            )
+        }
     }
 } 
