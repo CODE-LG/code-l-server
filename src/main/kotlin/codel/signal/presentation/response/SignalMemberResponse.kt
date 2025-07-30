@@ -23,7 +23,7 @@ data class SignalMemberResponse(
             return SignalMemberResponse(
                 signalId = signal.getIdOrThrow(),
                 member = MemberProfileResponse.toResponse(opponent),
-                status = signal.status,
+                status = signal.senderStatus,
                 createAt = signal.createdAt
             )
         }

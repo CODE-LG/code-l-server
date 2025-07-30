@@ -13,7 +13,7 @@ import java.time.LocalDateTime
 interface SignalJpaRepository : JpaRepository<Signal, Long> {
     fun findTopByFromMemberAndToMemberOrderByIdDesc(fromMember: Member, toMember: Member): Signal?
 
-    @Query("SELECT s FROM Signal s JOIN FETCH s.fromMember fm JOIN FETCH fm.profile WHERE s.toMember = :member AND s.status= :status")
+    @Query("SELECT s FROM Signal s JOIN FETCH s.fromMember fm JOIN FETCH fm.profile WHERE s.toMember = :member AND s.senderStatus= :status")
     fun findByToMemberAndStatus(member: Member, @Param("status") signalStatus: SignalStatus): List<Signal>
 
     @Query(
@@ -23,7 +23,7 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
         JOIN FETCH fm.profile
         JOIN FETCH s.toMember tm
         JOIN FETCH tm.profile
-        WHERE s.status = :status
+        WHERE s.senderStatus = :status
         AND (s.fromMember = :member OR s.toMember = :member)
     """
     )
@@ -37,7 +37,7 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
         JOIN FETCH s.toMember tm
         JOIN FETCH tm.profile
         WHERE s.fromMember = :member
-        AND s.status = :status
+        AND s.senderStatus = :status
     """
     )
     fun findByFromMemberAndStatus(member: Member, @Param("status") signalStatus: SignalStatus): List<Signal>
@@ -48,8 +48,8 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
     WHERE s.fromMember = :fromMember
       AND s.toMember IN :candidates
       AND (
-        (s.status = 'REJECTED' AND s.updatedAt >= :sevenDaysAgo)
-        OR s.status IN ('ACCEPTED', 'ACCEPTED_HIDDEN', 'PENDING', 'PENDING_HIDDEN')
+        (s.senderStatus = 'REJECTED' AND s.updatedAt >= :sevenDaysAgo)
+        OR s.senderStatus IN ('ACCEPTED', 'ACCEPTED_HIDDEN', 'PENDING', 'PENDING_HIDDEN')
       )
       AND s.id IN (
         SELECT MAX(s2.id) FROM Signal s2
@@ -69,7 +69,7 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
     SELECT s.toMember.id FROM Signal s
     WHERE s.fromMember = :fromMember
       AND s.toMember IN :candidates
-      AND s.status IN ('ACCEPTED', 'ACCEPTED_HIDDEN')
+      AND s.senderStatus IN ('ACCEPTED', 'ACCEPTED_HIDDEN')
       AND s.id IN (
         SELECT MAX(s2.id) FROM Signal s2
         WHERE s2.fromMember = :fromMember AND s2.toMember IN :candidates
@@ -88,8 +88,8 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
     WHERE s.fromMember = :fromMember
       AND s.toMember IN :candidates
       AND (
-        (s.status = 'REJECTED' AND s.updatedAt >= :sevenDaysAgo AND s.updatedAt < :todayMidnight)
-        OR (s.status IN ('ACCEPTED', 'ACCEPTED_HIDDEN', 'PENDING', 'PENDING_HIDDEN') AND s.updatedAt < :todayMidnight)
+        (s.senderStatus = 'REJECTED' AND s.updatedAt >= :sevenDaysAgo AND s.updatedAt < :todayMidnight)
+        OR (s.senderStatus IN ('ACCEPTED', 'ACCEPTED_HIDDEN', 'PENDING', 'PENDING_HIDDEN') AND s.updatedAt < :todayMidnight)
       )
       AND s.id IN (
         SELECT MAX(s2.id) FROM Signal s2

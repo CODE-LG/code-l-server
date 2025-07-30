@@ -14,7 +14,7 @@ data class SignalResponse(
             id = signal.getIdOrThrow(),
             fromMemberId = signal.fromMember.getIdOrThrow(),
             toMemberId = signal.toMember.getIdOrThrow(),
-            status = signal.status.toString(),
+            status = signal.senderStatus.toString(),
             toMemberFcmToken = signal.toMember.fcmToken
         )
     }
