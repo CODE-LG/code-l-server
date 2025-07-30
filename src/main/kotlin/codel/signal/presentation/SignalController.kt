@@ -4,6 +4,7 @@ import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import codel.member.presentation.response.MemberProfileResponse
 import codel.signal.business.SignalService
+import codel.signal.presentation.request.HideSignalRequest
 import codel.signal.presentation.request.SendSignalRequest
 import codel.signal.presentation.response.SignalMemberResponse
 import codel.signal.presentation.response.SignalResponse
@@ -91,5 +92,12 @@ class SignalController(
     ): ResponseEntity<Unit> {
         signalService.hideSignal(me, id);
         return ResponseEntity.ok().build()
+    }
+
+    @PostMapping("/hide")
+    fun hideSignals(
+        @LoginMember me : Member,
+        @RequestBody hideSignalRequest : HideSignalRequest){
+        signalService.hideSignals(me, hideSignalRequest.ids);
     }
 }

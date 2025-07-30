@@ -146,4 +146,14 @@ class SignalService(
 
         findSignal.hide(me.getIdOrThrow())
     }
+
+    @Transactional
+    fun hideSignals(me: Member, signalIds : List<Long>){
+        signalIds.forEach { signalId ->
+            val findSignal = signalJpaRepository.findById(signalId)
+                .orElseThrow { SignalException(HttpStatus.BAD_REQUEST, "해당 시그널을 찾을 수 없습니다.") }
+
+            findSignal.hide(me.getIdOrThrow())
+        }
+    }
 }

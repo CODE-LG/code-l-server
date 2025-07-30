@@ -34,7 +34,7 @@ class Signal(
     fun validateSendable(now: LocalDateTime = LocalDateTime.now()) {
         if (!canSendNewSignal(now)) {
             when (senderStatus) {
-                SignalStatus.PENDING, SignalStatus.APPROVED, SignalStatus.PENDING_HIDDEN->
+                SignalStatus.PENDING, SignalStatus.APPROVED, SignalStatus.PENDING_HIDDEN ->
                     throw SignalException(HttpStatus.BAD_REQUEST, "이미 시그널을 보낸 상대입니다.")
 
                 SignalStatus.REJECTED ->
@@ -72,16 +72,20 @@ class Signal(
     }
 
     fun hide(memberId: Long) {
-        validateHidable(memberId)
-        senderStatus = when (senderStatus) {
-            SignalStatus.PENDING -> SignalStatus.PENDING_HIDDEN
-            else -> senderStatus  // 변경 없는 상태 유지
-        }
-    }
-
-    private fun validateHidable(memberId: Long) {
         validateAccessRight(memberId)
-        validateHideAcceptable()
+        if (memberId == fromMember.id) {
+            validateSenderHideAcceptable()
+            senderStatus = when (senderStatus) {
+                SignalStatus.PENDING -> SignalStatus.PENDING_HIDDEN
+                else -> throw SignalException(HttpStatus.BAD_REQUEST, "숨김처리가 불가능합니다.")
+            }
+        } else {
+            validateReceiverHideAcceptable()
+            receiverStatus = when (receiverStatus) {
+                SignalStatus.PENDING -> SignalStatus.PENDING_HIDDEN
+                else -> throw SignalException(HttpStatus.BAD_REQUEST, "숨김처리가 불가능합니다.")
+            }
+        }
     }
 
     private fun validateAccessRight(memberId: Long) {
@@ -90,7 +94,13 @@ class Signal(
         }
     }
 
-    private fun validateHideAcceptable() {
+    private fun validateSenderHideAcceptable() {
+        senderStatus.canHide()?.let { msg ->
+            throw SignalException(HttpStatus.BAD_REQUEST, msg)
+        }
+    }
+
+    private fun validateReceiverHideAcceptable() {
         senderStatus.canHide()?.let { msg ->
             throw SignalException(HttpStatus.BAD_REQUEST, msg)
         }
