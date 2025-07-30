@@ -95,7 +95,7 @@ class SignalController(
     }
 
     @PostMapping("/hide")
-    fun hideSignals(
+    override fun hideSignals(
         @LoginMember me : Member,
         @RequestBody hideSignalRequest : HideSignalRequest
     ): ResponseEntity<Unit> {
