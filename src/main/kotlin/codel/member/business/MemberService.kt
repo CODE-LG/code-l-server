@@ -230,7 +230,7 @@ class MemberService(
             signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(me, member)
 
         if (findTopByFromMemberAndToMemberOrderByIdDesc != null) {
-            val status = findTopByFromMemberAndToMemberOrderByIdDesc.status
+            val status = findTopByFromMemberAndToMemberOrderByIdDesc.senderStatus
             if (status == REJECTED) {
                 val updatedAt = findTopByFromMemberAndToMemberOrderByIdDesc.updatedAt.toLocalDate()
                 val now = LocalDate.now()
@@ -241,7 +241,7 @@ class MemberService(
                 }
             }
 
-            if (status == APPROVED || status == APPROVED_HIDDEN) {
+            if (status == APPROVED) {
                 // 상대와 관련된 ChatRoom을 찾아와서 ChatRoomId값을 찾는다.
                 val findChatRoomByMembers =
                     chatRoomJpaRepository.findChatRoomByMembers(member.getIdOrThrow(), partnerId)
