@@ -24,7 +24,7 @@ class SignalController(
         @RequestBody request: SendSignalRequest
     ): ResponseEntity<SignalResponse> {
         val signal = signalService.sendSignal(fromMember, request.toMemberId, request.message)
-        return ResponseEntity.ok(SignalResponse.frstuom(signal))
+        return ResponseEntity.ok(SignalResponse.from(signal))
     }
 
     @GetMapping("/received")
@@ -97,7 +97,9 @@ class SignalController(
     @PostMapping("/hide")
     fun hideSignals(
         @LoginMember me : Member,
-        @RequestBody hideSignalRequest : HideSignalRequest){
-        signalService.hideSignals(me, hideSignalRequest.ids);
+        @RequestBody hideSignalRequest : HideSignalRequest
+    ): ResponseEntity<Unit> {
+        signalService.hideSignals(me, hideSignalRequest.ids)
+        return ResponseEntity.ok().build()
     }
 }
