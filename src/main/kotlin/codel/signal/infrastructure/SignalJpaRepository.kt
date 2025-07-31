@@ -13,7 +13,18 @@ import java.time.LocalDateTime
 interface SignalJpaRepository : JpaRepository<Signal, Long> {
     fun findTopByFromMemberAndToMemberOrderByIdDesc(fromMember: Member, toMember: Member): Signal?
 
-    @Query("SELECT s FROM Signal s JOIN FETCH s.fromMember fm JOIN FETCH fm.profile WHERE s.toMember = :member AND s.senderStatus= :status")
+    @Query("""
+    SELECT s FROM Signal s
+        JOIN FETCH s.fromMember fm
+        JOIN FETCH fm.profile
+        JOIN FETCH s.toMember tm
+        WHERE s.toMember = :member
+        AND s.senderStatus = :status
+        AND NOT EXISTS (
+            SELECT 1 FROM BlockMemberRelation b
+            WHERE b.blockerMember = :member AND b.blockedMember.id = fm.id
+            AND b.status = 'BLOCKED')
+        """)
     fun findByToMemberAndStatus(member: Member, @Param("status") signalStatus: SignalStatus): List<Signal>
 
     @Query(
