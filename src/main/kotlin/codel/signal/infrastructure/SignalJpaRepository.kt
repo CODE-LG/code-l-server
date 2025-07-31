@@ -38,6 +38,11 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
         JOIN FETCH tm.profile
         WHERE s.fromMember = :member
         AND s.senderStatus = :status
+        AND NOT EXISTS (
+            SELECT 1 FROM BlockMemberRelation b
+            WHERE b.blockerMember = :member AND b.blockedMember.id = tm.id
+            AND b.status = 'BLOCKED'
+        )
     """
     )
     fun findByFromMemberAndStatus(member: Member, @Param("status") signalStatus: SignalStatus): List<Signal>
