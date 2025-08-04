@@ -1,5 +1,6 @@
 package codel.member.business
 
+import codel.block.infrastructure.BlockMemberRelationJpaRepository
 import codel.chat.domain.ChatRoomStatus
 import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatRoomJpaRepository
@@ -37,6 +38,7 @@ class MemberService(
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
     private val chatRoomJpaRepository: ChatRoomJpaRepository,
     private val notificationService: NotificationService,
+    private val blockMemberRelationJpaRepository: BlockMemberRelationJpaRepository,
 ) {
     fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
@@ -153,38 +155,44 @@ class MemberService(
 
     @Transactional(readOnly = true)
     fun recommendMembers(member: Member): List<Member> {
-        val excludeId = member.getIdOrThrow()
-        val today = LocalDate.now()
-        val todayMidnight = today.atStartOfDay()
+        val now = LocalDateTime.now()
+        val todayMidnight = now.toLocalDate().atStartOfDay()
+        val sevenDaysAgo = now.minusDays(7)
         val seed = DailySeedProvider.generateDailySeedForMember(member.getIdOrThrow())
-        val candidateSize = 20
-        val pageable = PageRequest.of(0, candidateSize)
-        val candidates = memberJpaRepository.findRandomMembersStatusDoneWithProfile(excludeId, seed, pageable)
+        val candidates = memberJpaRepository.findRandomMembersStatusDoneWithProfile(member.getIdOrThrow(), seed)
+
         if (candidates.isEmpty()) return emptyList()
 
-        val now = LocalDateTime.now()
-        val sevenDaysAgo = now.minusDays(7)
-
         // 1. 00시 기준(오늘 00시 이전) 제외 조건 적용 → 5명만 고정
-        val excludeIds =
+        val allExcludeIds = makeExcludesMemberIds(member, candidates, sevenDaysAgo, todayMidnight)
+
+        return candidates.filter { candidate ->
+            candidate.id !in allExcludeIds
+        }.take(5)
+    }
+
+    private fun makeExcludesMemberIds(
+        member: Member,
+        candidates: List<Member>,
+        sevenDaysAgo: LocalDateTime,
+        todayMidnight: LocalDateTime
+    ): MutableList<Long> {
+        val excludeIdsByTimeAndStatus =
             signalJpaRepository
                 .findExcludedToMemberIdsAtMidnight(
                     member,
                     candidates,
                     sevenDaysAgo,
                     todayMidnight,
-                ).toSet()
-        val dailyList =
-            candidates
-                .filter { candidate ->
-                    candidate.id !in excludeIds
-                }.take(5) // 5명 고정
+                ).toMutableList()
 
-        // 2. 하루 동안은 실시간으로 ACCEPTED/ACCEPTED_HIDDEN만 제외 (대체 없이)
-        val realTimeExcludeIds = signalJpaRepository.findAcceptedToMemberIds(member, dailyList)
-        return dailyList.filter { candidate ->
-            candidate.id !in realTimeExcludeIds
-        }
+
+        val blockedMemberIds = blockMemberRelationJpaRepository.findBlockMembersBy(member.getIdOrThrow())
+            .mapNotNull { it.blockedMember.id }
+
+        val allExcludeIds = excludeIdsByTimeAndStatus
+        allExcludeIds += blockedMemberIds
+        return allExcludeIds
     }
 
     @Transactional(readOnly = true)
@@ -193,14 +201,20 @@ class MemberService(
         page: Int,
         size: Int,
     ): Page<Member> {
-        val excludeId = member.getIdOrThrow()
-        val seed = DailySeedProvider.generateRandomSeed()
-        val offset = page * size
-        val members = memberJpaRepository.findMembersWithSeedStatusDoneExcludeMe(excludeId, seed, size, offset)
-        val total = memberJpaRepository.countMembersStatusDoneExcludeMe(excludeId)
+        val now = LocalDateTime.now()
+        val todayMidnight = now.toLocalDate().atStartOfDay()
+        val sevenDaysAgo = now.minusDays(7)
+        val candidates = memberJpaRepository.findMembersWithStatusDoneExcludeMe(member.getIdOrThrow())
+
+        val allExcludeIds = makeExcludesMemberIds(member, candidates, sevenDaysAgo, todayMidnight)
+
+        val result = candidates.filter { candidate ->
+            candidate.id !in allExcludeIds
+        }
+
         val pageable = PageRequest.of(page, size)
 
-        return PageImpl(members, pageable, total)
+        return PageImpl(result, pageable, result.size.toLong())
     }
 
     fun findMembersWithFilter(

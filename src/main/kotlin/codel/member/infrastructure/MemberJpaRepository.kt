@@ -4,7 +4,6 @@ import codel.member.domain.Member
 import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
@@ -38,23 +37,12 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
     ): List<Member>
 
     @Query(
-        value = "SELECT * FROM member WHERE id <> :excludeId AND member_status = 'DONE' ORDER BY RAND(:seed) LIMIT :limit OFFSET :offset",
+        value = "SELECT * FROM member WHERE id <> :excludeId AND member_status = 'DONE'",
         nativeQuery = true,
     )
-    fun findMembersWithSeedStatusDoneExcludeMe(
-        @Param("excludeId") excludeId: Long,
-        @Param("seed") seed: Long,
-        @Param("limit") limit: Int,
-        @Param("offset") offset: Int,
+    fun findMembersWithStatusDoneExcludeMe(
+        @Param("excludeId") excludeId: Long
     ): List<Member>
-
-    @Query(
-        value = "SELECT COUNT(*) FROM member WHERE id <> :excludeId AND member_status = 'DONE'",
-        nativeQuery = true,
-    )
-    fun countMembersStatusDoneExcludeMe(
-        @Param("excludeId") excludeId: Long,
-    ): Long
 
     @Query(
         value = "SELECT m FROM Member m JOIN FETCH m.profile WHERE m.id <> :excludeId AND m.memberStatus = 'DONE' ORDER BY function('RAND', :seed)",
@@ -63,7 +51,6 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
     fun findRandomMembersStatusDoneWithProfile(
         @Param("excludeId") excludeId: Long,
         @Param("seed") seed: Long,
-        pageRequest: PageRequest
     ): List<Member>
 
     @Query(
