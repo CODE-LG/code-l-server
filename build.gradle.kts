@@ -47,7 +47,7 @@ dependencies {
     implementation("software.amazon.awssdk:s3:2.20.148")
 
     // monitoring
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
+//    implementation("org.springframework.boot:spring-boot-starter-actuator")
 //    implementation("io.micrometer:micrometer-registry-prometheus")
 
     // fcm
