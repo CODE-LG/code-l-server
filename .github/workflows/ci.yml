@@ -50,7 +50,7 @@ jobs:
                   include: health, metrics, prometheus
             metrics:
               enable:
-                all: true
+                processor: false
           spring:
             datasource:
               driver-class-name: com.mysql.cj.jdbc.Driver
