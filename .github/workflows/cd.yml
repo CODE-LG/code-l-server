@@ -163,7 +163,7 @@ jobs:
           sudo docker pull ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
 
           echo "🚀 Starting container..."
-          sudo docker run -d --name codel -p 8080:8080 -v /var/log/app:/var/log/app ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
+          sudo docker run -d --name codel -p 8080:8080 -v /var/log/app:/var/log/app -e JAVA_OPTS="-XX:+UnlockExperimentalVMOptions -XX:-UseContainerSupport" ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
 
           echo "📄 Tail log output:"
           sudo docker logs --tail=20 codel || true
