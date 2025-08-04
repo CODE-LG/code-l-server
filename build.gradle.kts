@@ -48,7 +48,7 @@ dependencies {
 
     // monitoring
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("io.micrometer:micrometer-registry-prometheus")
+//    implementation("io.micrometer:micrometer-registry-prometheus")
 
     // fcm
     implementation("com.google.firebase:firebase-admin:9.4.3")
