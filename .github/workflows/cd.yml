@@ -51,7 +51,8 @@ jobs:
                   include: health, metrics, prometheus
             metrics:
               enable:
-                processor: false
+                all: true
+                processor : false
           spring:
             datasource:
               driver-class-name: com.mysql.cj.jdbc.Driver
@@ -109,9 +110,6 @@ jobs:
                 all: true
           
           spring:
-            autoconfigure:
-              exclude:
-                - org.springframework.boot.actuate.autoconfigure.metrics.SystemMetricsAutoConfiguration
             datasource:
               driver-class-name: org.h2.Driver
               url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
@@ -151,17 +149,21 @@ jobs:
       - name: Push image to Docker Hub
         run: sudo docker push ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
 
-      - name: Deploy Docker container on same server
+      - name: Prepare and run container locally (self-hosted)
         run: |
-          echo "🧼 Stop & remove old container..."
+          echo "📁 Creating log directory..."
+          sudo mkdir -p /var/log/app
+          sudo chown $USER:$USER /var/log/app
+
+          echo "🧼 Cleaning up old container..."
           sudo docker stop codel || true
           sudo docker rm codel || true
-          
-          echo "🐳 Pull latest image from Docker Hub..."
+
+          echo "🐳 Pulling latest image from Docker Hub..."
           sudo docker pull ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
-          
-          echo "🚀 Start new container..."
+
+          echo "🚀 Starting container..."
           sudo docker run -d --name codel -p 8080:8080 -v /var/log/app:/var/log/app ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
-          
-          echo "📄 Tail logs..."
-          sudo docker logs --tail=20 codel
+
+          echo "📄 Tail log output:"
+          sudo docker logs --tail=20 codel || true
