@@ -195,6 +195,6 @@ interface SignalControllerSwagger {
     )
     fun hideSignals(
         @Parameter(hidden = true) @LoginMember me: Member,
-        @PathVariable hideSignalRequest: HideSignalRequest
+        @RequestBody hideSignalRequest: HideSignalRequest
     ): ResponseEntity<Unit>
 } 
