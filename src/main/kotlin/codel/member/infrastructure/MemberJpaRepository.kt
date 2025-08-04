@@ -63,7 +63,6 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
     fun findRandomMembersStatusDoneWithProfile(
         @Param("excludeId") excludeId: Long,
         @Param("seed") seed: Long,
-        pageRequest: PageRequest
     ): List<Member>
 
     @Query(

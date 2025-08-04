@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query
 
 interface BlockMemberRelationJpaRepository : JpaRepository<BlockMemberRelation, Long> {
 
-    @Query("SELECT bmr FROM BlockMemberRelation bmr WHERE bmr.blockerMember.id = :blockerId")
+    @Query("SELECT bmr FROM BlockMemberRelation bmr WHERE bmr.blockerMember.id = :blockerId AND bmr.status = 'BLOCKED'")
     fun findBlockMembersBy(blockerId: Long) : List<BlockMemberRelation>
 
     @Query("SELECT bmr FROM BlockMemberRelation bmr WHERE bmr.blockerMember.id = :blockerMemberId AND bmr.blockedMember.id = :blockedMemberId")

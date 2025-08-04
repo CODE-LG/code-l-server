@@ -85,27 +85,9 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
     SELECT s.toMember.id FROM Signal s
     WHERE s.fromMember = :fromMember
       AND s.toMember IN :candidates
-      AND s.senderStatus IN ('ACCEPTED', 'ACCEPTED_HIDDEN')
-      AND s.id IN (
-        SELECT MAX(s2.id) FROM Signal s2
-        WHERE s2.fromMember = :fromMember AND s2.toMember IN :candidates
-        GROUP BY s2.toMember
-      )
-    """
-    )
-    fun findAcceptedToMemberIds(
-        @Param("fromMember") fromMember: Member,
-        @Param("candidates") candidates: List<Member>
-    ): List<Long>
-
-    @Query(
-        """
-    SELECT s.toMember.id FROM Signal s
-    WHERE s.fromMember = :fromMember
-      AND s.toMember IN :candidates
       AND (
         (s.senderStatus = 'REJECTED' AND s.updatedAt >= :sevenDaysAgo AND s.updatedAt < :todayMidnight)
-        OR (s.senderStatus IN ('ACCEPTED', 'ACCEPTED_HIDDEN', 'PENDING', 'PENDING_HIDDEN') AND s.updatedAt < :todayMidnight)
+        OR (s.senderStatus IN ('ACCEPTED', 'PENDING', 'PENDING_HIDDEN') AND s.updatedAt < :todayMidnight)
       )
       AND s.id IN (
         SELECT MAX(s2.id) FROM Signal s2
