@@ -51,7 +51,7 @@ jobs:
                   include: health, metrics, prometheus
             metrics:
               enable:
-                all: true
+                processor: false
           spring:
             datasource:
               driver-class-name: com.mysql.cj.jdbc.Driver
@@ -148,35 +148,17 @@ jobs:
       - name: Push image to Docker Hub
         run: sudo docker push ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
 
-      - name: Deploy to dev server (install docker + run)
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.DEV_SERVER_HOST }}
-          username: ${{ secrets.DEV_SERVER_USER }}
-          key: ${{ secrets.DEV_SERVER_KEY }}
-          script: |
-            echo "🛠 Checking Docker..."
-            if ! command -v docker &> /dev/null
-            then
-              echo "📦 Docker not found. Installing..."
-              curl -fsSL https://get.docker.com | sudo bash
-            else
-              echo "✅ Docker already installed."
-            fi
-            
-            echo "📁 Creating log directory..."
-            sudo mkdir -p /var/log/app
-            sudo chown $USER:$USER /var/log/app
-
-            echo "🧼 Cleaning up old container..."
-            sudo docker stop codel || true
-            sudo docker rm codel || true
-
-            echo "🐳 Pulling latest image from Docker Hub..."
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
-
-            echo "🚀 Starting container..."
-            sudo docker run -d --name codel -p 8080:8080 -v /var/log/app:/var/log/app ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
-
-            echo "📄 Tail log output:"
-            sudo docker logs --tail=20 codel || true
+      - name: Deploy Docker container on same server
+        run: |
+          echo "🧼 Stop & remove old container..."
+          sudo docker stop codel || true
+          sudo docker rm codel || true
+          
+          echo "🐳 Pull latest image from Docker Hub..."
+          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
+          
+          echo "🚀 Start new container..."
+          sudo docker run -d --name codel -p 8080:8080 -v /var/log/app:/var/log/app ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
+          
+          echo "📄 Tail logs..."
+          sudo docker logs --tail=20 codel
