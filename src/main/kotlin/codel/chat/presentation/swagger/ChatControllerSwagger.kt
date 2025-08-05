@@ -7,6 +7,7 @@ import codel.chat.presentation.response.ChatRoomResponse
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -31,7 +32,7 @@ interface ChatControllerSwagger {
         ],
     )
     fun createChatRoom(
-        @LoginMember requester: Member,
+        @Parameter(hidden = true) @LoginMember requester: Member,
         @RequestBody request: CreateChatRoomRequest,
     ): ResponseEntity<ChatRoomResponse>
 
@@ -47,7 +48,7 @@ interface ChatControllerSwagger {
         ],
     )
     fun getChatRooms(
-        @LoginMember requester: Member,
+        @Parameter(hidden = true) @LoginMember requester: Member,
         @PageableDefault(size = 10, page = 0) pageable: Pageable,
     ): ResponseEntity<Page<ChatRoomResponse>>
 
@@ -63,7 +64,7 @@ interface ChatControllerSwagger {
         ],
     )
     fun getChats(
-        @LoginMember requester: Member,
+        @Parameter(hidden = true) @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
         @RequestBody chatLogRequest: ChatLogRequest,
         @PageableDefault(size = 10, page = 0) pageable: Pageable,
@@ -81,7 +82,7 @@ interface ChatControllerSwagger {
         ],
     )
     fun updateLastChat(
-        @LoginMember requester: Member,
+        @Parameter(hidden = true) @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
         @RequestBody chatLogRequest: ChatLogRequest,
     ): ResponseEntity<Unit>
