@@ -35,7 +35,7 @@ class ChatController(
     @GetMapping("/v1/chatrooms")
     override fun getChatRooms(
         @LoginMember requester: Member,
-        @PageableDefault(size = 10, page = 0) pageable: Pageable,
+        @PageableDefault(size = 20000, page = 0) pageable: Pageable,
     ): ResponseEntity<Page<ChatRoomResponse>> {
         val chatRoomResponses = chatService.getChatRooms(requester, pageable)
         return ResponseEntity.ok(chatRoomResponses)
