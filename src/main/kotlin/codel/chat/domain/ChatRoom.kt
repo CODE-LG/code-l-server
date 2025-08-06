@@ -10,7 +10,6 @@ import java.time.LocalDateTime
 class ChatRoom(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-    var isActive: Boolean = true,
     @OneToOne
     @JoinColumn(name = "chat_id")
     var recentChat: Chat? = null,
@@ -42,6 +41,10 @@ class ChatRoom(
 
             ChatRoomStatus.UNLOCKED -> {
                 throw ChatException(HttpStatus.BAD_REQUEST, "이미 코드해제된 방입니다.")
+            }
+
+            ChatRoomStatus.DISABLED -> {
+                throw ChatException(HttpStatus.BAD_REQUEST, "폐지된 채팅방입니다.")
             }
         }
     }
