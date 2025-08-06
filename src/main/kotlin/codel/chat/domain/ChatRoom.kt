@@ -26,12 +26,12 @@ class ChatRoom(
     fun unlock(memberId: Long) {
         when (status) {
             ChatRoomStatus.LOCKED -> {
-                status = ChatRoomStatus.LOCKED_REQUESTED
+                status = ChatRoomStatus.UNLOCKED_REQUESTED
                 unlockedUpdateAt = LocalDateTime.now()
                 unlockedRequestedBy = memberId
             }
 
-            ChatRoomStatus.LOCKED_REQUESTED -> {
+            ChatRoomStatus.UNLOCKED_REQUESTED -> {
                 if (unlockedRequestedBy == memberId) {
                     throw ChatException(HttpStatus.BAD_REQUEST, "이미 코드해제 요청을 보낸 상태입니다.")
                 }
