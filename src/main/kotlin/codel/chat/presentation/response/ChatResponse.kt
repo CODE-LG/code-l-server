@@ -1,7 +1,8 @@
 package codel.chat.presentation.response
 
 import codel.chat.domain.Chat
-import codel.chat.domain.ChatType
+import codel.chat.domain.ChatContentType
+import codel.chat.domain.ChatSenderType
 import codel.member.domain.Member
 import java.time.LocalDateTime
 
@@ -9,7 +10,8 @@ data class ChatResponse(
     val chatId: Long,
     val chatRoomId: Long,
     val message: String,
-    val chatType: ChatType,
+    val chatType: ChatSenderType,
+    val contentType: ChatContentType,
     val sentAt: LocalDateTime,
 ) {
     companion object {
@@ -22,6 +24,7 @@ data class ChatResponse(
                 chatRoomId = chat.chatRoom.getIdOrThrow(),
                 chatType = chat.getChatType(requester),
                 message = chat.message,
+                contentType = chat.chatContentType,
                 sentAt = chat.getSentAtOrThrow(),
             )
     }

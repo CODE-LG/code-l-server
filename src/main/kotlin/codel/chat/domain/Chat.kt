@@ -19,8 +19,13 @@ class Chat(
     @JoinColumn(name = "from_chat_room_member_id", nullable = false)
     var fromChatRoomMember: ChatRoomMember,
     var message: String,
+
     @Enumerated(EnumType.STRING)
-    var chatType: ChatType,
+    var senderType : ChatSenderType,
+
+    @Enumerated(EnumType.STRING)
+    var chatContentType : ChatContentType,
+
     @CreatedDate
     var sentAt: LocalDateTime? = null,
 ) {
@@ -34,7 +39,8 @@ class Chat(
                 chatRoom = fromChatRoomMember.chatRoom,
                 fromChatRoomMember = fromChatRoomMember,
                 message = chatRequest.message,
-                chatType = chatRequest.chatType,
+                senderType = chatRequest.chatType,
+                chatContentType = ChatContentType.TEXT
             )
     }
 
@@ -43,9 +49,11 @@ class Chat(
     fun getSentAtOrThrow(): LocalDateTime =
         sentAt ?: throw ChatException(HttpStatus.BAD_REQUEST, "채팅 발송 시간이 설정되지 않았습니다.")
 
-    fun getChatType(requester: Member): ChatType =
-        when (requester) {
-            fromChatRoomMember.member -> ChatType.MY
-            else -> ChatType.PARTNER
+    fun getChatType(requester: Member): ChatSenderType {
+        return when {
+            senderType == ChatSenderType.SYSTEM -> ChatSenderType.SYSTEM
+            requester == fromChatRoomMember.member -> ChatSenderType.MY
+            else -> ChatSenderType.PARTNER
         }
+    }
 }
