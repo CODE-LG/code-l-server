@@ -96,10 +96,10 @@ class MemberController(
     }
 
     @GetMapping("/v1/member/all")
-    override fun getDailyRecommendMembers(
+    override fun getRecommendMemberAtTenHourCycle(
         @LoginMember member: Member,
         @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "10") size: Int,
+        @RequestParam(defaultValue = "8") size: Int,
     ): ResponseEntity<Page<MemberResponse>> {
         val memberPage = memberService.getRandomMembers(member, page, size)
 

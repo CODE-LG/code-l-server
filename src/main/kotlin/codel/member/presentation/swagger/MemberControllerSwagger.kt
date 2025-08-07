@@ -138,10 +138,10 @@ interface MemberControllerSwagger {
             ApiResponse(responseCode = "500", description = "서버 내부 오류"),
         ],
     )
-    fun getDailyRecommendMembers(
+    fun getRecommendMemberAtTenHourCycle(
         @Parameter(hidden = true) @LoginMember member: Member,
         @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "10") size: Int,
+        @RequestParam(defaultValue = "8") size: Int,
     ): ResponseEntity<Page<MemberResponse>>
 
     @Operation(
