@@ -8,7 +8,7 @@ import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatJpaRepository
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
-import codel.chat.presentation.request.ChatRequest
+import codel.chat.presentation.request.ChatSendRequest
 import codel.member.domain.Member
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -17,7 +17,6 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
-import java.time.LocalDateTime
 
 @Component
 class ChatRepository(
@@ -28,11 +27,11 @@ class ChatRepository(
     fun saveChat(
         chatRoomId: Long,
         requester: Member,
-        chatRequest: ChatRequest,
+        chatSendRequest: ChatSendRequest,
     ): Chat {
         val requesterChatRoomMember = findMe(chatRoomId, requester)
 
-        return chatJpaRepository.save(Chat.of(requesterChatRoomMember, chatRequest))
+        return chatJpaRepository.save(Chat.of(requesterChatRoomMember, chatSendRequest))
     }
 
     fun saveDateChat(chatRoom: ChatRoom, dateMessage: String) {

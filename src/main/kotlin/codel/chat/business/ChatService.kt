@@ -1,9 +1,8 @@
 package codel.chat.business
 
-import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
-import codel.chat.presentation.request.ChatRequest
+import codel.chat.presentation.request.ChatSendRequest
 import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.ChatLogRequest
 import codel.chat.presentation.response.ChatResponse
@@ -16,11 +15,9 @@ import codel.member.domain.MemberRepository
 import codel.signal.infrastructure.SignalJpaRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Transactional
 @Service
@@ -63,17 +60,17 @@ class ChatService(
     fun saveChat(
         chatRoomId: Long,
         requester: Member,
-        chatRequest: ChatRequest,
+        chatSendRequest: ChatSendRequest,
     ): SavedChatDto {
         val now = LocalDate.now()
-        val recentChatTime = chatRequest.recentChatTime
+        val recentChatTime = chatSendRequest.recentChatTime
 
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
         if(now != recentChatTime.toLocalDate()) {
             val dateMessage = now.toString()
             chatRepository.saveDateChat(chatRoom, dateMessage)
         }
-        val savedChat = chatRepository.saveChat(chatRoomId, requester, chatRequest)
+        val savedChat = chatRepository.saveChat(chatRoomId, requester, chatSendRequest)
 
         chatRoom.updateRecentChat(savedChat)
 
@@ -99,10 +96,10 @@ class ChatService(
 
     fun updateLastChat(
         chatRoomId: Long,
-        chatLogRequest: ChatLogRequest,
+        lastReadChatId : Long,
         requester: Member,
     ) {
-        val lastChat = chatRepository.findChat(chatLogRequest.lastChatId)
+        val lastChat = chatRepository.findChat(lastReadChatId)
 
         chatRepository.upsertLastChat(chatRoomId, requester, lastChat)
     }
