@@ -25,7 +25,7 @@ class ChatRoomTest {
         // then
         assertThat(chatRoom.status).isEqualTo(ChatRoomStatus.UNLOCKED_REQUESTED)
         assertThat(chatRoom.unlockedRequestedBy).isEqualTo(memberId)
-        assertThat(chatRoom.unlockedUpdateAt).isNotNull()
+        assertThat(chatRoom.getUnlockedUpdateAtOrThrow).isNotNull()
     }
 
     @DisplayName("LOCKED_REQUESTED 상태에서 unlock을 다른 사용자가 하면 UNLOCKED로 전이된다")
@@ -45,7 +45,7 @@ class ChatRoomTest {
 
         // then
         assertThat(chatRoom.status).isEqualTo(ChatRoomStatus.UNLOCKED)
-        assertThat(chatRoom.unlockedUpdateAt).isNotNull()
+        assertThat(chatRoom.getUnlockedUpdateAtOrThrow).isNotNull()
     }
 
     @DisplayName("LOCKED_REQUESTED 상태에서 unlock을 같은 사용자가 하면 예외가 발생한다")
