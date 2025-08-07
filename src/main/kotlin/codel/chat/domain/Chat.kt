@@ -1,7 +1,7 @@
 package codel.chat.domain
 
 import codel.chat.exception.ChatException
-import codel.chat.presentation.request.ChatRequest
+import codel.chat.presentation.request.ChatSendRequest
 import codel.member.domain.Member
 import jakarta.persistence.*
 import org.springframework.data.annotation.CreatedDate
@@ -32,14 +32,14 @@ class Chat(
     companion object {
         fun of(
             fromChatRoomMember: ChatRoomMember,
-            chatRequest: ChatRequest,
+            chatSendRequest: ChatSendRequest,
         ): Chat =
             Chat(
                 id = null,
                 chatRoom = fromChatRoomMember.chatRoom,
                 fromChatRoomMember = fromChatRoomMember,
-                message = chatRequest.message,
-                senderType = chatRequest.chatType,
+                message = chatSendRequest.message,
+                senderType = chatSendRequest.chatType,
                 chatContentType = ChatContentType.TEXT
             )
 

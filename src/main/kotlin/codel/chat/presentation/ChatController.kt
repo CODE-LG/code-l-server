@@ -59,7 +59,7 @@ class ChatController(
         @PathVariable chatRoomId: Long,
         @RequestBody chatLogRequest: ChatLogRequest,
     ): ResponseEntity<Unit> {
-        chatService.updateLastChat(chatRoomId, chatLogRequest, requester)
+        chatService.updateLastChat(chatRoomId, chatLogRequest.lastChatId, requester)
 
         return ResponseEntity.noContent().build()
     }
