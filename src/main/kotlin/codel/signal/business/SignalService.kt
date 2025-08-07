@@ -11,7 +11,6 @@ import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
-import codel.member.presentation.response.MemberProfileResponse
 import codel.member.presentation.response.UnlockedMemberProfileResponse
 import codel.signal.domain.Signal
 import codel.signal.domain.SignalStatus
@@ -229,7 +228,7 @@ class SignalService(
         val chatRoomMembers =
             chatRoomMemberJpaRepository.findUnlockedOpponentsWithProfile(member, ChatRoomStatus.UNLOCKED, pageable)
         // 챗룸멤버를 멤버로 찾아온다.
-        return chatRoomMembers.map { chatRoomMember -> UnlockedMemberProfileResponse.toResponse(chatRoomMember.member, chatRoomMember.chatRoom.getUnlockedUpdateAt()) }
+        return chatRoomMembers.map { chatRoomMember -> UnlockedMemberProfileResponse.toResponse(chatRoomMember.member, chatRoomMember.chatRoom.getUnlockedUpdateAtOrThrow()) }
         // 챗룸멤버라는 리스트를 가져온 상태에서 챗룸의 정보를 가져온다.
         // 챗룸 상태가 코드해제된 방에 대해서 알아오고, 코드해제된 방 중 상대방에 대한 멤버 정보 + 프로필 정보를 함꼐 가져온다.
     }
