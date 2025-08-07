@@ -52,4 +52,7 @@ class ChatRoom(
     fun updateRecentChat(recentChat: Chat) {
         this.recentChat = recentChat
     }
+
+
+    fun getUnlockedUpdateAt() = unlockedUpdateAt ?: throw ChatException(HttpStatus.BAD_REQUEST, "코드 해제 요청 또는 승인한 적이 없습니다.")
 }

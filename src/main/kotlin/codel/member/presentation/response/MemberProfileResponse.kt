@@ -3,6 +3,7 @@ package codel.member.presentation.response
 import codel.member.domain.Member
 import codel.member.domain.Profile
 import codel.signal.domain.SignalStatus
+import java.time.LocalDateTime
 
 data class MemberProfileResponse(
     val memberId : Long,
@@ -44,7 +45,7 @@ data class MemberProfileResponse(
                 question = profile.question,
                 answer = profile.answer,
                 codeImages = profile.getCodeImageOrThrow(),
-                faceImages = profile.getFaceImageOrThrow(),
+                faceImages = profile.getFaceImageOrThrow()
             )
         }
 

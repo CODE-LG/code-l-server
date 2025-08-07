@@ -3,6 +3,7 @@ package codel.signal.presentation.swagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import codel.member.presentation.response.MemberProfileResponse
+import codel.member.presentation.response.UnlockedMemberProfileResponse
 import codel.signal.presentation.request.HideSignalRequest
 import codel.signal.presentation.request.SendSignalRequest
 import codel.signal.presentation.response.SignalMemberResponse
@@ -162,7 +163,7 @@ interface SignalControllerSwagger {
         @Parameter(hidden = true) @LoginMember me: Member,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int
-    ): ResponseEntity<Page<MemberProfileResponse>>
+    ): ResponseEntity<Page<UnlockedMemberProfileResponse>>
 
     @Operation(
         summary = "시그널 숨김",

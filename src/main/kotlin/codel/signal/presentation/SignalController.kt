@@ -3,6 +3,7 @@ package codel.signal.presentation
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import codel.member.presentation.response.MemberProfileResponse
+import codel.member.presentation.response.UnlockedMemberProfileResponse
 import codel.signal.business.SignalService
 import codel.signal.presentation.request.HideSignalRequest
 import codel.signal.presentation.request.SendSignalRequest
@@ -81,9 +82,9 @@ class SignalController(
         @LoginMember me: Member,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
-    ): ResponseEntity<Page<MemberProfileResponse>> {
-        val members = signalService.getUnlockedSignal(me, page, size);
-        return ResponseEntity.ok(members.map { MemberProfileResponse.toResponse(it) })
+    ): ResponseEntity<Page<UnlockedMemberProfileResponse>> {
+        val unlockedMemberProfileResponses = signalService.getUnlockedSignal(me, page, size);
+        return ResponseEntity.ok(unlockedMemberProfileResponses)
     }
 
     @PatchMapping("/{id}/hide")

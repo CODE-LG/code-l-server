@@ -16,7 +16,6 @@ data class MemberResponse(
     val job: String,
     val hobby: List<String>,
     val matchingReason: String,
-    val unlockTime: LocalDateTime,
 ) {
     companion object {
         fun toResponse(member: Member): MemberResponse {
@@ -32,9 +31,7 @@ data class MemberResponse(
                 mbti = profile.mbti,
                 job = profile.job,
                 hobby = Profile.deserializeAttribute(profile.hobby),
-                matchingReason = "mbti",
-                // FIXME: 코드 해제 시간으로 변경
-                unlockTime = LocalDateTime.now(),
+                matchingReason = "mbti"
             )
         }
     }
