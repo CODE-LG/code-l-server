@@ -12,12 +12,14 @@ import codel.signal.presentation.response.SignalResponse
 import codel.signal.presentation.swagger.SignalControllerSwagger
 import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
+import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/v1/signals")
 class SignalController(
-    private val signalService: SignalService
+    private val signalService: SignalService,
+    private val messagingTemplate: SimpMessagingTemplate,
 ) : SignalControllerSwagger {
     @PostMapping
     override fun sendSignal(
@@ -64,7 +66,17 @@ class SignalController(
         @LoginMember me: Member,
         @PathVariable id: Long
     ): ResponseEntity<Unit> {
-        signalService.acceptSignal(me, id)
+        val chatRoomResponse = signalService.acceptSignal(me, id)
+
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${id}",
+            chatRoomResponse,
+        )
+
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${me.id}",
+            chatRoomResponse,
+        )
         return ResponseEntity.ok().build()
     }
 
