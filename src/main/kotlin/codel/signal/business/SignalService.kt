@@ -33,10 +33,7 @@ class SignalService(
     private val memberRepository: MemberRepository,
     private val signalJpaRepository: SignalJpaRepository,
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
-    private val chatRoomJpaRepository: ChatRoomJpaRepository,
-    private val chatJpaRepository: ChatJpaRepository,
-    private val chatService: ChatService,
-    private val chatRepository: ChatRepository,
+    private val chatService: ChatService
 ) {
     @Transactional
     fun sendSignal(fromMember: Member, toMemberId: Long, message: String): Signal {
