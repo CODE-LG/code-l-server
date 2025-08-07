@@ -1,5 +1,6 @@
 package codel.signal.business
 
+import codel.chat.business.ChatService
 import codel.chat.infrastructure.ChatJpaRepository
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
@@ -36,10 +37,7 @@ class SignalServiceTest {
     lateinit var chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository
 
     @Mock
-    lateinit var chatRoomJpaRepository: ChatRoomJpaRepository
-
-    @Mock
-    lateinit var chatJpaRepository: ChatJpaRepository
+    lateinit var chatService : ChatService
 
     @InjectMocks
     lateinit var signalService: SignalService
