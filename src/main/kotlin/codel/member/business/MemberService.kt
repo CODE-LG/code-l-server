@@ -204,13 +204,15 @@ class MemberService(
         val now = LocalDateTime.now()
         val todayMidnight = now.toLocalDate().atStartOfDay()
         val sevenDaysAgo = now.minusDays(7)
-        val candidates = memberJpaRepository.findMembersWithStatusDoneExcludeMe(member.getIdOrThrow())
+
+        val seed = DailySeedProvider.generateMemberSeedEveryTenHours(member.getIdOrThrow())
+        val candidates = memberJpaRepository.findRandomMembersStatusDone(member.getIdOrThrow(),seed)
 
         val allExcludeIds = makeExcludesMemberIds(member, candidates, sevenDaysAgo, todayMidnight)
 
         val result = candidates.filter { candidate ->
             candidate.id !in allExcludeIds
-        }
+        }.take(size)
 
         val pageable = PageRequest.of(page, size)
 

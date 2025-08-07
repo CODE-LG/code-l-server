@@ -27,12 +27,11 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
     fun countByMemberStatus(memberStatus: MemberStatus): Long
 
     @Query(
-        value = "SELECT * FROM member WHERE id <> :excludeId AND member_status = 'DONE' ORDER BY RAND(:seed) LIMIT :randomSize",
+        value = "SELECT * FROM member WHERE id <> :excludeId AND member_status = 'DONE' ORDER BY RAND(:seed)",
         nativeQuery = true,
     )
     fun findRandomMembersStatusDone(
         @Param("excludeId") excludeId: Long,
-        @Param("randomSize") randomSize: Long,
         @Param("seed") seed: Long,
     ): List<Member>
 
