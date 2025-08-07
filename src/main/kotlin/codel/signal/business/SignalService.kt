@@ -83,7 +83,7 @@ class SignalService(
     fun acceptSignal(
         me: Member,
         id: Long
-    ) : ChatRoom{
+    ) : ChatRoomResponse{
         val findSignal = signalJpaRepository.findById(id)
             .orElseThrow { SignalException(HttpStatus.NOT_FOUND, "해당 시그널을 찾을 수 없습니다.") }
 
