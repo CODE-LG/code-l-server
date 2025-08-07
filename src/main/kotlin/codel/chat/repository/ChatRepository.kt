@@ -1,6 +1,7 @@
 package codel.chat.repository
 
 import codel.chat.domain.Chat
+import codel.chat.domain.ChatContentType
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
 import codel.chat.exception.ChatException
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
+import java.time.LocalDateTime
 
 @Component
 class ChatRepository(
@@ -31,6 +33,10 @@ class ChatRepository(
         val requesterChatRoomMember = findMe(chatRoomId, requester)
 
         return chatJpaRepository.save(Chat.of(requesterChatRoomMember, chatRequest))
+    }
+
+    fun saveDateChat(chatRoom: ChatRoom, dateMessage: String) {
+        chatJpaRepository.save(Chat.createSystemMessage(chatRoom = chatRoom, message = dateMessage, chatContentType = ChatContentType.TIME))
     }
 
     fun findNextChats(
@@ -75,7 +81,7 @@ class ChatRepository(
         val requesterChatRoomMember =
             chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoom.getIdOrThrow(), requester)
                 ?: throw ChatException(HttpStatus.BAD_REQUEST, "해당 채팅방에 속해있는 사용자가 아닙니다.")
-        
+
         if(requesterChatRoomMember.lastReadChat == null){
             return chatJpaRepository.countByChatRoomAfterLastChat(chatRoom)
         }
@@ -92,6 +98,5 @@ class ChatRepository(
     ): ChatRoomMember =
         chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, requester)
             ?: throw ChatException(HttpStatus.BAD_REQUEST, "해당 채팅방 멤버가 존재하지 않습니다.")
-
     private fun getChatDefaultSort(): Sort = Sort.by(Sort.Order.desc("sentAt"))
 }
