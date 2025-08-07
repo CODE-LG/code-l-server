@@ -176,7 +176,7 @@ class SignalService(
                 chatContentType = ChatContentType.TEXT
             )
         )
-        chatJpaRepository.save(
+        val savedUserAnswer = chatJpaRepository.save(
             Chat(
                 chatRoom = savedChatRoom,
                 fromChatRoomMember = savedChatRoomMemberBySender,
@@ -186,6 +186,7 @@ class SignalService(
                 chatContentType = ChatContentType.TEXT
             )
         )
+        savedChatRoom.updateRecentChat(savedUserAnswer)
     }
 
     private fun validateMySignal(findSignal: Signal, me: Member) {
