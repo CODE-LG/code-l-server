@@ -19,6 +19,8 @@ import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Transactional
 @Service
@@ -63,9 +65,17 @@ class ChatService(
         requester: Member,
         chatRequest: ChatRequest,
     ): SavedChatDto {
+        val now = LocalDate.now()
+        val recentChatTime = chatRequest.recentChatTime
+
         val savedChat = chatRepository.saveChat(chatRoomId, requester, chatRequest)
 
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
+
+        if(now != recentChatTime.toLocalDate()) {
+            val dateMessage = now.toString()
+            chatRepository.saveDateChat(chatRoom, dateMessage)
+        }
         val partner = chatRoomRepository.findPartner(chatRoomId, requester)
         val unReadMessageCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
 

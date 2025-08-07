@@ -1,7 +1,9 @@
 package codel.chat.domain
 
+import codel.chat.exception.ChatException
 import codel.member.domain.Member
 import jakarta.persistence.*
+import org.springframework.http.HttpStatus
 
 @Entity
 @Table(uniqueConstraints = [UniqueConstraint(columnNames = ["chat_room_id", "member_id"])])

@@ -1,10 +1,11 @@
 package codel.signal.business
 
 import codel.chat.domain.Chat
+import codel.chat.domain.ChatContentType
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
 import codel.chat.domain.ChatRoomStatus
-import codel.chat.domain.ChatType
+import codel.chat.domain.ChatSenderType
 import codel.chat.infrastructure.ChatJpaRepository
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
@@ -20,6 +21,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
@@ -82,7 +84,7 @@ class SignalService(
         validateMySignal(findSignal, me)
         findSignal.accept()
 
-        signalJpaRepository.save(findSignal)
+        val approvedSignal = signalJpaRepository.save(findSignal)
 
         val partner = findSignal.fromMember
         val newChatRoom = ChatRoom()
@@ -91,9 +93,99 @@ class SignalService(
         val chatRoomMemberForSendMember = ChatRoomMember(chatRoom = savedChatRoom, member = partner)
         val savedChatRoomMemberByApprover = chatRoomMemberJpaRepository.save(chatRoomMemberForApproveMember)
         val savedChatRoomMemberBySender = chatRoomMemberJpaRepository.save(chatRoomMemberForSendMember)
-        chatJpaRepository.save(Chat(chatRoom = savedChatRoom, fromChatRoomMember = savedChatRoomMemberByApprover, chatType = ChatType.CONVERSATION, message = me.getProfileOrThrow().question, sentAt = LocalDateTime.now()))
-        chatJpaRepository.save(Chat(chatRoom = savedChatRoom, fromChatRoomMember = savedChatRoomMemberByApprover, chatType = ChatType.CONVERSATION, message = me.getProfileOrThrow().answer, sentAt = LocalDateTime.now()))
-        chatJpaRepository.save(Chat(chatRoom = savedChatRoom, fromChatRoomMember = savedChatRoomMemberBySender, chatType = ChatType.CONVERSATION, message = findSignal.message, sentAt = LocalDateTime.now()))
+        saveSystemMessage(savedChatRoom, savedChatRoomMemberByApprover)
+        saveUserMessage(savedChatRoom, savedChatRoomMemberByApprover, me, savedChatRoomMemberBySender, approvedSignal)
+    }
+
+    private fun saveSystemMessage(
+        savedChatRoom: ChatRoom,
+        savedChatRoomMemberByApprover: ChatRoomMember
+    ) {
+        chatJpaRepository.save(
+            Chat(
+                chatRoom = savedChatRoom,
+                fromChatRoomMember = savedChatRoomMemberByApprover,
+                message = "코드 매칭에 성공했어요!",
+                sentAt = LocalDateTime.now(),
+                senderType = ChatSenderType.SYSTEM,
+                chatContentType = ChatContentType.CODE_MATCHED
+            )
+        )
+
+        chatJpaRepository.save(
+            Chat(
+                chatRoom = savedChatRoom,
+                fromChatRoomMember = savedChatRoomMemberByApprover,
+                message = "✨ 코드 대화가 시작되었습니다.\n" +
+                        "이어서 질문에 답하며 대화를 시작해보세요!\n" +
+                        "\n" +
+                        "\uD83D\uDD13 프로필 해제 안내\n" +
+                        "상대의 숨겨진 프로필이 궁금하다면?\n" +
+                        "[        ] 버튼을 눌러 상대의 숨겨진 히든 코드프로필 해제를 요청할 수 있어요.\n" +
+                        "\n" +
+                        "❓ 혹시 아직 어색한가요?\n" +
+                        "위에 있는 [        ] 버튼을 확인해보세요.\n" +
+                        "두 분의 공통 관심사에 맞춘 질문을 CODE가 추천해드립니다.\n" +
+                        "\n" +
+                        " ✨ 인연의 시작, CODE가 함께할게요.",
+                sentAt = LocalDateTime.now(),
+                senderType = ChatSenderType.SYSTEM,
+                chatContentType = ChatContentType.CODE_ONBOARDING
+            )
+        )
+
+        chatJpaRepository.save(
+            Chat(
+                chatRoom = savedChatRoom,
+                fromChatRoomMember = savedChatRoomMemberByApprover,
+                message = LocalDate.now().toString(),
+                sentAt = LocalDateTime.now(),
+                senderType = ChatSenderType.SYSTEM,
+                chatContentType = ChatContentType.TIME
+            )
+        )
+
+
+
+    }
+
+    private fun saveUserMessage(
+        savedChatRoom: ChatRoom,
+        savedChatRoomMemberByApprover: ChatRoomMember,
+        me: Member,
+        savedChatRoomMemberBySender: ChatRoomMember,
+        findSignal: Signal
+    ) {
+        chatJpaRepository.save(
+            Chat(
+                chatRoom = savedChatRoom,
+                fromChatRoomMember = savedChatRoomMemberByApprover,
+                message = me.getProfileOrThrow().question,
+                sentAt = LocalDateTime.now(),
+                senderType = ChatSenderType.SYSTEM,
+                chatContentType = ChatContentType.CODE_QUESTION
+            )
+        )
+        chatJpaRepository.save(
+            Chat(
+                chatRoom = savedChatRoom,
+                fromChatRoomMember = savedChatRoomMemberByApprover,
+                message = me.getProfileOrThrow().answer,
+                sentAt = LocalDateTime.now(),
+                senderType = ChatSenderType.USER,
+                chatContentType = ChatContentType.TEXT
+            )
+        )
+        chatJpaRepository.save(
+            Chat(
+                chatRoom = savedChatRoom,
+                fromChatRoomMember = savedChatRoomMemberBySender,
+                message = findSignal.message,
+                sentAt = LocalDateTime.now(),
+                senderType = ChatSenderType.USER,
+                chatContentType = ChatContentType.TEXT
+            )
+        )
     }
 
     private fun validateMySignal(findSignal: Signal, me: Member) {

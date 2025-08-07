@@ -23,7 +23,7 @@ class ChatRoomTest {
         chatRoom.unlock(memberId)
 
         // then
-        assertThat(chatRoom.status).isEqualTo(ChatRoomStatus.LOCKED_REQUESTED)
+        assertThat(chatRoom.status).isEqualTo(ChatRoomStatus.UNLOCKED_REQUESTED)
         assertThat(chatRoom.unlockedRequestedBy).isEqualTo(memberId)
         assertThat(chatRoom.unlockedUpdateAt).isNotNull()
     }
@@ -34,7 +34,7 @@ class ChatRoomTest {
         // given
         val chatRoom = ChatRoom(
             id = 1L,
-            status = ChatRoomStatus.LOCKED_REQUESTED,
+            status = ChatRoomStatus.UNLOCKED_REQUESTED,
             unlockedRequestedBy = 100L,
             unlockedUpdateAt = LocalDateTime.now().minusMinutes(1)
         )
@@ -55,7 +55,7 @@ class ChatRoomTest {
         val memberId = 100L
         val chatRoom = ChatRoom(
             id = 1L,
-            status = ChatRoomStatus.LOCKED_REQUESTED,
+            status = ChatRoomStatus.UNLOCKED_REQUESTED,
             unlockedRequestedBy = memberId,
             unlockedUpdateAt = LocalDateTime.now().minusMinutes(1)
         )

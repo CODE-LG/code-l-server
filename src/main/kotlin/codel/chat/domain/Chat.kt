@@ -16,11 +16,16 @@ class Chat(
     @JoinColumn(name = "chat_room_id", nullable = false)
     var chatRoom: ChatRoom,
     @ManyToOne(optional = false)
-    @JoinColumn(name = "from_chat_room_member_id", nullable = false)
-    var fromChatRoomMember: ChatRoomMember,
+    @JoinColumn(name = "from_chat_room_member_id", nullable = true)
+    var fromChatRoomMember: ChatRoomMember?,
     var message: String,
+
     @Enumerated(EnumType.STRING)
-    var chatType: ChatType,
+    var senderType : ChatSenderType,
+
+    @Enumerated(EnumType.STRING)
+    var chatContentType : ChatContentType,
+
     @CreatedDate
     var sentAt: LocalDateTime? = null,
 ) {
@@ -34,7 +39,23 @@ class Chat(
                 chatRoom = fromChatRoomMember.chatRoom,
                 fromChatRoomMember = fromChatRoomMember,
                 message = chatRequest.message,
-                chatType = chatRequest.chatType,
+                senderType = chatRequest.chatType,
+                chatContentType = ChatContentType.TEXT
+            )
+
+        fun createSystemMessage(
+            chatRoom : ChatRoom,
+            message : String,
+            chatContentType: ChatContentType,
+        ): Chat =
+            Chat(
+                id = null,
+                chatRoom = chatRoom,
+                message = message,
+                senderType = ChatSenderType.SYSTEM,
+                chatContentType = chatContentType,
+                fromChatRoomMember = null,
+                sentAt = LocalDateTime.now(),
             )
     }
 
@@ -43,9 +64,14 @@ class Chat(
     fun getSentAtOrThrow(): LocalDateTime =
         sentAt ?: throw ChatException(HttpStatus.BAD_REQUEST, "채팅 발송 시간이 설정되지 않았습니다.")
 
-    fun getChatType(requester: Member): ChatType =
-        when (requester) {
-            fromChatRoomMember.member -> ChatType.MY
-            else -> ChatType.PARTNER
+    fun getChatType(requester: Member): ChatSenderType {
+        return when {
+            senderType == ChatSenderType.SYSTEM -> ChatSenderType.SYSTEM
+            requester == getFromChatRoomMemberOrThrow() -> ChatSenderType.MY
+            else -> ChatSenderType.PARTNER
         }
+    }
+
+    fun getFromChatRoomMemberOrThrow(): ChatRoomMember = fromChatRoomMember ?: throw ChatException(
+        HttpStatus.BAD_REQUEST, "채팅과 관련된 회원을 찾을 수 없습니다.")
 }

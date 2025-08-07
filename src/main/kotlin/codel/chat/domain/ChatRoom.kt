@@ -10,7 +10,6 @@ import java.time.LocalDateTime
 class ChatRoom(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-    var isActive: Boolean = true,
     @OneToOne
     @JoinColumn(name = "chat_id")
     var recentChat: Chat? = null,
@@ -27,12 +26,12 @@ class ChatRoom(
     fun unlock(memberId: Long) {
         when (status) {
             ChatRoomStatus.LOCKED -> {
-                status = ChatRoomStatus.LOCKED_REQUESTED
+                status = ChatRoomStatus.UNLOCKED_REQUESTED
                 unlockedUpdateAt = LocalDateTime.now()
                 unlockedRequestedBy = memberId
             }
 
-            ChatRoomStatus.LOCKED_REQUESTED -> {
+            ChatRoomStatus.UNLOCKED_REQUESTED -> {
                 if (unlockedRequestedBy == memberId) {
                     throw ChatException(HttpStatus.BAD_REQUEST, "이미 코드해제 요청을 보낸 상태입니다.")
                 }
@@ -42,6 +41,10 @@ class ChatRoom(
 
             ChatRoomStatus.UNLOCKED -> {
                 throw ChatException(HttpStatus.BAD_REQUEST, "이미 코드해제된 방입니다.")
+            }
+
+            ChatRoomStatus.DISABLED -> {
+                throw ChatException(HttpStatus.BAD_REQUEST, "폐지된 채팅방입니다.")
             }
         }
     }
