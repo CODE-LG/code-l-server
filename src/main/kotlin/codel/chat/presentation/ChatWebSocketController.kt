@@ -27,6 +27,12 @@ class ChatWebSocketController(
             "/sub/v1/chatroom/member/${responseDto.partner.id}",
             responseDto.chatRoomResponse,
         )
+
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${requester.id}",
+            responseDto.chatRoomResponse,
+        )
+
         messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", responseDto.chatResponse)
     }
 }
