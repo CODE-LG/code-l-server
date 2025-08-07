@@ -48,4 +48,8 @@ class ChatRoom(
             }
         }
     }
+
+    fun updateRecentChat(recentChat: Chat) {
+        this.recentChat = recentChat
+    }
 }

@@ -68,14 +68,15 @@ class ChatService(
         val now = LocalDate.now()
         val recentChatTime = chatRequest.recentChatTime
 
-        val savedChat = chatRepository.saveChat(chatRoomId, requester, chatRequest)
-
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
-
         if(now != recentChatTime.toLocalDate()) {
             val dateMessage = now.toString()
             chatRepository.saveDateChat(chatRoom, dateMessage)
         }
+        val savedChat = chatRepository.saveChat(chatRoomId, requester, chatRequest)
+
+        chatRoom.updateRecentChat(savedChat)
+
         val partner = chatRoomRepository.findPartner(chatRoomId, requester)
         val unReadMessageCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
 
