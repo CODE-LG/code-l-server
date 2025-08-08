@@ -32,7 +32,7 @@ class MemberController(
         return ResponseEntity
             .ok()
             .header("Authorization", "Bearer $token")
-            .body(MemberLoginResponse(member.memberStatus))
+            .body(MemberLoginResponse(member.getIdOrThrow(), member.memberStatus))
     }
 
     @PostMapping("/v1/member/profile")
