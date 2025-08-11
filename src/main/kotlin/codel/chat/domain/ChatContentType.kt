@@ -6,5 +6,5 @@ enum class ChatContentType {
     CODE_UNLOCKED,
     CODE_QUESTION,
     CODE_ONBOARDING,
-    TIME
+    TIME,
 }

@@ -42,4 +42,7 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMember, Long> {
         @Param("status") status: ChatRoomStatus,
         pageable: Pageable
     ): Page<ChatRoomMember>
+
+    @Query("SELECT crm FROM ChatRoomMember crm WHERE crm.chatRoom.id = :chatRoomId")
+    fun findByChatRoomId(@Param("chatRoomId") chatRoomId: Long): List<ChatRoomMember>
 }
