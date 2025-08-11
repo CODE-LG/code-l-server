@@ -8,6 +8,7 @@ import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.swagger.ChatControllerSwagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
+import jdk.internal.joptsimple.internal.Messages.message
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.*
 @Controller
 class ChatController(
     private val chatService: ChatService,
-    private val messageTemplate: SimpMessagingTemplate,
+    private val messagingTemplate: SimpMessagingTemplate,
 ) : ChatControllerSwagger {
     @PostMapping("/v1/chatroom")
     override fun createChatRoom(
@@ -28,7 +29,7 @@ class ChatController(
     ): ResponseEntity<ChatRoomResponse> {
         val response = chatService.createChatRoom(requester, request)
 
-        messageTemplate.convertAndSend("/sub/v1/chatroom/member${request.partnerId}", response)
+        messagingTemplate.convertAndSend("/sub/v1/chatroom/member${request.partnerId}", response)
         return ResponseEntity.ok(response)
     }
 
@@ -65,11 +66,23 @@ class ChatController(
     }
 
     @PostMapping("/v1/chatroom/{chatRoomId}/unlock")
-    fun updateChatRoomStatus(
+    fun requestUnlockChatRoomStatus(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
     ): ResponseEntity<Unit> {
-        chatService.updateUnlockChatRoom(requester, chatRoomId)
+        val chatRoomAndChatResponse = chatService.updateUnlockChatRoom(requester, chatRoomId)
+        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", chatRoomAndChatResponse.chatResponse)
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${requester.id}",
+            chatRoomAndChatResponse.chatRoomResponse,
+        )
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${requester.id}",
+            chatRoomAndChatResponse.chatRoomResponse,
+        )
+
+        // TODO : 실시간 채팅 도중 상대방에게 실시간으로 바텀시트 올라가게끔 알려줄 수 있는 이벤트 발행
+        //  messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId/events")
         return ResponseEntity.ok().build()
     }
 }
