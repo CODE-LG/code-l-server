@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 
@@ -87,6 +88,23 @@ interface ChatControllerSwagger {
         @Parameter(hidden = true) @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
         @RequestBody chatLogRequest: ChatLogRequest,
+    ): ResponseEntity<Unit>
+
+    @Operation(
+        summary = "채팅방 코드해제 요청",
+        description = "채팅방 코드해제를 요청합니다.."
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "204", description = "성공적으로 코드 해제 요청 성공"),
+            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
+        ]
+    )
+    @PostMapping("/v1/chatroom/{chatRoomId}/unlock")
+    fun updateChatRoomStatus(
+        @Parameter(hidden = true) @LoginMember requester: Member,
+        @PathVariable chatRoomId: Long,
     ): ResponseEntity<Unit>
 
     @Operation(

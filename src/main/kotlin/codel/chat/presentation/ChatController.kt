@@ -67,7 +67,7 @@ class ChatController(
     }
 
     @PostMapping("/v1/chatroom/{chatRoomId}/unlock")
-    fun updateChatRoomStatus(
+    override fun updateChatRoomStatus(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
     ): ResponseEntity<Unit> {
