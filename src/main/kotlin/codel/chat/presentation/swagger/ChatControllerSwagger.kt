@@ -4,6 +4,7 @@ import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.ChatLogRequest
 import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomResponse
+import codel.chat.presentation.response.QuestionResponse
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import io.swagger.v3.oas.annotations.Operation
@@ -16,7 +17,9 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 
 @Tag(name = "Chat", description = "채팅 관련 API")
 interface ChatControllerSwagger {
@@ -86,4 +89,39 @@ interface ChatControllerSwagger {
         @PathVariable chatRoomId: Long,
         @RequestBody chatLogRequest: ChatLogRequest,
     ): ResponseEntity<Unit>
+
+    @Operation(
+        summary = "채팅방 코드해제 요청",
+        description = "채팅방 코드해제를 요청합니다.."
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "204", description = "성공적으로 코드 해제 요청 성공"),
+            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
+        ]
+    )
+    @PostMapping("/v1/chatroom/{chatRoomId}/unlock")
+    fun updateChatRoomStatus(
+        @Parameter(hidden = true) @LoginMember requester: Member,
+        @PathVariable chatRoomId: Long,
+    ): ResponseEntity<Unit>
+
+    @Operation(
+        summary = "랜덤 질문 즉시 전송",
+        description = "채팅방에 랜덤 질문을 시스템 메시지로 즉시 전송합니다. 버튼 클릭 시 바로 실행됩니다."
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "성공적으로 랜덤 질문 전송"),
+            ApiResponse(responseCode = "204", description = "더 이상 사용할 수 있는 질문이 없음"),
+            ApiResponse(responseCode = "403", description = "해당 채팅방에 접근할 권한이 없음"),
+            ApiResponse(responseCode = "404", description = "채팅방을 찾을 수 없음"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류")
+        ]
+    )
+    fun sendRandomQuestion(
+        @Parameter(hidden = true) @LoginMember requester: Member,
+        @PathVariable chatRoomId: Long
+    ): ResponseEntity<ChatResponse>
 }
