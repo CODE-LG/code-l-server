@@ -1,7 +1,6 @@
 package codel.chat.presentation
 
 import codel.chat.business.ChatService
-import codel.chat.business.QuestionService
 import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.ChatLogRequest
 import codel.chat.presentation.response.ChatResponse
@@ -20,7 +19,6 @@ import org.springframework.web.bind.annotation.*
 @Controller
 class ChatController(
     private val chatService: ChatService,
-    private val questionService: QuestionService,
     private val messagingTemplate: SimpMessagingTemplate,
 ) : ChatControllerSwagger {
     @PostMapping("/v1/chatroom")
@@ -80,19 +78,19 @@ class ChatController(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long
     ): ResponseEntity<ChatResponse> {
-        val result = questionService.sendRandomQuestion(chatRoomId, requester)
+        val result = chatService.sendRandomQuestion(chatRoomId, requester)
         
         // 1. 채팅방 실시간 메시지 전송 (채팅방에 있는 사용자들에게)
         messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", result.chatResponse)
         
         // 2. 채팅방 멤버들의 채팅방 목록 업데이트 (홈 화면에 있는 사용자들에게)
         messagingTemplate.convertAndSend(
-            "/sub/v1/chatroom/member/${result.partner.id}",
+            "/sub/v1/chatroom/member/${result.partner.getIdOrThrow()}",
             result.updatedChatRoom,
         )
 
         messagingTemplate.convertAndSend(
-            "/sub/v1/chatroom/member/${requester.id}",
+            "/sub/v1/chatroom/member/${requester.getIdOrThrow()}",
             result.updatedChatRoom,
         )
         return ResponseEntity.ok(result.chatResponse)
