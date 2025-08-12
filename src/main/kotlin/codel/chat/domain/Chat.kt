@@ -41,7 +41,8 @@ class Chat(
                 fromChatRoomMember = fromChatRoomMember,
                 message = chatSendRequest.message,
                 senderType = chatSendRequest.chatType,
-                chatContentType = ChatContentType.TEXT
+                chatContentType = ChatContentType.TEXT,
+                sentAt = LocalDateTime.now(),
             )
 
         fun createSystemMessage(
