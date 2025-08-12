@@ -76,7 +76,7 @@ class ChatController(
             chatRoomAndChatResponse.chatRoomResponse,
         )
         messagingTemplate.convertAndSend(
-            "/sub/v1/chatroom/member/${requester.id}",
+            "/sub/v1/chatroom/member/${chatRoomAndChatResponse.partner.getIdOrThrow()}",
             chatRoomAndChatResponse.chatRoomResponse,
         )
 
