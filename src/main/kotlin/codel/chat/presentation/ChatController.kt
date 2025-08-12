@@ -21,17 +21,6 @@ class ChatController(
     private val chatService: ChatService,
     private val messagingTemplate: SimpMessagingTemplate,
 ) : ChatControllerSwagger {
-    @PostMapping("/v1/chatroom")
-    override fun createChatRoom(
-        @LoginMember requester: Member,
-        @RequestBody request: CreateChatRoomRequest,
-    ): ResponseEntity<ChatRoomResponse> {
-        val response = chatService.createChatRoom(requester, request)
-
-        messagingTemplate.convertAndSend("/sub/v1/chatroom/member${request.partnerId}", response)
-        return ResponseEntity.ok(response)
-    }
-
     @GetMapping("/v1/chatrooms")
     override fun getChatRooms(
         @LoginMember requester: Member,
@@ -76,7 +65,7 @@ class ChatController(
             chatRoomAndChatResponse.chatRoomResponse,
         )
         messagingTemplate.convertAndSend(
-            "/sub/v1/chatroom/member/${requester.id}",
+            "/sub/v1/chatroom/member/${chatRoomAndChatResponse.partner.getIdOrThrow()}",
             chatRoomAndChatResponse.chatRoomResponse,
         )
 

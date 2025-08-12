@@ -24,22 +24,6 @@ import org.springframework.web.bind.annotation.RequestParam
 @Tag(name = "Chat", description = "채팅 관련 API")
 interface ChatControllerSwagger {
     @Operation(
-        summary = "매칭 후 채팅방 생성 (매칭 기능과 연계되면 삭제 예정)",
-        description = "매칭이 성사되면 채팅방을 생성하고 상대방의 채팅방 목록에 채팅방 생성",
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "성공적으로 채팅방 생성"),
-            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
-            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
-        ],
-    )
-    fun createChatRoom(
-        @Parameter(hidden = true) @LoginMember requester: Member,
-        @RequestBody request: CreateChatRoomRequest,
-    ): ResponseEntity<ChatRoomResponse>
-
-    @Operation(
         summary = "채팅방 목록 조회",
         description = "내가 참여하고 있는 채팅방 목록 조회",
     )
