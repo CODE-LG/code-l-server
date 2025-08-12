@@ -11,7 +11,6 @@ import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.chat.presentation.request.ChatSendRequest
 import codel.chat.presentation.request.CreateChatRoomRequest
-import codel.chat.presentation.request.ChatLogRequest
 import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.response.SavedChatDto
@@ -223,10 +222,32 @@ class ChatService(
         chatRepository.upsertLastChat(chatRoomId, requester, lastChat)
     }
 
-    fun updateUnlockChatRoom(requester: Member, chatRoomId: Long) {
+    fun updateUnlockChatRoom(requester: Member, chatRoomId: Long) : SavedChatDto{
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
 
         chatRoom.unlock(requester.getIdOrThrow())
+
+        val savedChat = chatJpaRepository.save(
+            Chat.createSystemMessage(
+                chatRoom = chatRoom,
+                message = "코드해제 요청이 왔습니다.",
+                chatContentType = ChatContentType.CODE_UNLOCKED_REQUEST
+            )
+        )
+
+        val findPartner = chatRoomRepository.findPartner(chatRoom.getIdOrThrow(), requester)
+        val chatResponse = ChatResponse.toResponse(requester, savedChat)
+        val chatRoomResponse = ChatRoomResponse.toResponse(
+            chatRoom, requester,
+            chatRoomMemberJpaRepository.findByChatRoomIdAndMember(
+                chatRoom.getIdOrThrow(),
+                requester
+            )?.lastReadChat?.getIdOrThrow(),
+            findPartner,
+            chatRepository.getUnReadMessageCount(chatRoom, requester)
+        )
+
+        return SavedChatDto(findPartner, chatRoomResponse, chatResponse)
     }
 
     /**
@@ -319,3 +340,4 @@ class ChatService(
         )
     }
 }
+

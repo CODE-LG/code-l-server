@@ -69,7 +69,19 @@ class ChatController(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
     ): ResponseEntity<Unit> {
-        chatService.updateUnlockChatRoom(requester, chatRoomId)
+        val chatRoomAndChatResponse = chatService.updateUnlockChatRoom(requester, chatRoomId)
+        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", chatRoomAndChatResponse.chatResponse)
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${requester.id}",
+            chatRoomAndChatResponse.chatRoomResponse,
+        )
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${requester.id}",
+            chatRoomAndChatResponse.chatRoomResponse,
+        )
+
+        // TODO : 실시간 채팅 도중 상대방에게 실시간으로 바텀시트 올라가게끔 알려줄 수 있는 이벤트 발행
+        //  messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId/events")
         return ResponseEntity.ok().build()
     }
 
