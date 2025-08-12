@@ -8,7 +8,6 @@ import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.swagger.ChatControllerSwagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
-import jdk.internal.joptsimple.internal.Messages.message
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
