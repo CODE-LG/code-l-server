@@ -58,8 +58,4 @@ class Profile(
         this.answer = updateProfile.answer
         this.introduce = updateProfile.introduce
     }
-
-    fun registerCodeImage(codeImage: String) {
-
-    }
 }

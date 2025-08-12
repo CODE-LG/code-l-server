@@ -66,7 +66,7 @@ class ChatController(
     }
 
     @PostMapping("/v1/chatroom/{chatRoomId}/unlock")
-    fun requestUnlockChatRoomStatus(
+    override fun updateChatRoomStatus(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
     ): ResponseEntity<Unit> {
@@ -84,5 +84,28 @@ class ChatController(
         // TODO : 실시간 채팅 도중 상대방에게 실시간으로 바텀시트 올라가게끔 알려줄 수 있는 이벤트 발행
         //  messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId/events")
         return ResponseEntity.ok().build()
+    }
+
+    @PostMapping("/v1/chatroom/{chatRoomId}/questions/random")
+    override fun sendRandomQuestion(
+        @LoginMember requester: Member,
+        @PathVariable chatRoomId: Long
+    ): ResponseEntity<ChatResponse> {
+        val result = chatService.sendRandomQuestion(chatRoomId, requester)
+        
+        // 1. 채팅방 실시간 메시지 전송 (채팅방에 있는 사용자들에게)
+        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", result.chatResponse)
+        
+        // 2. 채팅방 멤버들의 채팅방 목록 업데이트 (홈 화면에 있는 사용자들에게)
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${result.partner.getIdOrThrow()}",
+            result.updatedChatRoom,
+        )
+
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${requester.getIdOrThrow()}",
+            result.updatedChatRoom,
+        )
+        return ResponseEntity.ok(result.chatResponse)
     }
 }
