@@ -284,12 +284,18 @@ class ChatService(
     ): Chat {
         val message = "💭 ${question.content}\n\n_${requester.getProfileOrThrow().codeName}님이 질문을 추천했습니다._"
         
-        val systemMessage = Chat.createSystemMessage(
+        // 요청자의 ChatRoomMember 찾기
+        val requesterChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoom.getIdOrThrow(), requester)
+            ?: throw ChatException(HttpStatus.BAD_REQUEST, "채팅방 멤버를 찾을 수 없습니다.")
+        
+        val systemMessage = Chat(
             chatRoom = chatRoom,
+            fromChatRoomMember = requesterChatRoomMember, // null 대신 실제 멤버 할당
             message = message,
-            chatContentType = ChatContentType.CODE_QUESTION
+            senderType = ChatSenderType.SYSTEM,
+            chatContentType = ChatContentType.CODE_QUESTION,
+            sentAt = LocalDateTime.now()
         )
-        systemMessage.sentAt = LocalDateTime.now()
         
         return chatJpaRepository.save(systemMessage)
     }

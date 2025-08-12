@@ -15,7 +15,8 @@ class Chat(
     @ManyToOne(optional = false)
     @JoinColumn(name = "chat_room_id", nullable = false)
     var chatRoom: ChatRoom,
-    @ManyToOne(optional = false)
+
+    @ManyToOne
     @JoinColumn(name = "from_chat_room_member_id", nullable = true)
     var fromChatRoomMember: ChatRoomMember?,
     var message: String,
