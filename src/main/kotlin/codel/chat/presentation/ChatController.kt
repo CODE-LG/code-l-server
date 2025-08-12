@@ -45,10 +45,10 @@ class ChatController(
     override fun getChats(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
-        @RequestBody chatLogRequest : ChatLogRequest,
+        @RequestParam(required = false) lastReadChatId: Long?,
         @PageableDefault(size = 30, page = 0) pageable: Pageable,
     ): ResponseEntity<Page<ChatResponse>> {
-        val chatResponses = chatService.getChats(chatRoomId, chatLogRequest.lastChatId, requester, pageable)
+        val chatResponses = chatService.getChats(chatRoomId, lastReadChatId, requester, pageable)
 
         return ResponseEntity.ok(chatResponses)
     }
