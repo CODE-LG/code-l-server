@@ -3,6 +3,7 @@ package codel.chat.presentation
 import codel.chat.business.ChatService
 import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.ChatLogRequest
+import codel.chat.presentation.request.ChatSendRequest
 import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.swagger.ChatControllerSwagger
@@ -95,5 +96,27 @@ class ChatController(
             result.updatedChatRoom,
         )
         return ResponseEntity.ok(result.chatResponse)
+    }
+
+    @PostMapping("/v1/chatroom/{chatRoomId}/chat")
+    fun sendChat(
+        @LoginMember requester: Member,
+        @PathVariable chatRoomId: Long,
+        @RequestBody chatSendRequest: ChatSendRequest,
+    ): ResponseEntity<ChatResponse> {
+        val responseDto = chatService.saveChat(chatRoomId, requester, chatSendRequest)
+
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${responseDto.partner.id}",
+            responseDto.chatRoomResponse,
+        )
+
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${requester.id}",
+            responseDto.chatRoomResponse,
+        )
+
+        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", responseDto.chatResponse)
+        return ResponseEntity.ok(responseDto.chatResponse)
     }
 }
