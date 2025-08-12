@@ -10,15 +10,13 @@ class Question(
     
     @Column(nullable = false, length = 500)
     val content: String,
-    
-    @Column(nullable = true, length = 100)
-    val category: String? = null,
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 100)
+    val category: QuestionCategory,
     
     @Column(nullable = false)
     val isActive: Boolean = true,
-    
-    @Column(nullable = false)
-    val priority: Int = 0,  // 우선순위 (높을수록 먼저 노출)
     
     @Column(nullable = true, length = 1000)
     val description: String? = null  // 질문 설명

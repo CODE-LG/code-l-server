@@ -4,7 +4,7 @@ import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.ChatLogRequest
 import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomResponse
-import codel.chat.presentation.response.QuestionResponse
+import codel.question.presentation.response.QuestionResponse
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import io.swagger.v3.oas.annotations.Operation

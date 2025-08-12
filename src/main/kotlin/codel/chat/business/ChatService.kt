@@ -5,6 +5,7 @@ import codel.chat.domain.ChatContentType
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
 import codel.chat.domain.ChatSenderType
+import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatJpaRepository
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
@@ -14,13 +15,17 @@ import codel.chat.presentation.request.ChatLogRequest
 import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.response.SavedChatDto
+import codel.chat.presentation.response.QuestionSendResult
 import codel.chat.repository.ChatRepository
 import codel.chat.repository.ChatRoomRepository
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
 import codel.signal.infrastructure.SignalJpaRepository
+import codel.question.business.QuestionService
+import codel.question.domain.Question
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -35,7 +40,8 @@ class ChatService(
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
     private val signalJpaRepository: SignalJpaRepository,
     private val chatRoomJpaRepository: ChatRoomJpaRepository,
-    private val chatJpaRepository: ChatJpaRepository
+    private val chatJpaRepository: ChatJpaRepository,
+    private val questionService: QuestionService
 ) {
 
 
@@ -221,5 +227,95 @@ class ChatService(
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
 
         chatRoom.unlock(requester.getIdOrThrow())
+    }
+
+    /**
+     * 랜덤 질문을 채팅방에 전송
+     */
+    fun sendRandomQuestion(chatRoomId: Long, requester: Member): QuestionSendResult {
+        // 1. 채팅방 검증 (채팅 도메인 책임)
+        val chatRoom = chatRoomJpaRepository.findById(chatRoomId)
+            .orElseThrow { ChatException(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다.") }
+        
+        validateChatRoomMember(chatRoomId, requester)
+        val partner = findPartner(chatRoomId, requester)
+        
+        // 2. 질문 선택 (질문 도메인에 위임)
+        val availableQuestions = questionService.findUnusedQuestionsByChatRoom(chatRoomId)
+        if (availableQuestions.isEmpty()) {
+            throw ChatException(HttpStatus.NO_CONTENT, "더 이상 사용할 수 있는 질문이 없습니다.")
+        }
+        val selectedQuestion = questionService.selectRandomQuestion(availableQuestions)
+        
+        // 3. 질문 사용 표시 (질문 도메인에 위임)
+        questionService.markQuestionAsUsed(chatRoomId, selectedQuestion, requester)
+        
+        // 4. 채팅 메시지 생성 (채팅 도메인 책임)
+        val savedChat = createQuestionSystemMessage(chatRoom, selectedQuestion, requester)
+        chatRoom.updateRecentChat(savedChat)
+        
+        return buildQuestionSendResult(partner, savedChat)
+    }
+
+    /**
+     * 채팅방 멤버 권한 검증
+     */
+    private fun validateChatRoomMember(chatRoomId: Long, member: Member) {
+        chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, member)
+            ?: throw ChatException(HttpStatus.FORBIDDEN, "해당 채팅방에 접근할 권한이 없습니다.")
+    }
+
+    /**
+     * 채팅방 상대방 찾기
+     */
+    private fun findPartner(chatRoomId: Long, requester: Member): Member {
+        return chatRoomMemberJpaRepository.findByChatRoomIdAndMemberNot(chatRoomId, requester)
+            ?.member
+            ?: throw ChatException(HttpStatus.BAD_REQUEST, "상대방을 찾을 수 없습니다.")
+    }
+
+    /**
+     * 질문 시스템 메시지 생성
+     */
+    private fun createQuestionSystemMessage(
+        chatRoom: ChatRoom,
+        question: Question,
+        requester: Member
+    ): Chat {
+        val message = "💭 ${question.content}\n\n_${requester.getProfileOrThrow().codeName}님이 질문을 추천했습니다._"
+        
+        // 요청자의 ChatRoomMember 찾기
+        val requesterChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoom.getIdOrThrow(), requester)
+            ?: throw ChatException(HttpStatus.BAD_REQUEST, "채팅방 멤버를 찾을 수 없습니다.")
+        
+        val systemMessage = Chat(
+            chatRoom = chatRoom,
+            fromChatRoomMember = requesterChatRoomMember, // null 대신 실제 멤버 할당
+            message = message,
+            senderType = ChatSenderType.SYSTEM,
+            chatContentType = ChatContentType.CODE_QUESTION,
+            sentAt = LocalDateTime.now()
+        )
+        
+        return chatJpaRepository.save(systemMessage)
+    }
+
+    /**
+     * 질문 전송 결과 구성
+     */
+    private fun buildQuestionSendResult(partner: Member, savedChat: Chat): QuestionSendResult {
+        val updatedChatRoom = ChatRoomResponse.toResponse(
+            savedChat.chatRoom,
+            partner,
+            savedChat.getIdOrThrow(),
+            partner,
+            0
+        )
+
+        return QuestionSendResult(
+            chatResponse = ChatResponse.toResponse(partner, savedChat),
+            partner = partner,
+            updatedChatRoom = updatedChatRoom
+        )
     }
 }
