@@ -147,16 +147,6 @@ class ChatService(
     }
 
 
-    fun createChatRoom(
-        requester: Member,
-        request: CreateChatRoomRequest,
-    ): ChatRoomResponse {
-        val partner = memberRepository.findDoneMember(request.partnerId)
-        val savedChatRoom = chatRoomRepository.saveChatRoom(requester, partner)
-
-        return ChatRoomResponse.toResponse(savedChatRoom, requester, 0, partner, 0)
-    }
-
     @Transactional(readOnly = true)
     fun getChatRooms(
         requester: Member,
