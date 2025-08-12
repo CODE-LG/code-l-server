@@ -7,6 +7,7 @@ import java.time.LocalDateTime
 data class MemberResponse(
     val memberId: Long,
     val codeImage: String,
+    val faceImage: String,
     val name: String,
     val age: Int,
     val introduce: String,
@@ -23,6 +24,7 @@ data class MemberResponse(
             return MemberResponse(
                 memberId = member.getIdOrThrow(),
                 codeImage = profile.getCodeImageOrThrow().first(),
+                faceImage = profile.getFaceImageOrThrow().first(),
                 name = profile.codeName,
                 age = profile.age,
                 introduce = profile.introduce,
