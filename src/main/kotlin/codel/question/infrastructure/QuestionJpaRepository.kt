@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository
 @Repository
 interface QuestionJpaRepository : JpaRepository<Question, Long> {
     
-    @Query("SELECT q FROM Question q WHERE q.isActive = true ORDER BY FUNCTION('RAND')")
+    @Query("SELECT q FROM Question q WHERE q.isActive = true")
     fun findActiveQuestions(): List<Question>
     
     @Query("""
