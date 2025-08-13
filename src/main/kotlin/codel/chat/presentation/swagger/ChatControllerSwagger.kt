@@ -74,6 +74,42 @@ interface ChatControllerSwagger {
     ): ResponseEntity<Page<ChatResponse>>
 
     @Operation(
+        summary = "채팅방 이전 메시지 조회",
+        description = """
+            채팅방의 채팅 메시지 목록을 페이징하여 조회합니다.
+            
+            **파라미터 설명:**
+            - chatRoomId: 조회할 채팅방 ID (필수)
+            - lastChatId: 마지막으로 읽은 채팅 ID (선택, 무한스크롤 구현용)
+            - page: 페이지 번호 (기본값: 0)
+            - size: 페이지 크기 (기본값: 30)
+            
+            **사용 예시:**
+            - 최초 로드: GET /v1/chatroom/123/chats/previous?page=0&size=30
+            - 이전 메시지 로드: GET /v1/chatroom/123/chats/previous?lastChatId=456&page=0&size=30
+        """
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "성공적으로 채팅 목록 조회"),
+            ApiResponse(responseCode = "204", description = "이전 채팅 없음"),
+            ApiResponse(responseCode = "403", description = "해당 채팅방에 접근할 권한이 없음"),
+            ApiResponse(responseCode = "404", description = "채팅방을 찾을 수 없음"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
+        ],
+    )
+    fun getPreviousChats(
+        @Parameter(hidden = true) @LoginMember requester: Member,
+        @Parameter(description = "채팅방 ID", required = true, example = "123")
+        @PathVariable chatRoomId: Long,
+        @Parameter(description = "마지막으로 읽은 채팅 ID (무한스크롤용)", required = false, example = "456")
+        @RequestParam(required = false) lastReadChatId: Long?,
+        @PageableDefault(size = 30, page = 0) pageable: Pageable,
+    ): ResponseEntity<Page<ChatResponse>>
+
+
+
+    @Operation(
         summary = "채팅방에서 마지막으로 읽은 채팅 업데이트",
         description = "채팅방을 나가면서 이 채팅방에서 내가 읽은 마지막 채팅 정보 저장",
     )

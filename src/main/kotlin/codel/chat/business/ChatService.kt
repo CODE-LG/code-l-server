@@ -217,6 +217,17 @@ class ChatService(
         return pagedChats.map { chat -> ChatResponse.toResponse(requester, chat) }
     }
 
+    @Transactional(readOnly = true)
+    fun getPreviousChats(
+        chatRoomId: Long,
+        lastChatId : Long?,
+        requester: Member,
+        pageable: Pageable,
+    ): Page<ChatResponse> {
+        val pagedChats = chatRepository.findPrevChats(chatRoomId, lastChatId, pageable)
+        return pagedChats.map { chat -> ChatResponse.toResponse(requester, chat) }
+    }
+
     fun updateLastChat(
         chatRoomId: Long,
         lastReadChatId : Long,

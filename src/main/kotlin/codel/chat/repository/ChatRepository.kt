@@ -57,6 +57,25 @@ class ChatRepository(
         return chatJpaRepository.findNextChats(chatRoom, lastChatId, pageableWithSort)
     }
 
+    fun findPrevChats(
+        chatRoomId: Long,
+        lastChatId: Long?,
+        pageable: Pageable,
+    ): Page<Chat> {
+        val pageableWithSort: Pageable = PageRequest.of(pageable.pageNumber, pageable.pageSize, getChatDefaultSort())
+        val chatRoom =
+            chatRoomJpaRepository.findByIdOrNull(chatRoomId) ?: throw ChatException(
+                HttpStatus.BAD_REQUEST,
+                "채팅방을 찾을 수 없습니다.",
+            )
+
+        if(lastChatId == null){
+            throw ChatException(HttpStatus.NO_CONTENT, "이전 채팅이 존재하지 않습니다.")
+        }
+
+        return chatJpaRepository.findPrevChats(chatRoom, lastChatId, pageableWithSort)
+    }
+
     fun findChat(chatId: Long): Chat =
         chatJpaRepository.findByIdOrNull(chatId) ?: throw ChatException(
             HttpStatus.BAD_REQUEST,

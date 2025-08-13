@@ -43,6 +43,18 @@ class ChatController(
         return ResponseEntity.ok(chatResponses)
     }
 
+    @GetMapping("/v1/chatroom/{chatRoomId}/chats/previous")
+    override fun getPreviousChats(
+        @LoginMember requester: Member,
+        @PathVariable chatRoomId: Long,
+        @RequestParam(required = false) lastReadChatId: Long?,
+        @PageableDefault(size = 30, page = 0) pageable: Pageable,
+    ): ResponseEntity<Page<ChatResponse>> {
+        val chatResponses = chatService.getPreviousChats(chatRoomId, lastReadChatId, requester, pageable)
+
+        return ResponseEntity.ok(chatResponses)
+    }
+
     @PutMapping("/v1/chatroom/{chatRoomId}/last-chat")
     override fun updateLastChat(
         @LoginMember requester: Member,
