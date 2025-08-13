@@ -44,7 +44,7 @@ class ChatController(
     }
 
     @GetMapping("/v1/chatroom/{chatRoomId}/chats/previous")
-    fun getPreviousChats(
+    override fun getPreviousChats(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
         @RequestParam(required = false) lastReadChatId: Long?,
