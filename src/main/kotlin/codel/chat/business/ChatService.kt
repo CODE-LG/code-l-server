@@ -63,7 +63,10 @@ class ChatService(
         saveSystemMessages(savedChatRoom, savedApprover)
         saveUserMessages(savedChatRoom, savedApprover, senderMember, approver, responseOfApproverQuestion)
 
-        return ChatRoomResponse.toResponse(newChatRoom, approver, 0,sender,0)
+        // 4. 생성된 채팅방의 읽지 않은 메시지 수 계산 (시그널 발송자 기준)
+        val senderUnReadCount = chatRepository.getUnReadMessageCount(savedChatRoom, sender)
+
+        return ChatRoomResponse.toResponse(newChatRoom, sender, null, approver, senderUnReadCount)
     }
 
     private fun saveSystemMessages(chatRoom: ChatRoom, from: ChatRoomMember) {
@@ -183,12 +186,24 @@ class ChatService(
         chatRoom.updateRecentChat(savedChat)
 
         val partner = chatRoomRepository.findPartner(chatRoomId, requester)
-        val unReadMessageCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
+        
+        // 발송자와 수신자의 읽지 않은 메시지 수를 각각 계산
+        val requesterUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
+        val partnerUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, partner)
 
         val chatResponse = ChatResponse.toResponse(requester, savedChat)
-        val chatRoomResponse = ChatRoomResponse.toResponse(chatRoom, requester, savedChat.getIdOrThrow(), partner, unReadMessageCount)
+        
+        // 발송자용 채팅방 응답 (본인 기준 읽지 않은 수)
+        val requesterChatRoomResponse = ChatRoomResponse.toResponse(
+            chatRoom, requester, savedChat.getIdOrThrow(), partner, requesterUnReadCount
+        )
+        
+        // 수신자용 채팅방 응답 (상대방 기준 읽지 않은 수 - 새 메시지로 인해 증가)
+        val partnerChatRoomResponse = ChatRoomResponse.toResponse(
+            chatRoom, partner, null, requester, partnerUnReadCount
+        )
 
-        return SavedChatDto(partner, chatRoomResponse, chatResponse)
+        return SavedChatDto(partner, requesterChatRoomResponse, partnerChatRoomResponse, chatResponse)
     }
 
     @Transactional(readOnly = true)
@@ -208,8 +223,21 @@ class ChatService(
         requester: Member,
     ) {
         val lastChat = chatRepository.findChat(lastReadChatId)
-
         chatRepository.upsertLastChat(chatRoomId, requester, lastChat)
+        
+        // 읽음 처리 후 상대방에게도 업데이트된 정보 전송 (읽지 않은 수 감소 반영)
+        val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
+        val partner = chatRoomRepository.findPartner(chatRoomId, requester)
+        val partnerUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, partner)
+        
+        val updatedChatRoomResponse = ChatRoomResponse.toResponse(
+            chatRoom, partner, 
+            chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, partner)?.lastReadChat?.getIdOrThrow(),
+            requester, partnerUnReadCount
+        )
+        
+        // WebSocket으로 상대방에게 업데이트 전송 (Spring Event 등을 활용할 수도 있음)
+        // 이 부분은 Controller나 별도 이벤트 핸들러에서 처리하는 것이 좋습니다.
     }
 
     fun updateUnlockChatRoom(requester: Member, chatRoomId: Long) : SavedChatDto{
@@ -225,19 +253,31 @@ class ChatService(
             )
         )
 
-        val findPartner = chatRoomRepository.findPartner(chatRoom.getIdOrThrow(), requester)
+        val partner = chatRoomRepository.findPartner(chatRoom.getIdOrThrow(), requester)
+        
+        // 발송자와 수신자의 읽지 않은 메시지 수를 각각 계산
+        val requesterUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
+        val partnerUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, partner)
+        
         val chatResponse = ChatResponse.toResponse(requester, savedChat)
-        val chatRoomResponse = ChatRoomResponse.toResponse(
+        
+        // 발송자용 채팅방 응답
+        val requesterChatRoomResponse = ChatRoomResponse.toResponse(
             chatRoom, requester,
             chatRoomMemberJpaRepository.findByChatRoomIdAndMember(
                 chatRoom.getIdOrThrow(),
                 requester
             )?.lastReadChat?.getIdOrThrow(),
-            findPartner,
-            chatRepository.getUnReadMessageCount(chatRoom, requester)
+            partner,
+            requesterUnReadCount
+        )
+        
+        // 수신자용 채팅방 응답 (읽지 않은 수 증가)
+        val partnerChatRoomResponse = ChatRoomResponse.toResponse(
+            chatRoom, partner, null, requester, partnerUnReadCount
         )
 
-        return SavedChatDto(findPartner, chatRoomResponse, chatResponse)
+        return SavedChatDto(partner, requesterChatRoomResponse, partnerChatRoomResponse, chatResponse)
     }
 
     /**
@@ -265,7 +305,7 @@ class ChatService(
         val savedChat = createQuestionSystemMessage(chatRoom, selectedQuestion, requester)
         chatRoom.updateRecentChat(savedChat)
         
-        return buildQuestionSendResult(partner, savedChat)
+        return buildQuestionSendResult(requester, partner, savedChat)
     }
 
     /**
@@ -314,19 +354,36 @@ class ChatService(
     /**
      * 질문 전송 결과 구성
      */
-    private fun buildQuestionSendResult(partner: Member, savedChat: Chat): QuestionSendResult {
-        val updatedChatRoom = ChatRoomResponse.toResponse(
-            savedChat.chatRoom,
-            partner,
+    private fun buildQuestionSendResult(requester: Member, partner: Member, savedChat: Chat): QuestionSendResult {
+        val chatRoom = savedChat.chatRoom
+        
+        // 각자의 읽지 않은 메시지 수 계산
+        val requesterUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
+        val partnerUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, partner)
+        
+        // 발송자용 채팅방 응답
+        val requesterChatRoomResponse = ChatRoomResponse.toResponse(
+            chatRoom,
+            requester,
             savedChat.getIdOrThrow(),
             partner,
-            0
+            requesterUnReadCount
+        )
+        
+        // 수신자용 채팅방 응답 (읽지 않은 수 증가)
+        val partnerChatRoomResponse = ChatRoomResponse.toResponse(
+            chatRoom,
+            partner,
+            null, // 상대방은 아직 읽지 않았으므로 null
+            requester,
+            partnerUnReadCount
         )
 
         return QuestionSendResult(
-            chatResponse = ChatResponse.toResponse(partner, savedChat),
+            chatResponse = ChatResponse.toResponse(requester, savedChat),
             partner = partner,
-            updatedChatRoom = updatedChatRoom
+            requesterChatRoomResponse = requesterChatRoomResponse,
+            partnerChatRoomResponse = partnerChatRoomResponse
         )
     }
 }

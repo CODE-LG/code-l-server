@@ -60,14 +60,20 @@ class ChatController(
         @PathVariable chatRoomId: Long,
     ): ResponseEntity<Unit> {
         val chatRoomAndChatResponse = chatService.updateUnlockChatRoom(requester, chatRoomId)
+        
+        // 채팅방 실시간 메시지 전송
         messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", chatRoomAndChatResponse.chatResponse)
+        
+        // 발송자에게는 본인용 채팅방 응답 전송
         messagingTemplate.convertAndSend(
             "/sub/v1/chatroom/member/${requester.id}",
-            chatRoomAndChatResponse.chatRoomResponse,
+            chatRoomAndChatResponse.requesterChatRoomResponse,
         )
+        
+        // 상대방에게는 읽지 않은 수가 증가된 채팅방 응답 전송
         messagingTemplate.convertAndSend(
             "/sub/v1/chatroom/member/${chatRoomAndChatResponse.partner.getIdOrThrow()}",
-            chatRoomAndChatResponse.chatRoomResponse,
+            chatRoomAndChatResponse.partnerChatRoomResponse,
         )
 
         // TODO : 실시간 채팅 도중 상대방에게 실시간으로 바텀시트 올라가게끔 알려줄 수 있는 이벤트 발행
@@ -85,16 +91,18 @@ class ChatController(
         // 1. 채팅방 실시간 메시지 전송 (채팅방에 있는 사용자들에게)
         messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", result.chatResponse)
         
-        // 2. 채팅방 멤버들의 채팅방 목록 업데이트 (홈 화면에 있는 사용자들에게)
-        messagingTemplate.convertAndSend(
-            "/sub/v1/chatroom/member/${result.partner.getIdOrThrow()}",
-            result.updatedChatRoom,
-        )
-
+        // 2. 발송자에게는 본인용 채팅방 응답 전송
         messagingTemplate.convertAndSend(
             "/sub/v1/chatroom/member/${requester.getIdOrThrow()}",
-            result.updatedChatRoom,
+            result.requesterChatRoomResponse,
         )
+        
+        // 3. 상대방에게는 읽지 않은 수가 증가된 채팅방 응답 전송
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${result.partner.getIdOrThrow()}",
+            result.partnerChatRoomResponse,
+        )
+        
         return ResponseEntity.ok(result.chatResponse)
     }
 
@@ -106,16 +114,19 @@ class ChatController(
     ): ResponseEntity<ChatResponse> {
         val responseDto = chatService.saveChat(chatRoomId, requester, chatSendRequest)
 
+        // 상대방에게는 읽지 않은 수가 증가된 채팅방 정보 전송
         messagingTemplate.convertAndSend(
             "/sub/v1/chatroom/member/${responseDto.partner.id}",
-            responseDto.chatRoomResponse,
+            responseDto.partnerChatRoomResponse,
         )
 
+        // 발송자에게는 본인 기준 채팅방 정보 전송
         messagingTemplate.convertAndSend(
             "/sub/v1/chatroom/member/${requester.id}",
-            responseDto.chatRoomResponse,
+            responseDto.requesterChatRoomResponse,
         )
 
+        // 채팅방 구독자들에게 실시간 메시지 전송
         messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", responseDto.chatResponse)
         return ResponseEntity.ok(responseDto.chatResponse)
     }

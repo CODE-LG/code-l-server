@@ -26,16 +26,19 @@ class ChatWebSocketController(
     ) {
         val responseDto = chatService.saveChat(chatRoomId, requester, chatSendRequest)
 
+        // 상대방에게는 읽지 않은 수가 증가된 채팅방 정보 전송
         messagingTemplate.convertAndSend(
             "/sub/v1/chatroom/member/${responseDto.partner.id}",
-            responseDto.chatRoomResponse,
+            responseDto.partnerChatRoomResponse,
         )
 
+        // 발송자에게는 본인 기준 채팅방 정보 전송
         messagingTemplate.convertAndSend(
             "/sub/v1/chatroom/member/${requester.id}",
-            responseDto.chatRoomResponse,
+            responseDto.requesterChatRoomResponse,
         )
 
+        // 채팅방 구독자들에게 실시간 메시지 전송
         messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", responseDto.chatResponse)
     }
 

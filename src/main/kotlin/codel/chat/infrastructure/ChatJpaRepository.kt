@@ -15,7 +15,9 @@ interface ChatJpaRepository : JpaRepository<Chat, Long> {
         """
     SELECT c
     FROM Chat c
-    WHERE c.fromChatRoomMember.chatRoom = :chatRoom
+    WHERE c.chatRoom = :chatRoom 
+    AND c.senderType != 'SYSTEM'
+    AND c.fromChatRoomMember IS NOT NULL
     """,
     )
     fun findAllByFromChatRoom(
@@ -26,8 +28,12 @@ interface ChatJpaRepository : JpaRepository<Chat, Long> {
     @Query(
         """
             SELECT count(c) from Chat c
-            WHERE c.fromChatRoomMember.chatRoom = :chatRoom
+            WHERE c.chatRoom = :chatRoom
             AND c.sentAt > :afterTime
+            AND (
+                c.senderType = 'USER' 
+                OR c.chatContentType IN ('CODE_QUESTION', 'CODE_UNLOCKED_REQUEST')
+            )
         """,
     )
     fun countByChatRoomAfterLastChat(
@@ -38,7 +44,11 @@ interface ChatJpaRepository : JpaRepository<Chat, Long> {
     @Query(
         """
         SELECT count(c) from Chat c
-        WHERE c.fromChatRoomMember.chatRoom = :chatRoom
+        WHERE c.chatRoom = :chatRoom
+        AND (
+            c.senderType = 'USER' 
+            OR c.chatContentType IN ('CODE_QUESTION', 'CODE_UNLOCKED_REQUEST')
+        )
     """)
     fun countByChatRoomAfterLastChat(chatRoom: ChatRoom): Int
 
