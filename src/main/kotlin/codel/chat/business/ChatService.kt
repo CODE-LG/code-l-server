@@ -177,7 +177,7 @@ class ChatService(
         val recentChatTime = chatSendRequest.recentChatTime
 
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
-        if(now != recentChatTime.toLocalDate()) {
+        if(now != recentChatTime) {
             val dateMessage = now.toString()
             chatRepository.saveDateChat(chatRoom, dateMessage)
         }
