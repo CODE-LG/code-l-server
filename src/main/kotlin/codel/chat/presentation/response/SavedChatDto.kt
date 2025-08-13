@@ -4,6 +4,7 @@ import codel.member.domain.Member
 
 data class SavedChatDto(
     val partner: Member,
-    val chatRoomResponse: ChatRoomResponse,
+    val requesterChatRoomResponse: ChatRoomResponse,
+    val partnerChatRoomResponse: ChatRoomResponse,
     val chatResponse: ChatResponse,
 )

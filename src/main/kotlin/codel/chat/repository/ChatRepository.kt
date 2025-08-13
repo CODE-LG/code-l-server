@@ -82,12 +82,13 @@ class ChatRepository(
                 ?: throw ChatException(HttpStatus.BAD_REQUEST, "해당 채팅방에 속해있는 사용자가 아닙니다.")
 
         if(requesterChatRoomMember.lastReadChat == null){
-            return chatJpaRepository.countByChatRoomAfterLastChat(chatRoom)
+            return chatJpaRepository.countByChatRoomAfterLastChat(chatRoom, requester)
         }
 
         return chatJpaRepository.countByChatRoomAfterLastChat(
             chatRoom,
             requesterChatRoomMember.lastReadChat!!.getSentAtOrThrow(),
+            requester,
         )
     }
 
