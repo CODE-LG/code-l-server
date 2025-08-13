@@ -69,7 +69,7 @@ class Chat(
     fun getChatType(requester: Member): ChatSenderType {
         return when {
             senderType == ChatSenderType.SYSTEM -> ChatSenderType.SYSTEM
-            requester == getFromChatRoomMemberOrThrow() -> ChatSenderType.MY
+            requester == getFromChatRoomMemberOrThrow().member -> ChatSenderType.MY
             else -> ChatSenderType.PARTNER
         }
     }
