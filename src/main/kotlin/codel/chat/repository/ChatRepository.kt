@@ -111,6 +111,22 @@ class ChatRepository(
         )
     }
 
+    /**
+     * 채팅방에서 메시지 전송 가능 여부 확인
+     */
+    fun canSendMessage(chatRoomId: Long, sender: Member): Boolean {
+        val chatRoom = chatRoomJpaRepository.findByIdOrNull(chatRoomId) ?: return false
+        val allMembers = chatRoomMemberJpaRepository.findByChatRoomId(chatRoomId)
+
+        // 발송자가 활성 상태가 아니면 전송 불가
+        val senderMember = allMembers.find { it.member == sender }
+        if (senderMember?.isActive() != true) return false
+        
+        // 상대방이 존재하고 활성 상태인지 확인
+        val partner = allMembers.find { it.member != sender }
+        return partner?.isActive() == true
+    }
+
     private fun findMe(
         chatRoomId: Long,
         requester: Member,

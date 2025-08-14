@@ -24,6 +24,9 @@ class ChatWebSocketController(
         @LoginMember requester: Member,
         @Payload chatSendRequest: ChatSendRequest,
     ) {
+        // 메시지 전송 가능 여부 확인
+        chatService.validateCanSendMessage(chatRoomId, requester)
+        
         val responseDto = chatService.saveChat(chatRoomId, requester, chatSendRequest)
 
         // 상대방에게는 읽지 않은 수가 증가된 채팅방 정보 전송
