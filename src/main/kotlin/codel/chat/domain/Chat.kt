@@ -74,6 +74,14 @@ class Chat(
         }
     }
 
+    fun getSenderId() : Long?{
+        return if (senderType == ChatSenderType.SYSTEM) {
+            null  // 시스템 메시지는 명확히 null
+        } else {
+            getFromChatRoomMemberOrThrow().member.getIdOrThrow()
+        }
+    }
+
     fun getFromChatRoomMemberOrThrow(): ChatRoomMember = fromChatRoomMember ?: throw ChatException(
         HttpStatus.BAD_REQUEST, "채팅과 관련된 회원을 찾을 수 없습니다.")
 }
