@@ -9,4 +9,5 @@ enum class ChatContentType {
     CODE_ONBOARDING,
     TIME,
     DISABLED,
+    MEMBER_LEFT,
 }

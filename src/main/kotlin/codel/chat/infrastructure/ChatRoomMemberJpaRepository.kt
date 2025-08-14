@@ -1,6 +1,7 @@
 package codel.chat.infrastructure
 
 import codel.chat.domain.ChatRoomMember
+import codel.chat.domain.ChatRoomMemberStatus
 import codel.chat.domain.ChatRoomStatus
 import codel.member.domain.Member
 import org.springframework.data.domain.Page
@@ -45,4 +46,13 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMember, Long> {
 
     @Query("SELECT crm FROM ChatRoomMember crm WHERE crm.chatRoom.id = :chatRoomId")
     fun findByChatRoomId(@Param("chatRoomId") chatRoomId: Long): List<ChatRoomMember>
+
+    /**
+     * 새로 추가된 메서드들
+     */
+    fun findByMemberAndMemberStatus(
+        member: Member,
+        memberStatus: ChatRoomMemberStatus,
+        pageable: Pageable
+    ): Page<ChatRoomMember>
 }

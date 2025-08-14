@@ -124,6 +124,9 @@ class ChatController(
         @PathVariable chatRoomId: Long,
         @RequestBody chatSendRequest: ChatSendRequest,
     ): ResponseEntity<ChatResponse> {
+        // 메시지 전송 가능 여부 확인
+        chatService.validateCanSendMessage(chatRoomId, requester)
+        
         val responseDto = chatService.saveChat(chatRoomId, requester, chatSendRequest)
 
         // 상대방에게는 읽지 않은 수가 증가된 채팅방 정보 전송
@@ -141,5 +144,22 @@ class ChatController(
         // 채팅방 구독자들에게 실시간 메시지 전송
         messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", responseDto.chatResponse)
         return ResponseEntity.ok(responseDto.chatResponse)
+    }
+
+    @PostMapping("/v1/chatroom/{chatRoomId}/leave")
+    fun leaveChatRoom(
+        @LoginMember requester: Member,
+        @PathVariable chatRoomId: Long,
+    ): ResponseEntity<Unit> {
+        chatService.leaveChatRoom(chatRoomId, requester)
+        
+        // TODO 상대방에게 채팅방 나감 알림 (WebSocket)
+//        val partner = chatService.findPartner(chatRoomId, requester)
+//        messagingTemplate.convertAndSend(
+//            "/sub/v1/chatroom/member/${partner.getIdOrThrow()}/leave",
+//            mapOf("chatRoomId" to chatRoomId, "leftMember" to requester.getProfileOrThrow().codeName)
+//        )
+        
+        return ResponseEntity.ok().build()
     }
 }

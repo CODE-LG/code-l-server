@@ -1,10 +1,11 @@
 package codel.chat.repository
 
 import codel.chat.domain.ChatRoom
-import codel.chat.domain.ChatRoomMember
+import codel.chat.domain.ChatRoomMemberStatus
 import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
+import codel.chat.infrastructure.ChatRoomWithMemberInfo
 import codel.member.domain.Member
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -26,6 +27,38 @@ class ChatRoomRepository(
         val pageableWithSort = PageRequest.of(pageable.pageNumber, pageable.pageSize, getChatRoomDefaultSort())
 
         return chatRoomJpaRepository.findMyChatRoomWithPageable(member.getIdOrThrow(), pageableWithSort)
+    }
+
+    /**
+     * 활성 상태인 채팅방만 조회 (새로운 메서드)
+     */
+    fun findActiveChatRoomsByMember(
+        member: Member,
+        pageable: Pageable,
+    ): Page<ChatRoomWithMemberInfo> {
+        val pageableWithSort = PageRequest.of(pageable.pageNumber, pageable.pageSize, getChatRoomDefaultSort())
+        
+        // 사용자가 ACTIVE 상태인 채팅방들을 조회
+        val activeChatRoomMembers = chatRoomMemberJpaRepository.findByMemberAndMemberStatus(
+            member, 
+            ChatRoomMemberStatus.ACTIVE, 
+            pageableWithSort
+        )
+        
+        return activeChatRoomMembers.map { chatRoomMember ->
+            val partner = findPartner(chatRoomMember.chatRoom.getIdOrThrow(), member)
+            val partnerChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(
+                chatRoomMember.chatRoom.getIdOrThrow(), 
+                partner
+            )
+            
+            ChatRoomWithMemberInfo(
+                chatRoom = chatRoomMember.chatRoom,
+                requesterChatRoomMember = chatRoomMember,
+                partner = partner,
+                partnerChatRoomMember = partnerChatRoomMember
+            )
+        }
     }
 
     fun findPartner(

@@ -92,4 +92,5 @@ interface ChatJpaRepository : JpaRepository<Chat, Long> {
         lastChatId: Long,
         pageable: Pageable
     ): Page<Chat>
+
 }
