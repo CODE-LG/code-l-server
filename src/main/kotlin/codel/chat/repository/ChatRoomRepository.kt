@@ -36,13 +36,13 @@ class ChatRoomRepository(
         member: Member,
         pageable: Pageable,
     ): Page<ChatRoomWithMemberInfo> {
-        val pageableWithSort = PageRequest.of(pageable.pageNumber, pageable.pageSize, getChatRoomDefaultSort())
+        val pageable = PageRequest.of(pageable.pageNumber, pageable.pageSize)
         
         // 사용자가 ACTIVE 상태인 채팅방들을 조회
         val activeChatRoomMembers = chatRoomMemberJpaRepository.findByMemberAndMemberStatus(
             member, 
             ChatRoomMemberStatus.ACTIVE, 
-            pageableWithSort
+            pageable
         )
         
         return activeChatRoomMembers.map { chatRoomMember ->
