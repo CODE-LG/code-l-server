@@ -12,7 +12,6 @@ import codel.chat.infrastructure.ChatJpaRepository
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.chat.presentation.request.ChatSendRequest
-import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.response.SavedChatDto
@@ -82,7 +81,7 @@ class ChatService(
                 message = "코드 매칭에 성공했어요!",
                 sentAt = now,
                 senderType = ChatSenderType.SYSTEM,
-                chatContentType = ChatContentType.CODE_MATCHED
+                chatContentType = ChatContentType.MATCHED
             ),
             Chat(
                 chatRoom = chatRoom,
@@ -95,7 +94,7 @@ class ChatService(
                         "두 분의 공통 관심사에 맞춘 질문을 CODE가 추천해드립니다.\n\n ✨ 인연의 시작, CODE가 함께할게요.",
                 sentAt = now,
                 senderType = ChatSenderType.SYSTEM,
-                chatContentType = ChatContentType.CODE_ONBOARDING
+                chatContentType = ChatContentType.ONBOARDING
             ),
             Chat(
                 chatRoom = chatRoom,
@@ -127,7 +126,7 @@ class ChatService(
                 message = profile.question,
                 sentAt = now,
                 senderType = ChatSenderType.SYSTEM,
-                chatContentType = ChatContentType.CODE_QUESTION
+                chatContentType = ChatContentType.QUESTION
             ),
             Chat(
                 chatRoom = chatRoom,
@@ -304,7 +303,7 @@ class ChatService(
             Chat.createSystemMessage(
                 chatRoom = chatRoom,
                 message = "코드해제 요청이 왔습니다.",
-                chatContentType = ChatContentType.CODE_UNLOCKED_REQUEST
+                chatContentType = ChatContentType.UNLOCKED_REQUEST
             )
         )
 
@@ -397,7 +396,7 @@ class ChatService(
             fromChatRoomMember = requesterChatRoomMember, // null 대신 실제 멤버 할당
             message = message,
             senderType = ChatSenderType.SYSTEM,
-            chatContentType = ChatContentType.CODE_QUESTION,
+            chatContentType = ChatContentType.QUESTION,
             sentAt = LocalDateTime.now()
         )
         
