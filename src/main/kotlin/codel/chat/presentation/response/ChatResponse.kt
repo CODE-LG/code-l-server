@@ -11,7 +11,7 @@ data class ChatResponse(
     val chatRoomId: Long,
     val message: String,
     val chatType: ChatSenderType,
-    val senderId : Long,
+    val senderId: Long?,  // nullable로 변경
     val contentType: ChatContentType,
     val sentAt: LocalDateTime,
 ) {
@@ -25,7 +25,7 @@ data class ChatResponse(
                 chatRoomId = chat.chatRoom.getIdOrThrow(),
                 chatType = chat.getChatType(requester),
                 message = chat.message,
-                senderId = chat.getFromChatRoomMemberOrThrow().member.getIdOrThrow(),
+                senderId = chat.getSenderId(), // 안전한 방식으로 처리
                 contentType = chat.chatContentType,
                 sentAt = chat.getSentAtOrThrow(),
             )
