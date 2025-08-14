@@ -11,6 +11,7 @@ data class ChatResponse(
     val chatRoomId: Long,
     val message: String,
     val chatType: ChatSenderType,
+    val senderId : Long,
     val contentType: ChatContentType,
     val sentAt: LocalDateTime,
 ) {
@@ -24,6 +25,7 @@ data class ChatResponse(
                 chatRoomId = chat.chatRoom.getIdOrThrow(),
                 chatType = chat.getChatType(requester),
                 message = chat.message,
+                senderId = chat.getFromChatRoomMemberOrThrow().member.getIdOrThrow(),
                 contentType = chat.chatContentType,
                 sentAt = chat.getSentAtOrThrow(),
             )
