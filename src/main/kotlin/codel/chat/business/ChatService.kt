@@ -41,7 +41,8 @@ class ChatService(
     private val signalJpaRepository: SignalJpaRepository,
     private val chatRoomJpaRepository: ChatRoomJpaRepository,
     private val chatJpaRepository: ChatJpaRepository,
-    private val questionService: QuestionService
+    private val questionService: QuestionService,
+    private val codeUnlockService: CodeUnlockService
 ) {
 
 
@@ -167,13 +168,17 @@ class ChatService(
                 chatRoomInfo.partnerChatRoomMember
             )
             
-            ChatRoomResponse.toResponseWithMemberStatus(
+            // unlockInfo 추가
+            val unlockInfo = codeUnlockService.getUnlockInfo(chatRoomInfo.chatRoom, requester)
+            
+            ChatRoomResponse.toResponseWithUnlockInfo(
                 chatRoom = chatRoomInfo.chatRoom,
                 requester = requester,
                 lastReadChatId = chatRoomInfo.requesterChatRoomMember.lastReadChat?.getIdOrThrow(),
                 partner = chatRoomInfo.partner,
                 partnerStatus = chatRoomInfo.partnerChatRoomMember?.memberStatus ?: ChatRoomMemberStatus.ACTIVE,
                 unReadMessageCount = unReadCount,
+                unlockInfo = unlockInfo
             )
         }
     }

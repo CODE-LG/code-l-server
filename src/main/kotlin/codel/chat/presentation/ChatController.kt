@@ -66,33 +66,6 @@ class ChatController(
         return ResponseEntity.noContent().build()
     }
 
-    @PostMapping("/v1/chatroom/{chatRoomId}/unlock")
-    override fun updateChatRoomStatus(
-        @LoginMember requester: Member,
-        @PathVariable chatRoomId: Long,
-    ): ResponseEntity<Unit> {
-        val chatRoomAndChatResponse = chatService.updateUnlockChatRoom(requester, chatRoomId)
-        
-        // 채팅방 실시간 메시지 전송
-        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", chatRoomAndChatResponse.chatResponse)
-        
-        // 발송자에게는 본인용 채팅방 응답 전송
-        messagingTemplate.convertAndSend(
-            "/sub/v1/chatroom/member/${requester.id}",
-            chatRoomAndChatResponse.requesterChatRoomResponse,
-        )
-        
-        // 상대방에게는 읽지 않은 수가 증가된 채팅방 응답 전송
-        messagingTemplate.convertAndSend(
-            "/sub/v1/chatroom/member/${chatRoomAndChatResponse.partner.getIdOrThrow()}",
-            chatRoomAndChatResponse.partnerChatRoomResponse,
-        )
-
-        // TODO : 실시간 채팅 도중 상대방에게 실시간으로 바텀시트 올라가게끔 알려줄 수 있는 이벤트 발행
-        //  messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId/events")
-        return ResponseEntity.ok().build()
-    }
-
     @PostMapping("/v1/chatroom/{chatRoomId}/questions/random")
     override fun sendRandomQuestion(
         @LoginMember requester: Member,

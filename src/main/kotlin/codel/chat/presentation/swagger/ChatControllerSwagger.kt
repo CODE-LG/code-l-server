@@ -127,33 +127,14 @@ interface ChatControllerSwagger {
     ): ResponseEntity<Unit>
 
     @Operation(
-        summary = "채팅방 코드해제 요청",
-        description = "채팅방 코드해제를 요청합니다.."
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "204", description = "성공적으로 코드 해제 요청 성공"),
-            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
-            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
-        ]
-    )
-    @PostMapping("/v1/chatroom/{chatRoomId}/unlock")
-    fun updateChatRoomStatus(
-        @Parameter(hidden = true) @LoginMember requester: Member,
-        @PathVariable chatRoomId: Long,
-    ): ResponseEntity<Unit>
-
-    @Operation(
-        summary = "랜덤 질문 즉시 전송",
-        description = "채팅방에 랜덤 질문을 시스템 메시지로 즉시 전송합니다. 버튼 클릭 시 바로 실행됩니다."
+        summary = "랜덤 질문 전송",
+        description = "채팅방에 시스템이 추천하는 랜덤 질문을 전송합니다."
     )
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "성공적으로 랜덤 질문 전송"),
-            ApiResponse(responseCode = "204", description = "더 이상 사용할 수 있는 질문이 없음"),
-            ApiResponse(responseCode = "403", description = "해당 채팅방에 접근할 권한이 없음"),
-            ApiResponse(responseCode = "404", description = "채팅방을 찾을 수 없음"),
-            ApiResponse(responseCode = "500", description = "서버 내부 오류")
+            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
         ]
     )
     fun sendRandomQuestion(

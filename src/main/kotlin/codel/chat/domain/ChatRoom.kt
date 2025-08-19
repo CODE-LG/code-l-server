@@ -20,6 +20,10 @@ class ChatRoom(
     var unlockedRequestedBy: Long? = null,
 
     var unlockedUpdateAt: LocalDateTime? = null,
+
+    var isUnlocked: Boolean = false,
+
+    var unlockedAt: LocalDateTime? = null,
 ) : BaseTimeEntity() {
     fun getIdOrThrow(): Long = id ?: throw IllegalStateException("채팅방이 존재하지 않습니다.")
 
@@ -60,4 +64,10 @@ class ChatRoom(
     }
 
     fun getUnlockedUpdateAtOrThrow() = unlockedUpdateAt ?: throw ChatException(HttpStatus.BAD_REQUEST, "코드 해제 요청 또는 승인한 적이 없습니다.")
+
+    fun unlockByRequest() {
+        isUnlocked = true
+        unlockedAt = LocalDateTime.now()
+        status = ChatRoomStatus.UNLOCKED
+    }
 }
