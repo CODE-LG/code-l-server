@@ -50,4 +50,80 @@ class CodeUnlockController(
 
         return ResponseEntity.ok(UnlockRequestResponse.from(unlockRequest))
     }
+
+    /**
+     * 코드해제 요청 승인 (2단계)
+     */
+    @PutMapping("/v1/unlock-request/{requestId}/approve")
+    override fun approveUnlock(
+        @LoginMember processor: Member,
+        @PathVariable requestId: Long
+    ): ResponseEntity<UnlockRequestResponse> {
+        
+        // 코드해제 승인 처리
+        val approvedRequest = codeUnlockService.approveUnlock(requestId, processor)
+        
+        // 승인된 채팅방 정보 조회
+        val chatRoomId = approvedRequest.chatRoom.getIdOrThrow()
+        val requester = approvedRequest.requester
+        
+        // 실시간 알림 전송 (승인 메시지)
+        sendUnlockProcessNotification(chatRoomId, processor, requester, "approved")
+        
+        return ResponseEntity.ok(UnlockRequestResponse.from(approvedRequest))
+    }
+
+    /**
+     * 코드해제 요청 거절 (2단계)
+     */
+    @PutMapping("/v1/unlock-request/{requestId}/reject")
+    override fun rejectUnlock(
+        @LoginMember processor: Member,
+        @PathVariable requestId: Long
+    ): ResponseEntity<UnlockRequestResponse> {
+        
+        // 코드해제 거절 처리
+        val rejectedRequest = codeUnlockService.rejectUnlock(requestId, processor)
+        
+        // 거절된 채팅방 정보 조회
+        val chatRoomId = rejectedRequest.chatRoom.getIdOrThrow()
+        val requester = rejectedRequest.requester
+        
+        // 실시간 알림 전송 (거절 메시지)
+        sendUnlockProcessNotification(chatRoomId, processor, requester, "rejected")
+        
+        return ResponseEntity.ok(UnlockRequestResponse.from(rejectedRequest))
+    }
+
+    /**
+     * 승인/거절 시 실시간 알림 전송
+     */
+    private fun sendUnlockProcessNotification(
+        chatRoomId: Long,
+        processor: Member,
+        requester: Member,
+        action: String
+    ) {
+        // 최신 채팅방 정보 조회 (승인/거절 후 상태 반영)
+        val chatRoom = chatService.findChatRoomById(chatRoomId)
+        val recentChat = chatRoom.recentChat
+        
+        if (recentChat != null) {
+            // 1. 채팅방 실시간 메시지 전송
+            messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", 
+                chatService.buildChatResponse(processor, recentChat))
+            
+            // 2. 처리자(승인/거절한 사람)에게 채팅방 업데이트 전송
+            messagingTemplate.convertAndSend(
+                "/sub/v1/chatroom/member/${processor.getIdOrThrow()}",
+                chatService.buildChatRoomResponse(chatRoom, processor, requester)
+            )
+            
+            // 3. 요청자에게 채팅방 업데이트 전송
+            messagingTemplate.convertAndSend(
+                "/sub/v1/chatroom/member/${requester.getIdOrThrow()}",
+                chatService.buildChatRoomResponse(chatRoom, requester, processor)
+            )
+        }
+    }
 }

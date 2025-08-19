@@ -79,4 +79,132 @@ interface CodeUnlockControllerSwagger {
         )
         @PathVariable chatRoomId: Long
     ): ResponseEntity<UnlockRequestResponse>
+
+    @Operation(
+        summary = "코드해제 요청 승인",
+        description = """
+            대기 중인 코드해제 요청을 승인합니다.
+            
+            **기능 설명:**
+            - 상대방의 코드해제 요청을 승인하여 서로의 프로필을 공개
+            - 승인 시 채팅방 상태가 UNLOCKED로 변경됨
+            - 채팅방에 승인 완료 시스템 메시지가 전송됨
+            
+            **제약 조건:**
+            - PENDING 상태인 요청만 승인 가능
+            - 본인의 요청은 승인할 수 없음
+            - 해당 채팅방의 멤버만 승인 가능
+            
+            **처리 결과:**
+            1. 코드해제 요청 상태가 APPROVED로 변경
+            2. 채팅방 isUnlocked = true, status = UNLOCKED로 변경
+            3. "코드해제가 승인되었습니다" 시스템 메시지 전송
+            4. 양쪽 사용자에게 실시간 알림 전송
+        """
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200", 
+                description = "코드해제 요청 승인 성공"
+            ),
+            ApiResponse(
+                responseCode = "400", 
+                description = """
+                요청이 잘못되었습니다. 가능한 오류:
+                - 이미 처리된 요청 (PENDING 상태가 아님)
+                - 본인의 요청을 승인하려고 시도
+                """
+            ),
+            ApiResponse(
+                responseCode = "401", 
+                description = "인증되지 않은 사용자"
+            ),
+            ApiResponse(
+                responseCode = "403", 
+                description = "해당 채팅방에 접근할 권한이 없음"
+            ),
+            ApiResponse(
+                responseCode = "404", 
+                description = "코드해제 요청을 찾을 수 없음"
+            ),
+            ApiResponse(
+                responseCode = "500", 
+                description = "서버 내부 오류"
+            ),
+        ],
+    )
+    fun approveUnlock(
+        @Parameter(hidden = true) @LoginMember processor: Member,
+        @Parameter(
+            description = "승인할 코드해제 요청 ID", 
+            required = true, 
+            example = "456"
+        )
+        @PathVariable requestId: Long
+    ): ResponseEntity<UnlockRequestResponse>
+
+    @Operation(
+        summary = "코드해제 요청 거절",
+        description = """
+            대기 중인 코드해제 요청을 거절합니다.
+            
+            **기능 설명:**
+            - 상대방의 코드해제 요청을 거절
+            - 채팅방 상태는 LOCKED 상태 유지
+            - 채팅방에 거절 완료 시스템 메시지가 전송됨
+            
+            **제약 조건:**
+            - PENDING 상태인 요청만 거절 가능
+            - 본인의 요청은 거절할 수 없음
+            - 해당 채팅방의 멤버만 거절 가능
+            
+            **처리 결과:**
+            1. 코드해제 요청 상태가 REJECTED로 변경
+            2. 채팅방 상태는 변경되지 않음 (여전히 LOCKED)
+            3. "코드해제 요청이 거절되었습니다" 시스템 메시지 전송
+            4. 양쪽 사용자에게 실시간 알림 전송
+        """
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200", 
+                description = "코드해제 요청 거절 성공"
+            ),
+            ApiResponse(
+                responseCode = "400", 
+                description = """
+                요청이 잘못되었습니다. 가능한 오류:
+                - 이미 처리된 요청 (PENDING 상태가 아님)
+                - 본인의 요청을 거절하려고 시도
+                """
+            ),
+            ApiResponse(
+                responseCode = "401", 
+                description = "인증되지 않은 사용자"
+            ),
+            ApiResponse(
+                responseCode = "403", 
+                description = "해당 채팅방에 접근할 권한이 없음"
+            ),
+            ApiResponse(
+                responseCode = "404", 
+                description = "코드해제 요청을 찾을 수 없음"
+            ),
+            ApiResponse(
+                responseCode = "500", 
+                description = "서버 내부 오류"
+            ),
+        ],
+    )
+    fun rejectUnlock(
+        @Parameter(hidden = true) @LoginMember processor: Member,
+        @Parameter(
+            description = "거절할 코드해제 요청 ID", 
+            required = true, 
+            example = "456"
+        )
+        @PathVariable requestId: Long
+    ): ResponseEntity<UnlockRequestResponse>
 }

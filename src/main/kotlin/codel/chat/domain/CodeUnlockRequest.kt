@@ -36,31 +36,44 @@ class CodeUnlockRequest(
 
     fun isPending(): Boolean = status == UnlockRequestStatus.PENDING
 
-    // 2단계에서 구현할 메서드들 (현재는 주석 처리)
-    // fun approve(processor: Member) {
-    //     if (status != UnlockRequestStatus.PENDING) {
-    //         throw IllegalStateException("대기 중인 요청만 승인할 수 있습니다.")
-    //     }
-    //     status = UnlockRequestStatus.APPROVED
-    //     processedAt = LocalDateTime.now()
-    //     processedBy = processor
-    //     chatRoom.unlockByRequest()
-    // }
+    /**
+     * 코드해제 요청 승인 (2단계)
+     */
+    fun approve(processor: Member) {
+        if (status != UnlockRequestStatus.PENDING) {
+            throw IllegalStateException("대기 중인 요청만 승인할 수 있습니다.")
+        }
+        
+        status = UnlockRequestStatus.APPROVED
+        processedAt = LocalDateTime.now()
+        processedBy = processor
+        
+        // ChatRoom의 잠금 해제
+        chatRoom.unlockByRequest()
+    }
     
-    // fun reject(processor: Member) {
-    //     if (status != UnlockRequestStatus.PENDING) {
-    //         throw IllegalStateException("대기 중인 요청만 거절할 수 있습니다.")
-    //     }
-    //     status = UnlockRequestStatus.REJECTED
-    //     processedAt = LocalDateTime.now()
-    //     processedBy = processor
-    // }
+    /**
+     * 코드해제 요청 거절 (2단계)
+     */
+    fun reject(processor: Member) {
+        if (status != UnlockRequestStatus.PENDING) {
+            throw IllegalStateException("대기 중인 요청만 거절할 수 있습니다.")
+        }
+        
+        status = UnlockRequestStatus.REJECTED
+        processedAt = LocalDateTime.now()
+        processedBy = processor
+    }
     
-    // fun cancel() {
-    //     if (status != UnlockRequestStatus.PENDING) {
-    //         throw IllegalStateException("대기 중인 요청만 취소할 수 있습니다.")
-    //     }
-    //     status = UnlockRequestStatus.CANCELLED
-    //     processedAt = LocalDateTime.now()
-    // }
+    /**
+     * 코드해제 요청 취소 (2단계)
+     */
+    fun cancel() {
+        if (status != UnlockRequestStatus.PENDING) {
+            throw IllegalStateException("대기 중인 요청만 취소할 수 있습니다.")
+        }
+        
+        status = UnlockRequestStatus.CANCELLED
+        processedAt = LocalDateTime.now()
+    }
 }

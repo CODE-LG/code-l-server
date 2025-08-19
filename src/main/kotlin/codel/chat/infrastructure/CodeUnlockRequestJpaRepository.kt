@@ -31,4 +31,9 @@ interface CodeUnlockRequestJpaRepository : JpaRepository<CodeUnlockRequest, Long
         LIMIT 1
     """)
     fun findLatestByChatRoomId(chatRoomId: Long): CodeUnlockRequest?
+
+    /**
+     * ID로 코드해제 요청 조회 (2단계에서 사용)
+     */
+    fun findByIdAndStatus(requestId: Long, status: UnlockRequestStatus): CodeUnlockRequest?
 }
