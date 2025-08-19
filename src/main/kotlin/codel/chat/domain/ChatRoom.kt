@@ -11,7 +11,7 @@ class ChatRoom(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
     @OneToOne
-    @JoinColumn(name = "chat_id")
+    @JoinColumn(name = "recent_chat_id")
     var recentChat: Chat? = null,
 
     @Enumerated(EnumType.STRING)
@@ -53,6 +53,10 @@ class ChatRoom(
         isUnlocked = true
         status = ChatRoomStatus.UNLOCKED
         unlockedAt = LocalDateTime.now()
+    }
+
+    fun reject(){
+        status = ChatRoomStatus.LOCKED
     }
 
 }

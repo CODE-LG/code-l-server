@@ -123,6 +123,7 @@ class CodeUnlockService(
         )
 
         unlockRequest.chatRoom.updateRecentChat(systemMessage)
+        unlockRequest.chatRoom.reject()
 
         return unlockRequest
     }

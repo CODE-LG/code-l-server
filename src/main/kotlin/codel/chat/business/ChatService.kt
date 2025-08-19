@@ -302,8 +302,6 @@ class ChatService(
     fun updateUnlockChatRoom(requester: Member, chatRoomId: Long) : SavedChatDto{
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
 
-        chatRoom.requestUnlock()
-
         val savedChat = chatJpaRepository.save(
             Chat.createSystemMessage(
                 chatRoom = chatRoom,
