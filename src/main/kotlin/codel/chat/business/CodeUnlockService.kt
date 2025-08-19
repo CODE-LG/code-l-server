@@ -35,7 +35,7 @@ class CodeUnlockService(
             chatRoom = chatRoom,
             requester = requester
         )
-        
+
         val savedRequest = codeUnlockRequestRepository.save(unlockRequest)
         
         // 시스템 메시지 생성
@@ -46,7 +46,8 @@ class CodeUnlockService(
                 chatContentType = ChatContentType.UNLOCKED_REQUEST
             )
         )
-        
+
+        chatRoom.requestUnlock()
         chatRoom.updateRecentChat(systemMessage)
         
         return savedRequest

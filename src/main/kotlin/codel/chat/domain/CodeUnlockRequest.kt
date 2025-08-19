@@ -49,7 +49,7 @@ class CodeUnlockRequest(
         processedBy = processor
         
         // ChatRoom의 잠금 해제
-        chatRoom.unlockByRequest()
+        chatRoom.unlock()
     }
     
     /**

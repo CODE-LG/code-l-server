@@ -17,30 +17,20 @@ class ChatRoom(
     @Enumerated(EnumType.STRING)
     var status: ChatRoomStatus = ChatRoomStatus.LOCKED,
 
-    var unlockedRequestedBy: Long? = null,
-
-    var unlockedUpdateAt: LocalDateTime? = null,
-
     var isUnlocked: Boolean = false,
 
     var unlockedAt: LocalDateTime? = null,
 ) : BaseTimeEntity() {
     fun getIdOrThrow(): Long = id ?: throw IllegalStateException("채팅방이 존재하지 않습니다.")
 
-    fun unlock(memberId: Long) {
+    fun requestUnlock() {
         when (status) {
             ChatRoomStatus.LOCKED -> {
                 status = ChatRoomStatus.UNLOCKED_REQUESTED
-                unlockedUpdateAt = LocalDateTime.now()
-                unlockedRequestedBy = memberId
             }
 
             ChatRoomStatus.UNLOCKED_REQUESTED -> {
-                if (unlockedRequestedBy == memberId) {
-                    throw ChatException(HttpStatus.BAD_REQUEST, "이미 코드해제 요청을 보낸 상태입니다.")
-                }
-                status = ChatRoomStatus.UNLOCKED
-                unlockedUpdateAt = LocalDateTime.now()
+                throw ChatException(HttpStatus.BAD_REQUEST, "이미 코드해제 요청을 보낸 상태입니다.")
             }
 
             ChatRoomStatus.UNLOCKED -> {
@@ -57,11 +47,12 @@ class ChatRoom(
         this.recentChat = recentChat
     }
 
-    fun getUnlockedUpdateAtOrThrow() = unlockedUpdateAt ?: throw ChatException(HttpStatus.BAD_REQUEST, "코드 해제 요청 또는 승인한 적이 없습니다.")
+    fun getUnlockedUpdateAtOrThrow() = unlockedAt ?: throw ChatException(HttpStatus.BAD_REQUEST, "코드 해제 요청 또는 승인한 적이 없습니다.")
 
-    fun unlockByRequest() {
+    fun unlock(){
         isUnlocked = true
-        unlockedAt = LocalDateTime.now()
         status = ChatRoomStatus.UNLOCKED
+        unlockedAt = LocalDateTime.now()
     }
+
 }
