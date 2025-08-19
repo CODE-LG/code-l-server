@@ -11,32 +11,26 @@ class ChatRoom(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
     @OneToOne
-    @JoinColumn(name = "chat_id")
+    @JoinColumn(name = "recent_chat_id")
     var recentChat: Chat? = null,
 
     @Enumerated(EnumType.STRING)
     var status: ChatRoomStatus = ChatRoomStatus.LOCKED,
 
-    var unlockedRequestedBy: Long? = null,
+    var isUnlocked: Boolean = false,
 
-    var unlockedUpdateAt: LocalDateTime? = null,
+    var unlockedAt: LocalDateTime? = null,
 ) : BaseTimeEntity() {
     fun getIdOrThrow(): Long = id ?: throw IllegalStateException("채팅방이 존재하지 않습니다.")
 
-    fun unlock(memberId: Long) {
+    fun requestUnlock() {
         when (status) {
             ChatRoomStatus.LOCKED -> {
                 status = ChatRoomStatus.UNLOCKED_REQUESTED
-                unlockedUpdateAt = LocalDateTime.now()
-                unlockedRequestedBy = memberId
             }
 
             ChatRoomStatus.UNLOCKED_REQUESTED -> {
-                if (unlockedRequestedBy == memberId) {
-                    throw ChatException(HttpStatus.BAD_REQUEST, "이미 코드해제 요청을 보낸 상태입니다.")
-                }
-                status = ChatRoomStatus.UNLOCKED
-                unlockedUpdateAt = LocalDateTime.now()
+                throw ChatException(HttpStatus.BAD_REQUEST, "이미 코드해제 요청을 보낸 상태입니다.")
             }
 
             ChatRoomStatus.UNLOCKED -> {
@@ -53,11 +47,16 @@ class ChatRoom(
         this.recentChat = recentChat
     }
 
-    fun isMember(memberId: Long): Boolean {
-        // ChatRoomMember를 통해 확인해야 하지만, 여기서는 간단히 구현
-        // 실제로는 ChatRoomMemberRepository를 주입받아서 확인해야 합니다
-        return true // 임시 구현 - 실제로는 멤버십 확인 로직이 필요
+    fun getUnlockedUpdateAtOrThrow() = unlockedAt ?: throw ChatException(HttpStatus.BAD_REQUEST, "코드 해제 요청 또는 승인한 적이 없습니다.")
+
+    fun unlock(){
+        isUnlocked = true
+        status = ChatRoomStatus.UNLOCKED
+        unlockedAt = LocalDateTime.now()
     }
 
-    fun getUnlockedUpdateAtOrThrow() = unlockedUpdateAt ?: throw ChatException(HttpStatus.BAD_REQUEST, "코드 해제 요청 또는 승인한 적이 없습니다.")
+    fun reject(){
+        status = ChatRoomStatus.LOCKED
+    }
+
 }

@@ -41,7 +41,8 @@ class ChatService(
     private val signalJpaRepository: SignalJpaRepository,
     private val chatRoomJpaRepository: ChatRoomJpaRepository,
     private val chatJpaRepository: ChatJpaRepository,
-    private val questionService: QuestionService
+    private val questionService: QuestionService,
+    private val codeUnlockService: CodeUnlockService
 ) {
 
 
@@ -167,13 +168,17 @@ class ChatService(
                 chatRoomInfo.partnerChatRoomMember
             )
             
-            ChatRoomResponse.toResponseWithMemberStatus(
+            // unlockInfo 추가
+            val unlockInfo = codeUnlockService.getUnlockInfo(chatRoomInfo.chatRoom, requester)
+            
+            ChatRoomResponse.toResponseWithUnlockInfo(
                 chatRoom = chatRoomInfo.chatRoom,
                 requester = requester,
                 lastReadChatId = chatRoomInfo.requesterChatRoomMember.lastReadChat?.getIdOrThrow(),
                 partner = chatRoomInfo.partner,
                 partnerStatus = chatRoomInfo.partnerChatRoomMember?.memberStatus ?: ChatRoomMemberStatus.ACTIVE,
                 unReadMessageCount = unReadCount,
+                unlockInfo = unlockInfo
             )
         }
     }
@@ -296,8 +301,6 @@ class ChatService(
 
     fun updateUnlockChatRoom(requester: Member, chatRoomId: Long) : SavedChatDto{
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
-
-        chatRoom.unlock(requester.getIdOrThrow())
 
         val savedChat = chatJpaRepository.save(
             Chat.createSystemMessage(
@@ -494,6 +497,40 @@ class ChatService(
      */
     fun findPartner(chatRoomId: Long, requester: Member): Member {
         return chatRoomRepository.findPartner(chatRoomId, requester)
+    }
+
+    /**
+     * 채팅방 ID로 채팅방 조회 (2단계에서 추가)
+     */
+    fun findChatRoomById(chatRoomId: Long): ChatRoom {
+        return chatRoomRepository.findChatRoomById(chatRoomId)
+    }
+
+    /**
+     * ChatResponse 생성 헬퍼 (2단계에서 추가)
+     */
+    fun buildChatResponse(requester: Member, chat: Chat): ChatResponse {
+        return ChatResponse.toResponse(requester, chat)
+    }
+
+    /**
+     * ChatRoomResponse 생성 헬퍼 (2단계에서 추가)
+     */
+    fun buildChatRoomResponse(chatRoom: ChatRoom, requester: Member, partner: Member): ChatRoomResponse {
+        val requesterChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoom.getIdOrThrow(), requester)
+        val partnerChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoom.getIdOrThrow(), partner)
+        val unReadCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
+        val unlockInfo = codeUnlockService.getUnlockInfo(chatRoom, requester)
+        
+        return ChatRoomResponse.toResponseWithUnlockInfo(
+            chatRoom = chatRoom,
+            requester = requester,
+            lastReadChatId = requesterChatRoomMember?.lastReadChat?.getIdOrThrow(),
+            partner = partner,
+            partnerStatus = partnerChatRoomMember?.memberStatus ?: ChatRoomMemberStatus.ACTIVE,
+            unReadMessageCount = unReadCount,
+            unlockInfo = unlockInfo
+        )
     }
 }
 

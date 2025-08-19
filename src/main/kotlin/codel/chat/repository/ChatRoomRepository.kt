@@ -76,7 +76,7 @@ class ChatRoomRepository(
     fun findChatRoomById(chatRoomId: Long): ChatRoom =
         chatRoomJpaRepository.findByIdOrNull(chatRoomId) ?: throw ChatException(
             HttpStatus.BAD_REQUEST,
-            "chatId에 해당하는 채팅방을 찾을 수 없습니다.",
+            "chatRoomId에 해당하는 채팅방을 찾을 수 없습니다.",
         )
 
     private fun getChatRoomDefaultSort(): Sort = Sort.by(Sort.Order.desc("updatedAt"))
