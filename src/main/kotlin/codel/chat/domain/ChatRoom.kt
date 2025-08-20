@@ -38,4 +38,8 @@ class ChatRoom(
     fun reject(){
         status = ChatRoomStatus.LOCKED
     }
+
+    fun closeConversation() {
+        status = ChatRoomStatus.DISABLED
+    }
 }
