@@ -139,4 +139,13 @@ class ChatController(
         
         return ResponseEntity.ok().build()
     }
+
+    @PostMapping("/v1/chatroom/{chatRoomId}/close")
+    fun closeConversationAtChatRoom(
+        @LoginMember requester : Member,
+        @PathVariable chatRoomId: Long,
+    ) : ResponseEntity<Unit> {
+        chatService.closeConversation(chatRoomId, requester)
+        return ResponseEntity.ok().build()
+    }
 }

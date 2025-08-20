@@ -40,4 +40,8 @@ class ChatRoomMember(
     fun isActive(): Boolean = memberStatus == ChatRoomMemberStatus.ACTIVE
     
     fun hasLeft(): Boolean = memberStatus == ChatRoomMemberStatus.LEFT
+
+    fun closeConversation() {
+        this.chatRoom.closeConversation();
+    }
 }

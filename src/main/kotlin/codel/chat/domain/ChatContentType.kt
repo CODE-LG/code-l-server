@@ -10,6 +10,5 @@ enum class ChatContentType {
     QUESTION,
     ONBOARDING,
     TIME,
-    DISABLED,
-    MEMBER_LEFT,
+    CLOSE_CONVERSATION,
 }

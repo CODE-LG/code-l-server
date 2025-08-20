@@ -438,24 +438,29 @@ class ChatService(
 
         // 개별 사용자 상태 변경
         chatRoomMember.leave()
+    }
+
+    fun closeConversation(chatRoomId: Long, requester: Member) {
+        val chatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, requester)
+            ?: throw ChatException(HttpStatus.BAD_REQUEST, "해당 채팅방의 멤버가 아닙니다.")
+
+        // 이미 나간 상태인지 확인
+        if (chatRoomMember.hasLeft()) {
+            throw ChatException(HttpStatus.BAD_REQUEST, "이미 나간 채팅방입니다.")
+        }
+        chatRoomMember.closeConversation()
 
         // 시스템 메시지 추가
-        val leaveMessage = chatJpaRepository.save(
+        val closeConversationMessage = chatJpaRepository.save(
             Chat.createSystemMessage(
                 chatRoom = chatRoomMember.chatRoom,
-                message = "${member.getProfileOrThrow().codeName}님이 채팅방을 나갔습니다.",
-                chatContentType = ChatContentType.MEMBER_LEFT
+                message = "${requester.getProfileOrThrow().codeName}님이 대화를 종료하였습니다.",
+                chatContentType = ChatContentType.CLOSE_CONVERSATION
             )
         )
-        
+
         // 최근 채팅 업데이트
-        chatRoomMember.chatRoom.updateRecentChat(leaveMessage)
-        
-        // 양쪽 모두 나갔다면 채팅방 상태도 변경
-        val allMembers = chatRoomMemberJpaRepository.findByChatRoomId(chatRoomId)
-        if (allMembers.all { it.hasLeft() }) {
-            chatRoomMember.chatRoom.status = ChatRoomStatus.DISABLED
-        }
+        chatRoomMember.chatRoom.updateRecentChat(closeConversationMessage)
     }
 
     /**
@@ -495,7 +500,7 @@ class ChatService(
         val requesterChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoom.getIdOrThrow(), requester)
         val unReadCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
         val unlockInfo = codeUnlockService.getUnlockInfo(chatRoom, requester)
-        
+
         return ChatRoomResponse.toResponseWithUnlockInfo(
             chatRoom = chatRoom,
             requester = requester,
