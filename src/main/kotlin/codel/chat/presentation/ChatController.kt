@@ -141,7 +141,7 @@ class ChatController(
     }
 
     @PostMapping("/v1/chatroom/{chatRoomId}/close")
-    fun closeConversationAtChatRoom(
+    override fun closeConversationAtChatRoom(
         @LoginMember requester : Member,
         @PathVariable chatRoomId: Long,
     ) : ResponseEntity<Unit> {
