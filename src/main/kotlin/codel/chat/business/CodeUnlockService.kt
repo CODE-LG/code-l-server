@@ -47,7 +47,6 @@ class CodeUnlockService(
             )
         )
 
-        chatRoom.requestUnlock()
         chatRoom.updateRecentChat(systemMessage)
         
         return savedRequest

@@ -23,26 +23,6 @@ class ChatRoom(
 ) : BaseTimeEntity() {
     fun getIdOrThrow(): Long = id ?: throw IllegalStateException("채팅방이 존재하지 않습니다.")
 
-    fun requestUnlock() {
-        when (status) {
-            ChatRoomStatus.LOCKED -> {
-                status = ChatRoomStatus.UNLOCKED_REQUESTED
-            }
-
-            ChatRoomStatus.UNLOCKED_REQUESTED -> {
-                throw ChatException(HttpStatus.BAD_REQUEST, "이미 코드해제 요청을 보낸 상태입니다.")
-            }
-
-            ChatRoomStatus.UNLOCKED -> {
-                throw ChatException(HttpStatus.BAD_REQUEST, "이미 코드해제된 방입니다.")
-            }
-
-            ChatRoomStatus.DISABLED -> {
-                throw ChatException(HttpStatus.BAD_REQUEST, "폐지된 채팅방입니다.")
-            }
-        }
-    }
-
     fun updateRecentChat(recentChat: Chat) {
         this.recentChat = recentChat
     }
@@ -58,5 +38,4 @@ class ChatRoom(
     fun reject(){
         status = ChatRoomStatus.LOCKED
     }
-
 }
