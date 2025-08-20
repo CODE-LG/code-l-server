@@ -31,15 +31,13 @@ class ChatRoomMember(
         this.memberStatus = ChatRoomMemberStatus.LEFT
         this.leftAt = LocalDateTime.now()
     }
-    
+
     fun block() {
-        this.memberStatus = ChatRoomMemberStatus.BLOCKED
+        this.memberStatus = ChatRoomMemberStatus.LEFT
         this.leftAt = LocalDateTime.now()
     }
-    
+
     fun isActive(): Boolean = memberStatus == ChatRoomMemberStatus.ACTIVE
     
     fun hasLeft(): Boolean = memberStatus == ChatRoomMemberStatus.LEFT
-    
-    fun isBlocked(): Boolean = memberStatus == ChatRoomMemberStatus.BLOCKED
 }
