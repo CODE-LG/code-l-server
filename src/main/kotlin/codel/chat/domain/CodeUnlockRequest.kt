@@ -64,4 +64,8 @@ class CodeUnlockRequest(
         processedAt = LocalDateTime.now()
         processedBy = processor
     }
+
+    fun isRejected(): Boolean {
+        return status == UnlockRequestStatus.REJECTED
+    }
 }
