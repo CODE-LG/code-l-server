@@ -36,4 +36,13 @@ interface CodeUnlockRequestJpaRepository : JpaRepository<CodeUnlockRequest, Long
      * ID로 코드해제 요청 조회 (2단계에서 사용)
      */
     fun findByIdAndStatus(requestId: Long, status: UnlockRequestStatus): CodeUnlockRequest?
+
+    @Query("""
+        SELECT cur FROM CodeUnlockRequest cur
+        WHERE cur.chatRoom.id = :chatRoomId
+        AND cur.status = "PENDING"
+        ORDER BY cur.requestedAt DESC
+        LIMIT 1
+    """)
+    fun findLatestPendingByChatRoomId(chatRoomId: Any) : CodeUnlockRequest?
 }

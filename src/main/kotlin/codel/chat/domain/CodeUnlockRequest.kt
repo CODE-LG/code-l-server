@@ -64,16 +64,8 @@ class CodeUnlockRequest(
         processedAt = LocalDateTime.now()
         processedBy = processor
     }
-    
-    /**
-     * 코드해제 요청 취소 (2단계)
-     */
-    fun cancel() {
-        if (status != UnlockRequestStatus.PENDING) {
-            throw IllegalStateException("대기 중인 요청만 취소할 수 있습니다.")
-        }
-        
-        status = UnlockRequestStatus.CANCELLED
-        processedAt = LocalDateTime.now()
+
+    fun isRejected(): Boolean {
+        return status == UnlockRequestStatus.REJECTED
     }
 }

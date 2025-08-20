@@ -2,7 +2,6 @@ package codel.chat.presentation.response
 
 import codel.chat.business.UnlockInfo
 import codel.chat.domain.ChatRoom
-import codel.chat.domain.ChatRoomMemberStatus
 import codel.chat.domain.ChatRoomStatus
 import codel.member.domain.Member
 import codel.member.presentation.response.MemberResponse
@@ -12,7 +11,6 @@ data class ChatRoomResponse(
     val chatRoomId: Long,
     val unReadMessageCount: Int,
     val partner: MemberResponse,
-    val partnerChatRoomStatus: ChatRoomMemberStatus,
     val lastReadChatId : Long?,
     val recentChat: ChatResponse?,
     val chatRoomStatus : ChatRoomStatus,
@@ -26,13 +24,11 @@ data class ChatRoomResponse(
             requester: Member,
             lastReadChatId: Long?,
             partner: Member,
-            partnerStatus: ChatRoomMemberStatus,
             unReadMessageCount: Int,
         ): ChatRoomResponse =
             ChatRoomResponse(
                 chatRoomId = chatRoom.getIdOrThrow(),
                 partner = MemberResponse.toResponse(partner),
-                partnerChatRoomStatus = partnerStatus,
                 lastReadChatId = lastReadChatId,
                 recentChat = chatRoom.recentChat?.let { ChatResponse.toResponse(requester, it) },
                 unReadMessageCount = unReadMessageCount,
@@ -50,13 +46,11 @@ data class ChatRoomResponse(
             requester: Member,
             lastReadChatId: Long?,
             partner: Member,
-            partnerStatus: ChatRoomMemberStatus,
             unReadMessageCount: Int,
         ): ChatRoomResponse =
             ChatRoomResponse(
                 chatRoomId = chatRoom.getIdOrThrow(),
                 partner = MemberResponse.toResponse(partner),
-                partnerChatRoomStatus = partnerStatus,
                 lastReadChatId = lastReadChatId,
                 recentChat = chatRoom.recentChat?.let { ChatResponse.toResponse(requester, it) },
                 unReadMessageCount = unReadMessageCount,
@@ -74,14 +68,12 @@ data class ChatRoomResponse(
             requester: Member,
             lastReadChatId: Long?,
             partner: Member,
-            partnerStatus: ChatRoomMemberStatus,
             unReadMessageCount: Int,
             unlockInfo: UnlockInfo,
         ): ChatRoomResponse =
             ChatRoomResponse(
                 chatRoomId = chatRoom.getIdOrThrow(),
                 partner = MemberResponse.toResponse(partner),
-                partnerChatRoomStatus = partnerStatus,
                 lastReadChatId = lastReadChatId,
                 recentChat = chatRoom.recentChat?.let { ChatResponse.toResponse(requester, it) },
                 unReadMessageCount = unReadMessageCount,

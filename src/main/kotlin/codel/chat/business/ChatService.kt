@@ -4,7 +4,6 @@ import codel.chat.domain.Chat
 import codel.chat.domain.ChatContentType
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomMember
-import codel.chat.domain.ChatRoomMemberStatus
 import codel.chat.domain.ChatRoomStatus
 import codel.chat.domain.ChatSenderType
 import codel.chat.exception.ChatException
@@ -68,7 +67,7 @@ class ChatService(
         // 4. 생성된 채팅방의 읽지 않은 메시지 수 계산 (시그널 발송자 기준)
         val senderUnReadCount = chatRepository.getUnReadMessageCount(savedChatRoom, sender)
 
-        return ChatRoomResponse.toResponse(newChatRoom, sender, null, approver, ChatRoomMemberStatus.ACTIVE, senderUnReadCount)
+        return ChatRoomResponse.toResponse(newChatRoom, sender, null, approver, senderUnReadCount)
     }
 
     private fun saveSystemMessages(chatRoom: ChatRoom, from: ChatRoomMember) {
@@ -176,7 +175,6 @@ class ChatService(
                 requester = requester,
                 lastReadChatId = chatRoomInfo.requesterChatRoomMember.lastReadChat?.getIdOrThrow(),
                 partner = chatRoomInfo.partner,
-                partnerStatus = chatRoomInfo.partnerChatRoomMember?.memberStatus ?: ChatRoomMemberStatus.ACTIVE,
                 unReadMessageCount = unReadCount,
                 unlockInfo = unlockInfo
             )
@@ -191,7 +189,7 @@ class ChatService(
         requester: Member, 
         partnerChatRoomMember: ChatRoomMember?
     ): Int {
-        return if (partnerChatRoomMember?.isBlocked() == true) {
+        return if (partnerChatRoomMember?.hasLeft() == true) {
             0 // 차단된 경우만 0
         } else {
             // 파트너가 나간 경우에도 일반적인 읽지 않은 메시지 수와 동일
@@ -221,11 +219,7 @@ class ChatService(
         chatRoom.updateRecentChat(savedChat)
 
         val partner = chatRoomRepository.findPartner(chatRoomId, requester)
-        
-        // 상대방 상태 조회
-        val partnerChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, partner)
-        val requesterChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, requester)
-        
+
         // 발송자와 수신자의 읽지 않은 메시지 수를 각각 계산
         val requesterUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
         val partnerUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, partner)
@@ -235,14 +229,12 @@ class ChatService(
         // 발송자용 채팅방 응답 (본인 기준 읽지 않은 수)
         val requesterChatRoomResponse = ChatRoomResponse.toResponse(
             chatRoom, requester, savedChat.getIdOrThrow(), partner, 
-            partnerChatRoomMember?.memberStatus ?: ChatRoomMemberStatus.ACTIVE, 
             requesterUnReadCount
         )
         
         // 수신자용 채팅방 응답 (상대방 기준 읽지 않은 수 - 새 메시지로 인해 증가)
         val partnerChatRoomResponse = ChatRoomResponse.toResponse(
             chatRoom, partner, null, requester, 
-            requesterChatRoomMember?.memberStatus ?: ChatRoomMemberStatus.ACTIVE, 
             partnerUnReadCount
         )
 
@@ -283,19 +275,15 @@ class ChatService(
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
         val partner = chatRoomRepository.findPartner(chatRoomId, requester)
         val partnerUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, partner)
-        
-        // 상대방 상태 조회
-        val requesterChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, requester)
-        
+
         val updatedChatRoomResponse = ChatRoomResponse.toResponse(
             chatRoom, partner, 
             chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, partner)?.lastReadChat?.getIdOrThrow(),
             requester, 
-            requesterChatRoomMember?.memberStatus ?: ChatRoomMemberStatus.ACTIVE,
             partnerUnReadCount
         )
         
-        // WebSocket으로 상대방에게 업데이트 전송 (Spring Event 등을 활용할 수도 있음)
+        //TODO WebSocket으로 상대방에게 업데이트 전송 (Spring Event 등을 활용할 수도 있음)
         // 이 부분은 Controller나 별도 이벤트 핸들러에서 처리하는 것이 좋습니다.
     }
 
@@ -312,10 +300,6 @@ class ChatService(
 
         val partner = chatRoomRepository.findPartner(chatRoom.getIdOrThrow(), requester)
         
-        // 상대방 상태 조회
-        val partnerChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, partner)
-        val requesterChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, requester)
-        
         // 발송자와 수신자의 읽지 않은 메시지 수를 각각 계산
         val requesterUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
         val partnerUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, partner)
@@ -330,14 +314,12 @@ class ChatService(
                 requester
             )?.lastReadChat?.getIdOrThrow(),
             partner,
-            partnerChatRoomMember?.memberStatus ?: ChatRoomMemberStatus.ACTIVE,
             requesterUnReadCount
         )
         
         // 수신자용 채팅방 응답 (읽지 않은 수 증가)
         val partnerChatRoomResponse = ChatRoomResponse.toResponse(
             chatRoom, partner, null, requester, 
-            requesterChatRoomMember?.memberStatus ?: ChatRoomMemberStatus.ACTIVE,
             partnerUnReadCount
         )
 
@@ -411,12 +393,7 @@ class ChatService(
      */
     private fun buildQuestionSendResult(requester: Member, partner: Member, savedChat: Chat): QuestionSendResult {
         val chatRoom = savedChat.chatRoom
-        val chatRoomId = chatRoom.getIdOrThrow()
-        
-        // 상대방 상태 조회
-        val partnerChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, partner)
-        val requesterChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, requester)
-        
+
         // 각자의 읽지 않은 메시지 수 계산
         val requesterUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
         val partnerUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, partner)
@@ -427,7 +404,6 @@ class ChatService(
             requester,
             savedChat.getIdOrThrow(),
             partner,
-            partnerChatRoomMember?.memberStatus ?: ChatRoomMemberStatus.ACTIVE,
             requesterUnReadCount
         )
         
@@ -437,7 +413,6 @@ class ChatService(
             partner,
             null, // 상대방은 아직 읽지 않았으므로 null
             requester,
-            requesterChatRoomMember?.memberStatus ?: ChatRoomMemberStatus.ACTIVE,
             partnerUnReadCount
         )
 
@@ -518,7 +493,6 @@ class ChatService(
      */
     fun buildChatRoomResponse(chatRoom: ChatRoom, requester: Member, partner: Member): ChatRoomResponse {
         val requesterChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoom.getIdOrThrow(), requester)
-        val partnerChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoom.getIdOrThrow(), partner)
         val unReadCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
         val unlockInfo = codeUnlockService.getUnlockInfo(chatRoom, requester)
         
@@ -527,7 +501,6 @@ class ChatService(
             requester = requester,
             lastReadChatId = requesterChatRoomMember?.lastReadChat?.getIdOrThrow(),
             partner = partner,
-            partnerStatus = partnerChatRoomMember?.memberStatus ?: ChatRoomMemberStatus.ACTIVE,
             unReadMessageCount = unReadCount,
             unlockInfo = unlockInfo
         )
