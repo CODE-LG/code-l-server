@@ -25,7 +25,7 @@ data class PersonalityProfileRequest(
     @field:Size(min = 1, max = 5, message = "성격은 1-5개 사이여야 합니다")
     val personalities: List<String>,
     
-    val question: String?,
+    val questionId: Long?,
     
     val answer: String?
 ) {
@@ -38,9 +38,9 @@ data class PersonalityProfileRequest(
         }
         
         // 질문/답변 쌍 검증
-        val hasQuestion = !question.isNullOrBlank()
+        val hasQuestionId = questionId != null
         val hasAnswer = !answer.isNullOrBlank()
-        require(hasQuestion == hasAnswer) {
+        require(hasQuestionId == hasAnswer) {
             "대표 질문과 답변은 함께 입력해야 합니다"
         }
     }

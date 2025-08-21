@@ -44,8 +44,8 @@ data class PublicProfileResponse(
                 drinkingStyle = profile.getAlcoholOrThrow(),
                 smokingStyle = profile.getSmokeOrThrow(),
                 personalities = profile.getPersonalitiesList(),
-                question = profile.getQuestionOrThrow(),
-                answer = profile.getAnswerOrThrow()
+                question = profile.getRepresentativeQuestionOrThrow().content,
+                answer = profile.getRepresentativeAnswerOrThrow()
             )
         }
     }

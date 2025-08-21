@@ -1,6 +1,7 @@
 package codel.member.domain
 
 import codel.member.exception.MemberException
+import codel.question.domain.Question
 import jakarta.persistence.*
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
@@ -42,8 +43,13 @@ class Profile(
     var alcohol: String? = null,
     var smoke: String? = null,
     var personalities: String? = null,
-    var question: String? = null,
-    var answer: String? = null,
+    
+    // 대표 질문 (Question 엔티티와 1:1 관계)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "representative_question_id")
+    var representativeQuestion: Question? = null,
+
+    var representativeAnswer: String? = null,
 
     @Column(nullable = false)
     var personalityCompleted: Boolean = false,
@@ -132,8 +138,8 @@ class Profile(
         alcohol: String?,
         smoke: String?,
         personalities: List<String>,
-        question: String?,
-        answer: String?
+        representativeQuestion: codel.question.domain.Question?,
+        representativeAnswer: String?
     ) {
         validatePersonalityDomainRules(personalities, height, mbti)
         
@@ -145,8 +151,8 @@ class Profile(
         this.alcohol = alcohol
         this.smoke = smoke
         this.personalities = serializeList(personalities)
-        this.question = question
-        this.answer = answer
+        this.representativeQuestion = representativeQuestion
+        this.representativeAnswer = representativeAnswer
         
         this.personalityCompleted = true
         this.personalityCompletedAt = LocalDateTime.now()
@@ -269,8 +275,8 @@ class Profile(
     fun getAlcoholOrThrow(): String = alcohol ?: throw MemberException(HttpStatus.BAD_REQUEST, "음주 스타일이 설정되지 않았습니다.")
     fun getSmokeOrThrow(): String = smoke ?: throw MemberException(HttpStatus.BAD_REQUEST, "흡연 스타일이 설정되지 않았습니다.")
     fun getPersonalitiesOrThrow(): String = personalities ?: throw MemberException(HttpStatus.BAD_REQUEST, "성격이 설정되지 않았습니다.")
-    fun getQuestionOrThrow(): String = question ?: throw MemberException(HttpStatus.BAD_REQUEST, "대표 질문이 설정되지 않았습니다.")
-    fun getAnswerOrThrow(): String = answer ?: throw MemberException(HttpStatus.BAD_REQUEST, "대표 답변이 설정되지 않았습니다.")
+    fun getRepresentativeQuestionOrThrow(): codel.question.domain.Question = representativeQuestion ?: throw MemberException(HttpStatus.BAD_REQUEST, "대표 질문이 설정되지 않았습니다.")
+    fun getRepresentativeAnswerOrThrow(): String = representativeAnswer ?: throw MemberException(HttpStatus.BAD_REQUEST, "대표 답변이 설정되지 않았습니다.")
     
     // Hidden Profile
     fun getLoveLanguageOrThrow(): String = loveLanguage ?: throw MemberException(HttpStatus.BAD_REQUEST, "사랑의 언어가 설정되지 않았습니다.")

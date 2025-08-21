@@ -40,8 +40,8 @@ data class MemberProfileResponse(
                 smallCity = profile.getSmallCityOrThrow(),
                 mbti = profile.getMbtiOrThrow(),
                 introduce = profile.introduce ?: "",
-                question = profile.getQuestionOrThrow(),
-                answer = profile.getAnswerOrThrow(),
+                question = profile.getRepresentativeQuestionOrThrow().content,
+                answer = profile.getRepresentativeAnswerOrThrow(),
                 codeImages = profile.getCodeImageOrThrow(),
                 faceImages = profile.getFaceImageOrThrow()
             )
@@ -63,8 +63,8 @@ data class MemberProfileResponse(
                 smallCity = profile.getSmallCityOrThrow(),
                 mbti = profile.getMbtiOrThrow(),
                 introduce = profile.introduce ?: "",
-                question = profile.getQuestionOrThrow(),
-                answer = profile.getAnswerOrThrow(),
+                question = profile.getRepresentativeQuestionOrThrow().content,
+                answer = profile.getRepresentativeAnswerOrThrow(),
                 codeImages = profile.getCodeImageOrThrow(),
                 faceImages = profile.getFaceImageOrThrow(),
             )
