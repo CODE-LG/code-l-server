@@ -37,7 +37,7 @@ class SignupController(
         return ResponseEntity.ok().build()
     }
 
-    @PostMapping("/essential/profile")
+    @PostMapping("/open/profile")
     override fun registerEssentialProfile(
         @LoginMember member: Member,
         @RequestBody request: EssentialProfileRequest
@@ -46,7 +46,7 @@ class SignupController(
         return ResponseEntity.ok().build()
     }
 
-    @PostMapping("/essential/images", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @PostMapping("/open/images", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     override fun registerEssentialImages(
         @LoginMember member: Member,
         @RequestPart images: List<MultipartFile>
@@ -55,7 +55,7 @@ class SignupController(
         return ResponseEntity.ok().build()
     }
 
-    @PostMapping("/personality")
+    @PostMapping("/open/personality")
     override fun registerPersonalityProfile(
         @LoginMember member: Member,
         @RequestBody request: PersonalityProfileRequest

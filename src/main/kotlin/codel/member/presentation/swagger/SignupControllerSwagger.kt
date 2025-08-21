@@ -49,7 +49,7 @@ interface SignupControllerSwagger {
     ): ResponseEntity<Unit>
 
     @Operation(
-        summary = "Essential Profile 정보 등록",
+        summary = "Open Profile 정보 등록",
         description = "기본 프로필 정보를 등록합니다. (이미지 제외)"
     )
     @ApiResponses(
@@ -65,8 +65,8 @@ interface SignupControllerSwagger {
     ): ResponseEntity<Unit>
 
     @Operation(
-        summary = "Essential Profile 이미지 등록",
-        description = "기본 프로필 이미지를 등록하고 Essential Profile을 완료합니다."
+        summary = "Open Profile 이미지 등록",
+        description = "기본 프로필 이미지를 등록하고 Open Profile을 완료합니다."
     )
     @ApiResponses(
         value = [
