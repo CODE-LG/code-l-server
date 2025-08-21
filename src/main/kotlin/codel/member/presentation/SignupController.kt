@@ -7,7 +7,6 @@ import codel.member.domain.Member
 import codel.member.presentation.request.EssentialProfileRequest
 import codel.member.presentation.request.HiddenProfileRequest
 import codel.member.presentation.request.PersonalityProfileRequest
-import codel.member.presentation.request.PhoneVerificationRequest
 import codel.member.presentation.response.SignUpStatusResponse
 import codel.member.presentation.swagger.SignupControllerSwagger
 import org.springframework.http.MediaType
@@ -33,9 +32,8 @@ class SignupController(
     @PostMapping("/phone/verify")
     override fun completePhoneVerification(
         @LoginMember member: Member,
-        @RequestBody request: PhoneVerificationRequest
     ): ResponseEntity<Unit> {
-        signupService.completePhoneVerification(member, request)
+        signupService.completePhoneVerification(member)
         return ResponseEntity.ok().build()
     }
 

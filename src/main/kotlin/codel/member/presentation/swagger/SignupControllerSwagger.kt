@@ -5,7 +5,6 @@ import codel.member.domain.Member
 import codel.member.presentation.request.EssentialProfileRequest
 import codel.member.presentation.request.HiddenProfileRequest
 import codel.member.presentation.request.PersonalityProfileRequest
-import codel.member.presentation.request.PhoneVerificationRequest
 import codel.member.presentation.response.SignUpStatusResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -47,7 +46,6 @@ interface SignupControllerSwagger {
     )
     fun completePhoneVerification(
         @Parameter(hidden = true) @LoginMember member: Member,
-        @RequestBody request: PhoneVerificationRequest
     ): ResponseEntity<Unit>
 
     @Operation(

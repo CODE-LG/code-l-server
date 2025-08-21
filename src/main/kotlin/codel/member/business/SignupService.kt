@@ -7,7 +7,6 @@ import codel.member.domain.Member
 import codel.member.presentation.request.EssentialProfileRequest
 import codel.member.presentation.request.HiddenProfileRequest
 import codel.member.presentation.request.PersonalityProfileRequest
-import codel.member.presentation.request.PhoneVerificationRequest
 import codel.question.business.QuestionService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,10 +23,7 @@ class SignupService(
     /**
      * 전화번호 인증 완료 처리
      */
-    fun completePhoneVerification(member: Member, request: PhoneVerificationRequest) {
-        // TODO: 실제 전화번호 인증 로직 (SMS 코드 검증 등)
-        // 여기서 request.phoneNumber와 request.verificationCode 검증
-        
+    fun completePhoneVerification(member: Member) {
         member.completePhoneVerification()
     }
 
@@ -149,7 +145,7 @@ class SignupService(
         require(profile.loveLanguage != null) {
             "Hidden Profile 정보를 먼저 등록해주세요"
         }
-        
+
         // 기존 이미지 업로드 로직 재활용
         val faceImage = uploadFaceImage(images)
         
