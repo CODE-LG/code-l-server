@@ -3,6 +3,7 @@ package codel.member.presentation.swagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import codel.member.presentation.request.EssentialProfileRequest
+import codel.member.presentation.request.HiddenProfileRequest
 import codel.member.presentation.request.PersonalityProfileRequest
 import codel.member.presentation.request.PhoneVerificationRequest
 import codel.member.presentation.response.SignUpStatusResponse
@@ -95,5 +96,37 @@ interface SignupControllerSwagger {
     fun registerPersonalityProfile(
         @Parameter(hidden = true) @LoginMember member: Member,
         @RequestBody request: PersonalityProfileRequest
+    ): ResponseEntity<Unit>
+
+    @Operation(
+        summary = "Hidden Profile 정보 등록",
+        description = "히든 프로필 정보를 등록합니다. (이미지 제외)"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "등록 성공"),
+            ApiResponse(responseCode = "400", description = "잘못된 입력 데이터 또는 단계 오류"),
+            ApiResponse(responseCode = "401", description = "인증 실패")
+        ]
+    )
+    fun registerHiddenProfile(
+        @Parameter(hidden = true) @LoginMember member: Member,
+        @RequestBody request: HiddenProfileRequest
+    ): ResponseEntity<Unit>
+
+    @Operation(
+        summary = "Hidden Profile 이미지 등록",
+        description = "히든 프로필 이미지를 등록하고 Hidden Profile을 완료합니다. 회원가입이 완료되어 PENDING 상태로 변경됩니다."
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "등록 완료 (PENDING 상태로 변경)"),
+            ApiResponse(responseCode = "400", description = "잘못된 이미지 파일 또는 단계 오류"),
+            ApiResponse(responseCode = "401", description = "인증 실패")
+        ]
+    )
+    fun registerHiddenImages(
+        @Parameter(hidden = true) @LoginMember member: Member,
+        @Parameter(description = "얼굴 이미지 파일들 (3장)") images: List<MultipartFile>
     ): ResponseEntity<Unit>
 }

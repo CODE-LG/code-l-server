@@ -214,6 +214,38 @@ class Profile(
         this.hiddenCompletedAt = LocalDateTime.now()
         this.updatedAt = LocalDateTime.now()
     }
+
+    fun updateHiddenProfileInfo(
+        loveLanguage: String,
+        affectionStyle: String,
+        contactStyle: String,
+        dateStyle: String,
+        conflictResolutionStyle: String,
+        relationshipValues: String
+    ) {
+        validateHiddenInfoDomainRules()
+        
+        this.loveLanguage = loveLanguage
+        this.affectionStyle = affectionStyle
+        this.contactStyle = contactStyle
+        this.dateStyle = dateStyle
+        this.conflictResolutionStyle = conflictResolutionStyle
+        this.relationshipValues = relationshipValues
+        
+        this.updatedAt = LocalDateTime.now()
+    }
+    
+    fun updateHiddenProfileImages(
+        faceImages: List<String>
+    ) {
+        require(faceImages.isNotEmpty()) { "얼굴 이미지가 필요합니다" }
+        require(loveLanguage != null) { "Hidden Profile 정보를 먼저 입력해주세요" }
+        
+        this.faceImage = serializeList(faceImages)
+        this.hiddenCompleted = true
+        this.hiddenCompletedAt = LocalDateTime.now()
+        this.updatedAt = LocalDateTime.now()
+    }
     
     // ===== 상태 조회 =====
     fun isPublicProfileComplete(): Boolean = essentialCompleted && personalityCompleted
@@ -292,6 +324,10 @@ class Profile(
                 "MBTI는 4자리 영문이어야 합니다"
             }
         }
+    }
+    
+    private fun validateHiddenInfoDomainRules() {
+        require(isPublicProfileComplete()) { "공개 프로필을 먼저 완성해야 합니다" }
     }
     
     private fun validateHiddenDomainRules(faceImages: List<String>) {

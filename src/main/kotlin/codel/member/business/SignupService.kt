@@ -5,6 +5,7 @@ import codel.member.domain.FaceImage
 import codel.member.domain.ImageUploader
 import codel.member.domain.Member
 import codel.member.presentation.request.EssentialProfileRequest
+import codel.member.presentation.request.HiddenProfileRequest
 import codel.member.presentation.request.PersonalityProfileRequest
 import codel.member.presentation.request.PhoneVerificationRequest
 import codel.question.business.QuestionService
@@ -118,5 +119,44 @@ class SignupService(
         
         // Personality Profile 완료 상태로 변경
         member.completePersonalityProfile()
+    }
+
+    /**
+     * Hidden Profile 정보 등록
+     */
+    fun registerHiddenProfile(member: Member, request: HiddenProfileRequest) {
+        // 단계별 검증
+        member.validateCanProceedToHidden()
+        
+        // Profile 정보 업데이트 (이미지 제외)
+        val profile = member.getProfileOrThrow()
+        profile.updateHiddenProfileInfo(
+            loveLanguage = request.loveLanguage,
+            affectionStyle = request.affectionStyle,
+            contactStyle = request.contactStyle,
+            dateStyle = request.dateStyle,
+            conflictResolutionStyle = request.conflictResolutionStyle,
+            relationshipValues = request.relationshipValues
+        )
+    }
+
+    /**
+     * Hidden Profile 이미지 등록 및 완료 처리
+     */
+    fun registerHiddenImages(member: Member, images: List<MultipartFile>) {
+        // Hidden Profile 정보가 먼저 등록되어 있는지 검증
+        val profile = member.getProfileOrThrow()
+        require(profile.loveLanguage != null) {
+            "Hidden Profile 정보를 먼저 등록해주세요"
+        }
+        
+        // 기존 이미지 업로드 로직 재활용
+        val faceImage = uploadFaceImage(images)
+        
+        // Profile 이미지 업데이트 및 완료 처리
+        profile.updateHiddenProfileImages(faceImage.urls)
+        
+        // Hidden Profile 완료 상태로 변경 (PENDING 상태로)
+        member.completeHiddenProfile()
     }
 }
