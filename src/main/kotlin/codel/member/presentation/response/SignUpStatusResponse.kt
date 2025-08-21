@@ -8,19 +8,25 @@ data class SignUpStatusResponse(
     val currentStep: MemberStatus,
     val nextStep: MemberStatus?,
     val completedSteps: List<MemberStatus>,
-    val isRegistrationComplete: Boolean
+    val isRegistrationComplete: Boolean,
+    val canProceedToEssential: Boolean,
+    val canProceedToPersonality: Boolean,
+    val canProceedToHidden: Boolean
 ) {
     companion object {
         fun from(member: Member): SignUpStatusResponse {
             val completedSteps = getCompletedSteps(member.memberStatus)
-            val nextStep = getNextStep(member.memberStatus)
+            val nextStep = member.getNextAvailableStep()
             
             return SignUpStatusResponse(
                 memberId = member.getIdOrThrow(),
                 currentStep = member.memberStatus,
                 nextStep = nextStep,
                 completedSteps = completedSteps,
-                isRegistrationComplete = member.memberStatus == MemberStatus.DONE
+                isRegistrationComplete = member.memberStatus == MemberStatus.DONE,
+                canProceedToEssential = member.canProceedToEssential(),
+                canProceedToPersonality = member.canProceedToPersonality(),
+                canProceedToHidden = member.canProceedToHidden()
             )
         }
         
@@ -41,17 +47,6 @@ data class SignUpStatusResponse(
                 )
                 MemberStatus.PENDING, MemberStatus.REJECT, MemberStatus.DONE -> 
                     MemberStatus.values().filter { it != MemberStatus.SIGNUP }
-            }
-        }
-        
-        private fun getNextStep(status: MemberStatus): MemberStatus? {
-            return when (status) {
-                MemberStatus.SIGNUP -> MemberStatus.PHONE_VERIFIED
-                MemberStatus.PHONE_VERIFIED -> MemberStatus.ESSENTIAL_COMPLETED
-                MemberStatus.ESSENTIAL_COMPLETED -> MemberStatus.PERSONALITY_COMPLETED
-                MemberStatus.PERSONALITY_COMPLETED -> MemberStatus.HIDDEN_COMPLETED
-                MemberStatus.HIDDEN_COMPLETED -> MemberStatus.PENDING
-                else -> null
             }
         }
     }

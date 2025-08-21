@@ -52,5 +52,103 @@ class Member(
         return id?.hashCode() ?: 0
     }
 
+    // ===== 회원가입 단계 검증 및 상태 전환 메서드들 =====
+    
+    /**
+     * 전화번호 인증을 완료하고 상태를 PHONE_VERIFIED로 변경
+     */
+    fun completePhoneVerification() {
+        require(memberStatus == MemberStatus.SIGNUP) {
+            "전화번호 인증은 회원가입 직후에만 가능합니다. 현재 상태: $memberStatus"
+        }
+        memberStatus = MemberStatus.PHONE_VERIFIED
+    }
+
+    /**
+     * Essential Profile 등록이 가능한지 확인
+     */
+    fun canProceedToEssential(): Boolean {
+        return memberStatus == MemberStatus.PHONE_VERIFIED
+    }
+
+    /**
+     * Essential Profile 등록 가능 여부 검증
+     */
+    fun validateCanProceedToEssential() {
+        require(memberStatus == MemberStatus.PHONE_VERIFIED) {
+            "Essential Profile 등록은 전화번호 인증 완료 후에만 가능합니다. 현재 상태: $memberStatus"
+        }
+    }
+
+    /**
+     * Essential Profile 완료 상태로 변경
+     */
+    fun completeEssentialProfile() {
+        validateCanProceedToEssential()
+        memberStatus = MemberStatus.ESSENTIAL_COMPLETED
+    }
+
+    /**
+     * Personality Profile 등록이 가능한지 확인
+     */
+    fun canProceedToPersonality(): Boolean {
+        return memberStatus == MemberStatus.ESSENTIAL_COMPLETED
+    }
+
+    /**
+     * Personality Profile 등록 가능 여부 검증
+     */
+    fun validateCanProceedToPersonality() {
+        require(memberStatus == MemberStatus.ESSENTIAL_COMPLETED) {
+            "Personality Profile 등록은 Essential Profile 완료 후에만 가능합니다. 현재 상태: $memberStatus"
+        }
+    }
+
+    /**
+     * Personality Profile 완료 상태로 변경
+     */
+    fun completePersonalityProfile() {
+        validateCanProceedToPersonality()
+        memberStatus = MemberStatus.PERSONALITY_COMPLETED
+    }
+
+    /**
+     * Hidden Profile 등록이 가능한지 확인
+     */
+    fun canProceedToHidden(): Boolean {
+        return memberStatus == MemberStatus.PERSONALITY_COMPLETED
+    }
+
+    /**
+     * Hidden Profile 등록 가능 여부 검증
+     */
+    fun validateCanProceedToHidden() {
+        require(memberStatus == MemberStatus.PERSONALITY_COMPLETED) {
+            "Hidden Profile 등록은 Personality Profile 완료 후에만 가능합니다. 현재 상태: $memberStatus"
+        }
+    }
+
+    /**
+     * Hidden Profile 완료 상태로 변경 (최종 단계 - PENDING 상태로)
+     */
+    fun completeHiddenProfile() {
+        validateCanProceedToHidden()
+        memberStatus = MemberStatus.PENDING
+    }
+
+    /**
+     * 현재 상태에서 다음 진행 가능한 단계 반환
+     */
+    fun getNextAvailableStep(): MemberStatus? {
+        return when (memberStatus) {
+            MemberStatus.SIGNUP -> MemberStatus.PHONE_VERIFIED
+            MemberStatus.PHONE_VERIFIED -> MemberStatus.ESSENTIAL_COMPLETED
+            MemberStatus.ESSENTIAL_COMPLETED -> MemberStatus.PERSONALITY_COMPLETED
+            MemberStatus.PERSONALITY_COMPLETED -> MemberStatus.HIDDEN_COMPLETED
+            MemberStatus.HIDDEN_COMPLETED -> MemberStatus.PENDING
+            else -> null
+        }
+    }
+
 
 }

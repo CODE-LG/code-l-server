@@ -227,4 +227,8 @@ class MemberService(
         }
         return MemberProfileDetailResponse.toResponse(member, NONE)
     }
+
+    fun completePhoneVerification(member: Member) {
+        member.completePhoneVerification()
+    }
 }

@@ -275,7 +275,7 @@ class Profile(
     fun getAlcoholOrThrow(): String = alcohol ?: throw MemberException(HttpStatus.BAD_REQUEST, "음주 스타일이 설정되지 않았습니다.")
     fun getSmokeOrThrow(): String = smoke ?: throw MemberException(HttpStatus.BAD_REQUEST, "흡연 스타일이 설정되지 않았습니다.")
     fun getPersonalitiesOrThrow(): String = personalities ?: throw MemberException(HttpStatus.BAD_REQUEST, "성격이 설정되지 않았습니다.")
-    fun getRepresentativeQuestionOrThrow(): codel.question.domain.Question = representativeQuestion ?: throw MemberException(HttpStatus.BAD_REQUEST, "대표 질문이 설정되지 않았습니다.")
+    fun getRepresentativeQuestionOrThrow():Question = representativeQuestion ?: throw MemberException(HttpStatus.BAD_REQUEST, "대표 질문이 설정되지 않았습니다.")
     fun getRepresentativeAnswerOrThrow(): String = representativeAnswer ?: throw MemberException(HttpStatus.BAD_REQUEST, "대표 답변이 설정되지 않았습니다.")
     
     // Hidden Profile
