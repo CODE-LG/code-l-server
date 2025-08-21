@@ -45,7 +45,8 @@ interface SignupControllerSwagger {
         ]
     )
     fun completePhoneVerification(
-        @Parameter(hidden = true) @LoginMember member: Member
+        @Parameter(hidden = true) @LoginMember member: Member,
+        @RequestBody request: PhoneVerificationRequest
     ): ResponseEntity<Unit>
 
     @Operation(

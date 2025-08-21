@@ -32,8 +32,9 @@ class SignupController(
     @PostMapping("/phone/verify")
     override fun completePhoneVerification(
         @LoginMember member: Member,
+        @RequestBody request: PhoneVerificationRequest
     ): ResponseEntity<Unit> {
-        memberService.completePhoneVerification(member)
+        signupService.completePhoneVerification(member, request)
         return ResponseEntity.ok().build()
     }
 
@@ -52,6 +53,15 @@ class SignupController(
         @RequestPart images: List<MultipartFile>
     ): ResponseEntity<Unit> {
         signupService.registerEssentialImages(member, images)
+        return ResponseEntity.ok().build()
+    }
+
+    @PostMapping("/personality")
+    override fun registerPersonalityProfile(
+        @LoginMember member: Member,
+        @RequestBody request: PersonalityProfileRequest
+    ): ResponseEntity<Unit> {
+        signupService.registerPersonalityProfile(member, request)
         return ResponseEntity.ok().build()
     }
 }
