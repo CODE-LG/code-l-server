@@ -5,6 +5,7 @@ import codel.member.business.MemberService
 import codel.member.business.SignupService
 import codel.member.domain.Member
 import codel.member.presentation.request.EssentialProfileRequest
+import codel.member.presentation.request.PersonalityProfileRequest
 import codel.member.presentation.request.PhoneVerificationRequest
 import codel.member.presentation.response.SignUpStatusResponse
 import codel.member.presentation.swagger.SignupControllerSwagger

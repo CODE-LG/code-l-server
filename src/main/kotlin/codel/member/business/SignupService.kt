@@ -5,7 +5,9 @@ import codel.member.domain.FaceImage
 import codel.member.domain.ImageUploader
 import codel.member.domain.Member
 import codel.member.presentation.request.EssentialProfileRequest
+import codel.member.presentation.request.PersonalityProfileRequest
 import codel.member.presentation.request.PhoneVerificationRequest
+import codel.question.business.QuestionService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -14,8 +16,8 @@ import java.time.LocalDate
 @Service
 @Transactional
 class SignupService(
-    private val memberService: MemberService,
-    private val imageUploader: ImageUploader
+    private val imageUploader: ImageUploader,
+    private val questionService: QuestionService
 ) {
 
     /**
@@ -25,24 +27,21 @@ class SignupService(
         // TODO: 실제 전화번호 인증 로직 (SMS 코드 검증 등)
         // 여기서 request.phoneNumber와 request.verificationCode 검증
         
-        val currentMember = memberService.findMember(member.getIdOrThrow())
-        currentMember.completePhoneVerification()
+        member.completePhoneVerification()
     }
 
     /**
      * Essential Profile 정보 등록
      */
     fun registerEssentialProfile(member: Member, request: EssentialProfileRequest) {
-        val currentMember = memberService.findMember(member.getIdOrThrow())
-        
         // 단계별 검증
-        currentMember.validateCanProceedToEssential()
+        member.validateCanProceedToEssential()
         
         // 요청 데이터 검증
         request.validateSelf()
         
         // Profile 정보 업데이트
-        val profile = currentMember.getProfileOrThrow()
+        val profile = member.getProfileOrThrow()
         profile.updateEssentialProfileInfo(
             codeName = request.codeName,
             birthDate = LocalDate.parse(request.birthDate),
@@ -57,10 +56,8 @@ class SignupService(
      * Essential Profile 이미지 등록 및 완료 처리
      */
     fun registerEssentialImages(member: Member, images: List<MultipartFile>) {
-        val currentMember = memberService.findMember(member.getIdOrThrow())
-        
         // 기본 정보가 먼저 등록되어 있는지 검증
-        val profile = currentMember.getProfileOrThrow()
+        val profile = member.getProfileOrThrow()
         require(profile.codeName != null) {
             "Essential Profile 정보를 먼저 등록해주세요"
         }
@@ -72,7 +69,7 @@ class SignupService(
         profile.updateEssentialProfileImages(codeImage.urls)
         
         // Essential Profile 완료 상태로 변경
-        currentMember.completeEssentialProfile()
+        member.completeEssentialProfile()
     }
 
     /**
@@ -87,5 +84,39 @@ class SignupService(
      */
     private fun uploadFaceImage(files: List<MultipartFile>): FaceImage {
         return FaceImage(files.map { file -> imageUploader.uploadFile(file) })
+    }
+
+    /**
+     * Personality Profile 등록 및 완료 처리
+     */
+    fun registerPersonalityProfile(member: Member, request: PersonalityProfileRequest) {
+        // 단계별 검증
+        member.validateCanProceedToPersonality()
+        
+        // 요청 데이터 검증
+        request.validateSelf()
+        
+        // Question 조회 (질문이 있는 경우)
+        val representativeQuestion = request.questionId?.let { 
+            questionService.findQuestionById(it)
+        }
+        
+        // Profile 정보 업데이트
+        val profile = member.getProfileOrThrow()
+        profile.updatePersonalityProfile(
+            hairLength = request.hairLength,
+            bodyType = request.bodyType,
+            height = request.height,
+            styles = request.styles,
+            mbti = request.mbti,
+            alcohol = request.drinkingStyle,
+            smoke = request.smokingStyle,
+            personalities = request.personalities,
+            representativeQuestion = representativeQuestion,
+            representativeAnswer = request.answer
+        )
+        
+        // Personality Profile 완료 상태로 변경
+        member.completePersonalityProfile()
     }
 }

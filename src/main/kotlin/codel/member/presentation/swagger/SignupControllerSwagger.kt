@@ -3,6 +3,7 @@ package codel.member.presentation.swagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import codel.member.presentation.request.EssentialProfileRequest
+import codel.member.presentation.request.PersonalityProfileRequest
 import codel.member.presentation.request.PhoneVerificationRequest
 import codel.member.presentation.response.SignUpStatusResponse
 import io.swagger.v3.oas.annotations.Operation
@@ -77,5 +78,21 @@ interface SignupControllerSwagger {
     fun registerEssentialImages(
         @Parameter(hidden = true) @LoginMember member: Member,
         @Parameter(description = "코드 이미지 파일들 (1-3장)") images: List<MultipartFile>
+    ): ResponseEntity<Unit>
+
+    @Operation(
+        summary = "Personality Profile 등록",
+        description = "성격/취향 프로필 정보를 등록하고 Personality Profile을 완료합니다."
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "등록 완료"),
+            ApiResponse(responseCode = "400", description = "잘못된 입력 데이터 또는 단계 오류"),
+            ApiResponse(responseCode = "401", description = "인증 실패")
+        ]
+    )
+    fun registerPersonalityProfile(
+        @Parameter(hidden = true) @LoginMember member: Member,
+        @RequestBody request: PersonalityProfileRequest
     ): ResponseEntity<Unit>
 }
