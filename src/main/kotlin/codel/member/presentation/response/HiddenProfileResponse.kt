@@ -2,18 +2,21 @@ package codel.member.presentation.response
 
 import codel.member.domain.Profile
 
+/**
+ * Hidden Profile 정보
+ */
 data class HiddenProfileResponse(
-    val loveLanguage: String,            // not null
-    val affectionStyle: String,          // not null
-    val contactStyle: String,            // not null
-    val dateStyle: String,               // not null
-    val conflictResolutionStyle: String, // not null
-    val relationshipValues: String,      // not null
-    val faceImages: List<String>         // not null
+    val loveLanguage: String,
+    val affectionStyle: String,
+    val contactStyle: String,
+    val dateStyle: String,
+    val conflictResolutionStyle: String,
+    val relationshipValues: String,
+    val faceImages: List<String>
 ) {
     companion object {
         fun from(profile: Profile): HiddenProfileResponse {
-            require(profile.hiddenCompleted) { "히든 프로필이 완성되지 않았습니다" }
+            require(profile.hiddenCompleted) { "Hidden Profile이 완성되지 않았습니다" }
             
             return HiddenProfileResponse(
                 loveLanguage = profile.getLoveLanguageOrThrow(),

@@ -3,20 +3,23 @@ package codel.member.presentation.response
 import codel.member.domain.AccessLevel
 import codel.member.domain.Member
 
+/**
+ * 완전한 프로필 (오픈 + 숨김)
+ */
 data class FullProfileResponse(
-    val publicProfile: PublicProfileResponse,
+    val memberId: Long,
+    val openProfile: OpenProfileResponse,
     val hiddenProfile: HiddenProfileResponse?,
     val accessLevel: AccessLevel,
-    val canViewHidden: Boolean,
-    val isMyProfile: Boolean
+    val isMyProfile: Boolean = false
 ) {
     companion object {
-        fun createPublic(member: Member): FullProfileResponse {
+        fun createOpen(member: Member): FullProfileResponse {
             return FullProfileResponse(
-                publicProfile = PublicProfileResponse.from(member),
+                memberId = member.getIdOrThrow(),
+                openProfile = OpenProfileResponse.from(member),
                 hiddenProfile = null,
                 accessLevel = AccessLevel.PUBLIC,
-                canViewHidden = false,
                 isMyProfile = false
             )
         }
@@ -24,12 +27,12 @@ data class FullProfileResponse(
         fun createFull(member: Member, isMyProfile: Boolean = false): FullProfileResponse {
             val profile = member.getProfileOrThrow()
             return FullProfileResponse(
-                publicProfile = PublicProfileResponse.from(member),
+                memberId = member.getIdOrThrow(),
+                openProfile = OpenProfileResponse.from(member),
                 hiddenProfile = if (profile.hiddenCompleted) {
                     HiddenProfileResponse.from(profile)
                 } else null,
                 accessLevel = if (isMyProfile) AccessLevel.SELF else AccessLevel.CODE_EXCHANGED,
-                canViewHidden = true,
                 isMyProfile = isMyProfile
             )
         }

@@ -15,10 +15,10 @@ data class EssentialProfileRequest(
     val birthDate: String,
     
     @field:NotBlank(message = "시/도를 선택해주세요")
-    val sido: String,
+    val bigCity: String,
     
     @field:NotBlank(message = "시/군/구를 선택해주세요")
-    val sigugun: String,
+    val smallCity: String,
     
     @field:NotBlank(message = "직업을 선택해주세요")
     val jobCategory: String,

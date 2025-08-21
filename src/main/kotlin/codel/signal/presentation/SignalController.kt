@@ -2,8 +2,8 @@ package codel.signal.presentation
 
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
-import codel.member.presentation.response.MemberProfileResponse
 import codel.member.presentation.response.UnlockedMemberProfileResponse
+import codel.member.presentation.response.FullProfileResponse
 import codel.signal.business.SignalService
 import codel.signal.presentation.request.HideSignalRequest
 import codel.signal.presentation.request.SendSignalRequest

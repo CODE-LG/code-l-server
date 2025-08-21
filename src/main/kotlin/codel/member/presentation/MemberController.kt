@@ -5,17 +5,11 @@ import codel.config.argumentresolver.LoginMember
 import codel.member.business.MemberService
 import codel.member.domain.Member
 import codel.member.presentation.request.MemberLoginRequest
-import codel.member.presentation.response.MemberLoginResponse
-import codel.member.presentation.response.MemberProfileDetailResponse
-import codel.member.presentation.response.MemberProfileResponse
-import codel.member.presentation.response.MemberRecommendResponses
-import codel.member.presentation.response.MemberResponse
+import codel.member.presentation.response.*
 import codel.member.presentation.swagger.MemberControllerSwagger
 import org.springframework.data.domain.Page
-import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
 
 @RestController
 class MemberController(
@@ -46,17 +40,17 @@ class MemberController(
     @GetMapping("/v1/member/profile")
     override fun findMemberProfile(
         @LoginMember member: Member,
-    ): ResponseEntity<MemberProfileResponse> {
+    ): ResponseEntity<FullProfileResponse> {
         val findMember = memberService.findMemberProfile(member)
-        return ResponseEntity.ok(MemberProfileResponse.toResponse(findMember))
+        return ResponseEntity.ok(FullProfileResponse.createFull(findMember, isMyProfile = true))
     }
 
     @GetMapping("/v1/member/recommend")
     override fun recommendMembers(
         @LoginMember member: Member,
-    ): ResponseEntity<MemberRecommendResponses> {
+    ): ResponseEntity<MemberRecommendResponse> {
         val members = memberService.recommendMembers(member)
-        return ResponseEntity.ok(MemberRecommendResponses.toResponse(members))
+        return ResponseEntity.ok(MemberRecommendResponse.from(members))
     }
 
     @GetMapping("/v1/member/all")
@@ -64,21 +58,21 @@ class MemberController(
         @LoginMember member: Member,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "8") size: Int,
-    ): ResponseEntity<Page<MemberResponse>> {
+    ): ResponseEntity<Page<FullProfileResponse>> {
         val memberPage = memberService.getRandomMembers(member, page, size)
 
         return ResponseEntity.ok(
             memberPage.map { member ->
-                MemberResponse.toResponse(member)
+                FullProfileResponse.createOpen(member)
             },
         )
     }
 
     @GetMapping("/v1/members/{id}")
     override fun getMemberProfileDetail(
-        @LoginMember me : Member,
+        @LoginMember me: Member,
         @PathVariable id: Long,
-    ) : ResponseEntity<MemberProfileDetailResponse>{
+    ): ResponseEntity<MemberProfileDetailResponse> {
         val memberProfileDetail = memberService.findMemberProfile(me, id)
 
         return ResponseEntity.ok(memberProfileDetail)

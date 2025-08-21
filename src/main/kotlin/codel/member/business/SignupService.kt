@@ -42,8 +42,8 @@ class SignupService(
         profile.updateEssentialProfileInfo(
             codeName = request.codeName,
             birthDate = LocalDate.parse(request.birthDate),
-            sido = request.sido,
-            sigugun = request.sigugun,
+            sido = request.bigCity,
+            sigugun = request.smallCity,
             jobCategory = request.jobCategory,
             interests = request.interests
         )

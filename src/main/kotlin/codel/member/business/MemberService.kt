@@ -208,7 +208,7 @@ class MemberService(
                 val daysBetween = ChronoUnit.DAYS.between(updatedAt, now)
 
                 if (daysBetween > 7) {
-                    return MemberProfileDetailResponse.toResponse(member, NONE)
+                    return MemberProfileDetailResponse.create(member, NONE)
                 }
             }
 
@@ -219,13 +219,13 @@ class MemberService(
                         ?: throw ChatException(HttpStatus.BAD_REQUEST, "상대방과 관련된 채팅방을 찾을 수 없습니다.")
 
                 return when (findChatRoomByMembers.status) {
-                    ChatRoomStatus.UNLOCKED -> MemberProfileDetailResponse.toResponse(member, status, true)
-                    else -> MemberProfileDetailResponse.toResponse(member, status, false)
+                    ChatRoomStatus.UNLOCKED -> MemberProfileDetailResponse.create(member, status, true)
+                    else -> MemberProfileDetailResponse.create(member, status, false)
                 }
             }
-            return MemberProfileDetailResponse.toResponse(member, status)
+            return MemberProfileDetailResponse.create(member, status)
         }
-        return MemberProfileDetailResponse.toResponse(member, NONE)
+        return MemberProfileDetailResponse.create(member, NONE)
     }
 
     fun completePhoneVerification(member: Member) {

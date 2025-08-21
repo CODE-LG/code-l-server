@@ -2,7 +2,6 @@ package codel.signal.presentation.swagger
 
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
-import codel.member.presentation.response.MemberProfileResponse
 import codel.member.presentation.response.UnlockedMemberProfileResponse
 import codel.signal.presentation.request.HideSignalRequest
 import codel.signal.presentation.request.SendSignalRequest
@@ -198,4 +197,4 @@ interface SignalControllerSwagger {
         @Parameter(hidden = true) @LoginMember me: Member,
         @RequestBody hideSignalRequest: HideSignalRequest
     ): ResponseEntity<Unit>
-} 
+}

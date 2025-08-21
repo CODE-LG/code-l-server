@@ -3,12 +3,7 @@ package codel.member.presentation.swagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import codel.member.presentation.request.MemberLoginRequest
-import codel.member.presentation.response.FullProfileResponse
-import codel.member.presentation.response.MemberLoginResponse
-import codel.member.presentation.response.MemberProfileDetailResponse
-import codel.member.presentation.response.MemberProfileResponse
-import codel.member.presentation.response.MemberRecommendResponses
-import codel.member.presentation.response.MemberResponse
+import codel.member.presentation.response.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -51,8 +46,8 @@ interface MemberControllerSwagger {
     ): ResponseEntity<Unit>
 
     @Operation(
-        summary = "작성된 사용자의 코드 프로필 확인",
-        description = "작성된 사용자의 코드 프로필 정보를 받을 수 있습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
+        summary = "내 프로필 조회",
+        description = "작성된 사용자의 전체 프로필 정보를 받을 수 있습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
     )
     @ApiResponses(
         value = [
@@ -63,7 +58,7 @@ interface MemberControllerSwagger {
     )
     fun findMemberProfile(
         @Parameter(hidden = true) @LoginMember member: Member,
-    ): ResponseEntity<MemberProfileResponse>
+    ): ResponseEntity<FullProfileResponse>
 
     @Operation(
         summary = "홈 코드 추천 매칭 조회",
@@ -78,7 +73,7 @@ interface MemberControllerSwagger {
     )
     fun recommendMembers(
         @Parameter(hidden = true) @LoginMember member: Member,
-    ): ResponseEntity<MemberRecommendResponses>
+    ): ResponseEntity<MemberRecommendResponse>
 
     @Operation(
         summary = "홈 파도타기 조회",
@@ -95,7 +90,7 @@ interface MemberControllerSwagger {
         @Parameter(hidden = true) @LoginMember member: Member,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "8") size: Int,
-    ): ResponseEntity<Page<MemberResponse>>
+    ): ResponseEntity<Page<FullProfileResponse>>
 
     @Operation(
         summary = "회원 상세 조회",
