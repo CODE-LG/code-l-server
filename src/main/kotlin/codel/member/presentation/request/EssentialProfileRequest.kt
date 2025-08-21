@@ -23,9 +23,6 @@ data class EssentialProfileRequest(
     @field:NotBlank(message = "직업을 선택해주세요")
     val jobCategory: String,
     
-    @field:Size(min = 1, max = 3, message = "코드 이미지는 1-3장 사이여야 합니다")
-    val codeImages: List<String>,
-    
     @field:Size(min = 1, max = 5, message = "관심사는 1-5개 사이여야 합니다")
     val interests: List<String>
 ) {
@@ -40,13 +37,13 @@ data class EssentialProfileRequest(
         // 나이 검증
         val birthDate = try {
             LocalDate.parse(this.birthDate)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             throw IllegalArgumentException("생년월일 형식이 올바르지 않습니다")
         }
         
         val age = Period.between(birthDate, LocalDate.now()).years
-        require(age in 18..99) {
-            "나이는 18-99세 사이여야 합니다 (현재: ${age}세)"
+        require(age in 19..99) {
+            "나이는 19-99세 사이여야 합니다 (현재: ${age}세)"
         }
     }
 }

@@ -105,6 +105,38 @@ class Profile(
     }
     
     // ===== 자기 관리 메서드들 =====
+    fun updateEssentialProfileInfo(
+        codeName: String,
+        birthDate: LocalDate,
+        sido: String,
+        sigugun: String,
+        jobCategory: String,
+        interests: List<String>
+    ) {
+        validateEssentialInfoDomainRules(birthDate, interests)
+        
+        this.codeName = codeName
+        this.birthDate = birthDate
+        this.bigCity = sido
+        this.smallCity = sigugun
+        this.job = jobCategory
+        this.interests = serializeList(interests)
+        
+        this.updatedAt = LocalDateTime.now()
+    }
+    
+    fun updateEssentialProfileImages(
+        codeImages: List<String>
+    ) {
+        require(codeImages.isNotEmpty()) { "코드 이미지가 필요합니다" }
+        require(codeName != null) { "기본 정보를 먼저 입력해주세요" }
+        
+        this.codeImage = serializeList(codeImages)
+        this.essentialCompleted = true
+        this.essentialCompletedAt = LocalDateTime.now()
+        this.updatedAt = LocalDateTime.now()
+    }
+    
     fun updateEssentialProfile(
         codeName: String,
         birthDate: LocalDate,
@@ -221,6 +253,16 @@ class Profile(
     }
     
     // ===== 도메인 검증 (비즈니스 규칙만) =====
+    private fun validateEssentialInfoDomainRules(
+        birthDate: LocalDate,
+        interests: List<String>
+    ) {
+        require(!birthDate.isAfter(LocalDate.now())) {
+            "생년월일은 미래 날짜일 수 없습니다"
+        }
+        require(interests.isNotEmpty()) { "관심사가 필요합니다" }
+    }
+    
     private fun validateEssentialDomainRules(
         birthDate: LocalDate,
         codeImages: List<String>,

@@ -2,6 +2,7 @@ package codel.member.presentation.swagger
 
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
+import codel.member.presentation.request.EssentialProfileRequest
 import codel.member.presentation.request.PhoneVerificationRequest
 import codel.member.presentation.response.SignUpStatusResponse
 import io.swagger.v3.oas.annotations.Operation
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.multipart.MultipartFile
 
 @Tag(name = "회원가입", description = "단계별 회원가입 관련 API")
 interface SignupControllerSwagger {
@@ -43,5 +45,37 @@ interface SignupControllerSwagger {
     )
     fun completePhoneVerification(
         @Parameter(hidden = true) @LoginMember member: Member
+    ): ResponseEntity<Unit>
+
+    @Operation(
+        summary = "Essential Profile 정보 등록",
+        description = "기본 프로필 정보를 등록합니다. (이미지 제외)"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "등록 성공"),
+            ApiResponse(responseCode = "400", description = "잘못된 입력 데이터 또는 단계 오류"),
+            ApiResponse(responseCode = "401", description = "인증 실패")
+        ]
+    )
+    fun registerEssentialProfile(
+        @Parameter(hidden = true) @LoginMember member: Member,
+        @RequestBody request: EssentialProfileRequest
+    ): ResponseEntity<Unit>
+
+    @Operation(
+        summary = "Essential Profile 이미지 등록",
+        description = "기본 프로필 이미지를 등록하고 Essential Profile을 완료합니다."
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "등록 완료"),
+            ApiResponse(responseCode = "400", description = "잘못된 이미지 파일 또는 단계 오류"),
+            ApiResponse(responseCode = "401", description = "인증 실패")
+        ]
+    )
+    fun registerEssentialImages(
+        @Parameter(hidden = true) @LoginMember member: Member,
+        @Parameter(description = "코드 이미지 파일들 (1-3장)") images: List<MultipartFile>
     ): ResponseEntity<Unit>
 }
