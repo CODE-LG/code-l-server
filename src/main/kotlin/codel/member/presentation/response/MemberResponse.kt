@@ -16,7 +16,6 @@ data class MemberResponse(
     val mbti: String,
     val job: String,
     val hobby: List<String>,
-    val matchingReason: String,
 ) {
     companion object {
         fun toResponse(member: Member): MemberResponse {
@@ -25,15 +24,14 @@ data class MemberResponse(
                 memberId = member.getIdOrThrow(),
                 codeImage = profile.getCodeImageOrThrow().first(),
                 faceImage = profile.getFaceImageOrThrow().first(),
-                name = profile.codeName,
-                age = profile.age,
-                introduce = profile.introduce,
-                bigCity = profile.bigCity,
-                smallCity = profile.smallCity,
-                mbti = profile.mbti,
-                job = profile.job,
-                hobby = Profile.deserializeAttribute(profile.hobby),
-                matchingReason = "mbti"
+                name = profile.getCodeNameOrThrow(),
+                age = profile.getAge(),
+                introduce = profile.introduce ?: "",
+                bigCity = profile.getBigCityOrThrow(),
+                smallCity = profile.getSmallCityOrThrow(),
+                mbti = profile.getMbtiOrThrow(),
+                job = profile.getJobOrThrow(),
+                hobby = profile.getInterestsList(),
             )
         }
     }

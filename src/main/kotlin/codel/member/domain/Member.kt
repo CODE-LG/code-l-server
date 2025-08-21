@@ -39,12 +39,6 @@ class Member(
         this.profile = profile
     }
 
-    fun registerProfile(profile: Profile) {
-        this.profile = profile
-        profile.member = this
-        this.memberStatus = MemberStatus.CODE_SURVEY
-    }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Member) return false

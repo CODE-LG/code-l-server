@@ -15,21 +15,21 @@ class Profile(
     
     // ===== 기본 프로필 섹션 (Essential Profile) =====
     var codeName: String? = null,
-    
+
     @Column(nullable = true)
     var birthDate: LocalDate? = null,  // 생년월일로 변경
-    
-    var sido: String? = null,
-    var sigugun: String? = null,
-    var jobCategory: String? = null,
+
+    var bigCity: String? = null,
+    var smallCity: String? = null,
+    var job: String? = null,
     var interests: String? = null,
-    
+
     @Column(length = 1000)
     var codeImage: String? = null,
-    
+
     @Column(nullable = false)
     var essentialCompleted: Boolean = false,
-    
+
     @Column
     var essentialCompletedAt: LocalDateTime? = null,
     
@@ -37,17 +37,17 @@ class Profile(
     var hairLength: String? = null,
     var bodyType: String? = null,
     var height: Int? = null,
-    var styles: String? = null,
+    var style: String? = null,
     var mbti: String? = null,
-    var drinkingStyle: String? = null,
-    var smokingStyle: String? = null,
+    var alcohol: String? = null,
+    var smoke: String? = null,
     var personalities: String? = null,
     var question: String? = null,
     var answer: String? = null,
-    
+
     @Column(nullable = false)
     var personalityCompleted: Boolean = false,
-    
+
     @Column
     var personalityCompletedAt: LocalDateTime? = null,
     
@@ -58,26 +58,26 @@ class Profile(
     var dateStyle: String? = null,
     var conflictResolutionStyle: String? = null,
     var relationshipValues: String? = null,
-    
+
     @Column(length = 1000)
     var faceImage: String? = null,
-    
+
     @Column(nullable = false)
     var hiddenCompleted: Boolean = false,
-    
+
     @Column
     var hiddenCompletedAt: LocalDateTime? = null,
     
     // ===== 기타 =====
     var introduce: String? = null,     // 자기소개 (선택사항)
-    
+
     @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinColumn(name = "member_id")
     var member: Member? = null,
-    
+
     @Column(nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
-    
+
     @Column(nullable = false)
     var updatedAt: LocalDateTime = LocalDateTime.now()
 ) {
@@ -87,7 +87,7 @@ class Profile(
         private fun serializeList(list: List<String>): String = 
             list.filter { it.isNotBlank() }.joinToString(",")
         
-        private fun deserializeString(str: String?): List<String> = 
+        private fun deserializeString(str: String?): List<String> =
             str?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
     }
     
@@ -112,9 +112,9 @@ class Profile(
         
         this.codeName = codeName
         this.birthDate = birthDate
-        this.sido = sido
-        this.sigugun = sigugun
-        this.jobCategory = jobCategory
+        this.bigCity = sido
+        this.smallCity = sigugun
+        this.job = jobCategory
         this.codeImage = serializeList(codeImages)
         this.interests = serializeList(interests)
         
@@ -129,8 +129,8 @@ class Profile(
         height: Int?,
         styles: List<String>,
         mbti: String?,
-        drinkingStyle: String?,
-        smokingStyle: String?,
+        alcohol: String?,
+        smoke: String?,
         personalities: List<String>,
         question: String?,
         answer: String?
@@ -140,10 +140,10 @@ class Profile(
         this.hairLength = hairLength
         this.bodyType = bodyType
         this.height = height
-        this.styles = serializeList(styles)
+        this.style = serializeList(styles)
         this.mbti = mbti
-        this.drinkingStyle = drinkingStyle
-        this.smokingStyle = smokingStyle
+        this.alcohol = alcohol
+        this.smoke = smoke
         this.personalities = serializeList(personalities)
         this.question = question
         this.answer = answer
@@ -193,7 +193,7 @@ class Profile(
     // ===== 리스트 접근 메서드들 =====
     fun getInterestsList(): List<String> = deserializeString(interests)
     fun getPersonalitiesList(): List<String> = deserializeString(personalities)
-    fun getStylesList(): List<String> = deserializeString(styles)
+    fun getStylesList(): List<String> = deserializeString(style)
     fun getCodeImageList(): List<String> = deserializeString(codeImage)
     fun getFaceImageList(): List<String> = deserializeString(faceImage)
     
@@ -250,4 +250,38 @@ class Profile(
         require(isPublicProfileComplete()) { "공개 프로필을 먼저 완성해야 합니다" }
         require(faceImages.isNotEmpty()) { "얼굴 이미지가 필요합니다" }
     }
+
+
+    // ===== get...OrThrow 메서드들 =====
+    
+    // Essential Profile
+    fun getCodeNameOrThrow(): String = codeName ?: throw MemberException(HttpStatus.BAD_REQUEST, "닉네임이 설정되지 않았습니다.")
+    fun getBirthDateOrThrow(): LocalDate = birthDate ?: throw MemberException(HttpStatus.BAD_REQUEST, "생년월일이 설정되지 않았습니다.")
+    fun getBigCityOrThrow(): String = bigCity ?: throw MemberException(HttpStatus.BAD_REQUEST, "시/도가 설정되지 않았습니다.")
+    fun getSmallCityOrThrow(): String = smallCity ?: throw MemberException(HttpStatus.BAD_REQUEST, "시/군/구가 설정되지 않았습니다.")
+    fun getJobOrThrow(): String = job ?: throw MemberException(HttpStatus.BAD_REQUEST, "직업이 설정되지 않았습니다.")
+    // Personality Profile
+    fun getHairLengthOrThrow(): String = hairLength ?: throw MemberException(HttpStatus.BAD_REQUEST, "헤어 길이가 설정되지 않았습니다.")
+    fun getBodyTypeOrThrow(): String = bodyType ?: throw MemberException(HttpStatus.BAD_REQUEST, "체형이 설정되지 않았습니다.")
+    fun getHeightOrThrow(): Int = height ?: throw MemberException(HttpStatus.BAD_REQUEST, "키가 설정되지 않았습니다.")
+    fun getStyleOrThrow(): String = style ?: throw MemberException(HttpStatus.BAD_REQUEST, "스타일이 설정되지 않았습니다.")
+    fun getMbtiOrThrow(): String = mbti ?: throw MemberException(HttpStatus.BAD_REQUEST, "MBTI가 설정되지 않았습니다.")
+    fun getAlcoholOrThrow(): String = alcohol ?: throw MemberException(HttpStatus.BAD_REQUEST, "음주 스타일이 설정되지 않았습니다.")
+    fun getSmokeOrThrow(): String = smoke ?: throw MemberException(HttpStatus.BAD_REQUEST, "흡연 스타일이 설정되지 않았습니다.")
+    fun getPersonalitiesOrThrow(): String = personalities ?: throw MemberException(HttpStatus.BAD_REQUEST, "성격이 설정되지 않았습니다.")
+    fun getQuestionOrThrow(): String = question ?: throw MemberException(HttpStatus.BAD_REQUEST, "대표 질문이 설정되지 않았습니다.")
+    fun getAnswerOrThrow(): String = answer ?: throw MemberException(HttpStatus.BAD_REQUEST, "대표 답변이 설정되지 않았습니다.")
+    
+    // Hidden Profile
+    fun getLoveLanguageOrThrow(): String = loveLanguage ?: throw MemberException(HttpStatus.BAD_REQUEST, "사랑의 언어가 설정되지 않았습니다.")
+    fun getAffectionStyleOrThrow(): String = affectionStyle ?: throw MemberException(HttpStatus.BAD_REQUEST, "애정 표현 스타일이 설정되지 않았습니다.")
+    fun getContactStyleOrThrow(): String = contactStyle ?: throw MemberException(HttpStatus.BAD_REQUEST, "연락 스타일이 설정되지 않았습니다.")
+    fun getDateStyleOrThrow(): String = dateStyle ?: throw MemberException(HttpStatus.BAD_REQUEST, "데이트 스타일이 설정되지 않았습니다.")
+    fun getConflictResolutionStyleOrThrow(): String = conflictResolutionStyle ?: throw MemberException(HttpStatus.BAD_REQUEST, "갈등 해결 스타일이 설정되지 않았습니다.")
+    fun getRelationshipValuesOrThrow(): String = relationshipValues ?: throw MemberException(HttpStatus.BAD_REQUEST, "연애 가치관이 설정되지 않았습니다.")
+    
+    // 기타
+    fun getIntroduceOrThrow(): String = introduce ?: throw MemberException(HttpStatus.BAD_REQUEST, "자기소개가 설정되지 않았습니다.")
+    fun getMemberOrThrow(): Member = member ?: throw MemberException(HttpStatus.BAD_REQUEST, "회원 정보가 설정되지 않았습니다.")
+
 }

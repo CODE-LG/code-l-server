@@ -17,7 +17,7 @@ data class UnlockRequestResponse(
             return UnlockRequestResponse(
                 requestId = request.getIdOrThrow(),
                 requesterId = request.requester.getIdOrThrow(),
-                requesterName = request.requester.getProfileOrThrow().codeName,
+                requesterName = request.requester.getProfileOrThrow().getCodeNameOrThrow(),
                 status = request.status,
                 requestedAt = request.requestedAt,
                 processedAt = request.processedAt

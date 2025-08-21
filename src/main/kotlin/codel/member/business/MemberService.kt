@@ -46,20 +46,6 @@ class MemberService(
         return loginMember
     }
 
-    fun upsertProfile(
-        member: Member,
-        profile: Profile,
-    ) {
-        val existingProfile = member.profile
-        if (existingProfile == null) {
-            val newProfile = profileJpaRepository.save(profile)
-            member.registerProfile(newProfile)
-        } else {
-            existingProfile.update(profile)
-        }
-        memberJpaRepository.save(member)
-    }
-
     @Transactional(readOnly = true)
     fun findMember(
         oauthType: OauthType,
@@ -69,38 +55,7 @@ class MemberService(
     @Transactional(readOnly = true)
     fun findMember(memberId: Long): Member = memberRepository.findMember(memberId)
 
-    fun saveCodeImage(
-        member: Member,
-        files: List<MultipartFile>,
-    ) {
-        val profile =
-            member.profile
-                ?: throw MemberException(HttpStatus.BAD_REQUEST, "프로필이 존재하지 않습니다. 먼저 프로필을 등록해주세요.")
-        if (member.memberStatus == MemberStatus.CODE_SURVEY) {
-            member.memberStatus = MemberStatus.CODE_PROFILE_IMAGE
-        }
-        val codeImage = uploadCodeImage(files)
-        val serializeCodeImages = codeImage.serializeAttribute()
-        memberRepository.updateMemberCodeImage(profile, serializeCodeImages)
-    }
-
     private fun uploadCodeImage(files: List<MultipartFile>): CodeImage = CodeImage(files.map { file -> imageUploader.uploadFile(file) })
-
-    fun saveFaceImage(
-        member: Member,
-        files: List<MultipartFile>,
-    ) {
-        val profile =
-            member.profile
-                ?: throw MemberException(HttpStatus.BAD_REQUEST, "프로필이 존재하지 않습니다. 먼저 프로필을 등록해주세요.")
-        if (member.memberStatus == MemberStatus.CODE_PROFILE_IMAGE) {
-            member.memberStatus = MemberStatus.PENDING
-        }
-        val faceImage = uploadFaceImage(files)
-        val serializeCodeImages = faceImage.serializeAttribute()
-        memberRepository.updateMemberFaceImage(profile, serializeCodeImages)
-        sendNotification(member)
-    }
 
     private fun sendNotification(member: Member) {
         notificationService.send(
@@ -108,7 +63,7 @@ class MemberService(
                 type = NotificationType.DISCORD,
                 targetId = member.getIdOrThrow().toString(), // DISCORD는 없어도 됨
                 title = "[회원가입 요청]",
-                body = member.getProfileOrThrow().codeName + "님이 회원가입을 요청했습니다.",
+                body = member.getProfileOrThrow().getCodeNameOrThrow() + "님이 회원가입을 요청했습니다.",
             ),
         )
     }

@@ -5,7 +5,6 @@ import codel.config.argumentresolver.LoginMember
 import codel.member.business.MemberService
 import codel.member.domain.Member
 import codel.member.presentation.request.MemberLoginRequest
-import codel.member.presentation.request.ProfileSavedRequest
 import codel.member.presentation.response.MemberLoginResponse
 import codel.member.presentation.response.MemberProfileDetailResponse
 import codel.member.presentation.response.MemberProfileResponse
@@ -33,41 +32,6 @@ class MemberController(
             .ok()
             .header("Authorization", "Bearer $token")
             .body(MemberLoginResponse(member.getIdOrThrow(), member.memberStatus))
-    }
-
-    @PostMapping("/v1/member/profile")
-    override fun saveProfile(
-        @LoginMember member: Member,
-        @RequestBody request: ProfileSavedRequest,
-    ): ResponseEntity<Unit> {
-        memberService.upsertProfile(member, request.toProfile())
-        return ResponseEntity.ok().build()
-    }
-
-    @PostMapping(
-        "/v1/member/codeimage",
-        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
-        produces = [MediaType.APPLICATION_JSON_VALUE],
-    )
-    override fun saveCodeImage(
-        @LoginMember member: Member,
-        @RequestPart files: List<MultipartFile>,
-    ): ResponseEntity<Unit> {
-        memberService.saveCodeImage(member, files)
-        return ResponseEntity.ok().build()
-    }
-
-    @PostMapping(
-        "/v1/member/faceimage",
-        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
-        produces = [MediaType.APPLICATION_JSON_VALUE],
-    )
-    override fun saveFaceImage(
-        @LoginMember member: Member,
-        @RequestPart files: List<MultipartFile>,
-    ): ResponseEntity<Unit> {
-        memberService.saveFaceImage(member, files)
-        return ResponseEntity.ok().build()
     }
 
     @PostMapping("/v1/member/fcmtoken")

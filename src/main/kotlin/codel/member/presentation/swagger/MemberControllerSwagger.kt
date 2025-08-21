@@ -3,7 +3,7 @@ package codel.member.presentation.swagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import codel.member.presentation.request.MemberLoginRequest
-import codel.member.presentation.request.ProfileSavedRequest
+import codel.member.presentation.response.FullProfileResponse
 import codel.member.presentation.response.MemberLoginResponse
 import codel.member.presentation.response.MemberProfileDetailResponse
 import codel.member.presentation.response.MemberProfileResponse
@@ -19,8 +19,6 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RequestPart
-import org.springframework.web.multipart.MultipartFile
 
 @Tag(name = "Member", description = "회원 관련 API")
 interface MemberControllerSwagger {
@@ -35,51 +33,6 @@ interface MemberControllerSwagger {
     fun loginMember(
         @RequestBody request: MemberLoginRequest,
     ): ResponseEntity<MemberLoginResponse>
-
-    @Operation(summary = "이미지를 제외한 프로필 받기", description = "이미지를 제외한 프로필을 입력받습니다.")
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "프로필 성공적으로 저장됨"),
-            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
-            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
-        ],
-    )
-    fun saveProfile(
-        @Parameter(hidden = true) @LoginMember member: Member,
-        @RequestBody request: ProfileSavedRequest,
-    ): ResponseEntity<Unit>
-
-    @Operation(
-        summary = "코드 프로필 이미지 받기",
-        description = "코드 프로필 이미지 받습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "코드 프로필 이미지 성공적으로 저장됨"),
-            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
-            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
-        ],
-    )
-    fun saveCodeImage(
-        @LoginMember member: Member,
-        @RequestPart files: List<MultipartFile>,
-    ): ResponseEntity<Unit>
-
-    @Operation(
-        summary = "페이지 이미지 받기",
-        description = "페이즈 이미지를 3장 받습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "페이스 이미지 성공적으로 저장됨"),
-            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
-            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
-        ],
-    )
-    fun saveFaceImage(
-        @Parameter(hidden = true) @LoginMember member: Member,
-        @RequestPart files: List<MultipartFile>,
-    ): ResponseEntity<Unit>
 
     @Operation(
         summary = "사용자별 fcm 토큰 받기",

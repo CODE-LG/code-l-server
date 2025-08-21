@@ -27,23 +27,21 @@ data class MemberProfileResponse(
         fun toResponse(member: Member): MemberProfileResponse {
             val profile = member.getProfileOrThrow()
 
-            val deserializeHobby = Profile.deserializeAttribute(profile.hobby)
-            val deserializeStyle = Profile.deserializeAttribute(profile.style)
             return MemberProfileResponse(
                 memberId = member.getIdOrThrow(),
-                codeName = profile.codeName,
-                age = profile.age,
-                job = profile.job,
-                alcohol = profile.alcohol,
-                smoke = profile.smoke,
-                hobby = deserializeHobby,
-                style = deserializeStyle,
-                bigCity = profile.bigCity,
-                smallCity = profile.smallCity,
-                mbti = profile.mbti,
-                introduce = profile.introduce,
-                question = profile.question,
-                answer = profile.answer,
+                codeName = profile.getCodeNameOrThrow(),
+                age = profile.getAge(),
+                job = profile.getJobOrThrow(),
+                alcohol = profile.getAlcoholOrThrow(),
+                smoke = profile.getSmokeOrThrow(),
+                hobby = profile.getInterestsList(),
+                style = profile.getStylesList(),
+                bigCity = profile.getBigCityOrThrow(),
+                smallCity = profile.getSmallCityOrThrow(),
+                mbti = profile.getMbtiOrThrow(),
+                introduce = profile.introduce ?: "",
+                question = profile.getQuestionOrThrow(),
+                answer = profile.getAnswerOrThrow(),
                 codeImages = profile.getCodeImageOrThrow(),
                 faceImages = profile.getFaceImageOrThrow()
             )
@@ -52,23 +50,21 @@ data class MemberProfileResponse(
         fun toResponse(member: Member, signalStatus : SignalStatus): MemberProfileResponse {
             val profile = member.getProfileOrThrow()
 
-            val deserializeHobby = Profile.deserializeAttribute(profile.hobby)
-            val deserializeStyle = Profile.deserializeAttribute(profile.style)
             return MemberProfileResponse(
                 memberId = member.getIdOrThrow(),
-                codeName = profile.codeName,
-                age = profile.age,
-                job = profile.job,
-                alcohol = profile.alcohol,
-                smoke = profile.smoke,
-                hobby = deserializeHobby,
-                style = deserializeStyle,
-                bigCity = profile.bigCity,
-                smallCity = profile.smallCity,
-                mbti = profile.mbti,
-                introduce = profile.introduce,
-                question = profile.question,
-                answer = profile.answer,
+                codeName = profile.getCodeNameOrThrow(),
+                age = profile.getAge(),
+                job = profile.getJobOrThrow(),
+                alcohol = profile.getAlcoholOrThrow(),
+                smoke = profile.getSmokeOrThrow(),
+                hobby = profile.getInterestsList(),
+                style = profile.getStylesList(),
+                bigCity = profile.getBigCityOrThrow(),
+                smallCity = profile.getSmallCityOrThrow(),
+                mbti = profile.getMbtiOrThrow(),
+                introduce = profile.introduce ?: "",
+                question = profile.getQuestionOrThrow(),
+                answer = profile.getAnswerOrThrow(),
                 codeImages = profile.getCodeImageOrThrow(),
                 faceImages = profile.getFaceImageOrThrow(),
             )
