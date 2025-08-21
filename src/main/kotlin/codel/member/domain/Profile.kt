@@ -1,5 +1,6 @@
 package codel.member.domain
 
+import codel.common.domain.BaseTimeEntity
 import codel.member.exception.MemberException
 import codel.question.domain.Question
 import jakarta.persistence.*
@@ -80,13 +81,7 @@ class Profile(
     @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinColumn(name = "member_id")
     var member: Member? = null,
-
-    @Column(nullable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now(),
-
-    @Column(nullable = false)
-    var updatedAt: LocalDateTime = LocalDateTime.now()
-) {
+) : BaseTimeEntity(){
     
     companion object {
         // List ↔ String 변환 유틸리티
