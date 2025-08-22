@@ -54,6 +54,7 @@ class SignupService(
             jobCategory = request.jobCategory,
             interests = request.interests
         )
+        memberJpaRepository.save(member)
     }
 
     /**
