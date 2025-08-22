@@ -37,7 +37,19 @@ class Member(
     fun isNotDone(): Boolean = memberStatus != MemberStatus.DONE
 
     fun updateProfile(profile: Profile) {
+        // 양방향 연관관계 설정
         this.profile = profile
+        profile.member = this
+    }
+
+    /**
+     * 빈 Profile 생성 (전화번호 인증 완료 시 사용)
+     */
+    fun createEmptyProfile() {
+        if (this.profile == null) {
+            val profile = Profile()
+            updateProfile(profile)
+        }
     }
 
     override fun equals(other: Any?): Boolean {

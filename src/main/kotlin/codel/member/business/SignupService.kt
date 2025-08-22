@@ -4,6 +4,7 @@ import codel.member.domain.CodeImage
 import codel.member.domain.FaceImage
 import codel.member.domain.ImageUploader
 import codel.member.domain.Member
+import codel.member.domain.Profile
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.presentation.request.EssentialProfileRequest
 import codel.member.presentation.request.HiddenProfileRequest
@@ -27,6 +28,10 @@ class SignupService(
      */
     fun completePhoneVerification(member: Member) {
         member.completePhoneVerification()
+        
+        // Profile 객체 생성 (빈 상태로)
+        member.createEmptyProfile()
+        
         memberJpaRepository.save(member)
     }
 
@@ -39,8 +44,7 @@ class SignupService(
         
         // 요청 데이터 검증
         request.validateSelf()
-        
-        // Profile 정보 업데이트
+
         val profile = member.getProfileOrThrow()
         profile.updateEssentialProfileInfo(
             codeName = request.codeName,
