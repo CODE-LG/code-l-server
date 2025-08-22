@@ -75,6 +75,8 @@ class SignupService(
         
         // Essential Profile 완료 상태로 변경
         member.completeEssentialProfile()
+
+        memberJpaRepository.save(member)
     }
 
     /**
@@ -123,6 +125,8 @@ class SignupService(
         
         // Personality Profile 완료 상태로 변경
         member.completePersonalityProfile()
+
+        memberJpaRepository.save(member)
     }
 
     /**
@@ -162,5 +166,7 @@ class SignupService(
         
         // Hidden Profile 완료 상태로 변경 (PENDING 상태로)
         member.completeHiddenProfile()
+
+        memberJpaRepository.save(member)
     }
 }
