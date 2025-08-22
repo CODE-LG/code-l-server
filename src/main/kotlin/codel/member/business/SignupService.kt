@@ -6,6 +6,7 @@ import codel.member.domain.ImageUploader
 import codel.member.domain.Member
 import codel.member.domain.Profile
 import codel.member.infrastructure.MemberJpaRepository
+import codel.member.infrastructure.ProfileJpaRepository
 import codel.member.presentation.request.EssentialProfileRequest
 import codel.member.presentation.request.HiddenProfileRequest
 import codel.member.presentation.request.PersonalityProfileRequest
@@ -20,7 +21,8 @@ import java.time.LocalDate
 class SignupService(
     private val imageUploader: ImageUploader,
     private val questionService: QuestionService,
-    private val memberJpaRepository: MemberJpaRepository
+    private val memberJpaRepository: MemberJpaRepository,
+    private val profileJpaRepository: ProfileJpaRepository
 ) {
 
     /**
