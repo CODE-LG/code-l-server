@@ -3,6 +3,7 @@ package codel.member.domain
 import codel.member.exception.MemberException
 import jakarta.persistence.*
 import org.springframework.http.HttpStatus
+import kotlin.math.log
 
 @Entity
 @Table(

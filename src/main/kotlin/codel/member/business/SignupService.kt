@@ -4,6 +4,7 @@ import codel.member.domain.CodeImage
 import codel.member.domain.FaceImage
 import codel.member.domain.ImageUploader
 import codel.member.domain.Member
+import codel.member.infrastructure.MemberJpaRepository
 import codel.member.presentation.request.EssentialProfileRequest
 import codel.member.presentation.request.HiddenProfileRequest
 import codel.member.presentation.request.PersonalityProfileRequest
@@ -17,7 +18,8 @@ import java.time.LocalDate
 @Transactional
 class SignupService(
     private val imageUploader: ImageUploader,
-    private val questionService: QuestionService
+    private val questionService: QuestionService,
+    private val memberJpaRepository: MemberJpaRepository
 ) {
 
     /**
@@ -25,6 +27,7 @@ class SignupService(
      */
     fun completePhoneVerification(member: Member) {
         member.completePhoneVerification()
+        memberJpaRepository.save(member)
     }
 
     /**
