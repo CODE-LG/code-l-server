@@ -148,6 +148,7 @@ class SignupService(
             conflictResolutionStyle = request.conflictResolutionStyle,
             relationshipValues = request.relationshipValues
         )
+        memberJpaRepository.save(member)
     }
 
     /**
