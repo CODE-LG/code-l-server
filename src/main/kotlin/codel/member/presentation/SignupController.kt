@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
 @RestController
-@RequestMapping("/api/v1/signup")
+@RequestMapping("/v1/signup")
 class SignupController(
     private val memberService: MemberService,
     private val signupService: SignupService
