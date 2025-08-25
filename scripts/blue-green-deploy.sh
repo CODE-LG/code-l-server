@@ -92,14 +92,76 @@ sudo nginx -s reload
 echo -e "${GREEN}✅ Nginx 설정 전환 완료${NC}"
 
 # 4. 외부 접근 테스트
+# 4. 외부 접근 테스트 (상세 버전)
 echo -e "${YELLOW}🌐 외부 접근 테스트 중...${NC}"
-sleep 3
-if curl -f -s https://codelg.store/actuator/health > /dev/null 2>&1 || \
-   curl -f -s https://codelg.store/health > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ 외부 접근 정상${NC}"
+
+# 단계별 테스트
+echo -e "${BLUE}1️⃣ 로컬 포트 직접 확인${NC}"
+LOCAL_TEST=$(curl -f -s -m 5 http://localhost:$NEW_PORT/actuator/health 2>/dev/null || echo "FAILED")
+if [ "$LOCAL_TEST" = "FAILED" ]; then
+    echo -e "${RED}❌ 로컬 포트 $NEW_PORT 응답 없음${NC}"
+    echo "컨테이너 상태:"
+    sudo docker ps | grep codel-$NEW_PORT
+    echo "컨테이너 로그:"
+    sudo docker logs --tail 10 codel-$NEW_PORT
+    exit 1
 else
-    echo -e "${RED}❌ 외부 접근 실패: 롤백합니다${NC}"
-    # Nginx 롤백
+    echo -e "${GREEN}✅ 로컬 포트 $NEW_PORT 응답 정상${NC}"
+fi
+
+echo -e "${BLUE}2️⃣ Nginx upstream 설정 확인${NC}"
+UPSTREAM_PORT=$(sudo grep -A 3 "upstream backend" /etc/nginx/conf.d/www.codelg.store.conf | grep "server localhost" | grep -o "[0-9]\+")
+echo -e "${BLUE}   현재 upstream 포트: $UPSTREAM_PORT${NC}"
+if [ "$UPSTREAM_PORT" != "$NEW_PORT" ]; then
+    echo -e "${RED}❌ Upstream 포트가 새 포트와 다릅니다 ($UPSTREAM_PORT ≠ $NEW_PORT)${NC}"
+    exit 1
+fi
+
+echo -e "${BLUE}3️⃣ Nginx 프로세스 상태 확인${NC}"
+if ! sudo systemctl is-active --quiet nginx; then
+    echo -e "${RED}❌ Nginx 서비스가 실행되지 않고 있습니다${NC}"
+    sudo systemctl status nginx --no-pager
+    exit 1
+else
+    echo -e "${GREEN}✅ Nginx 서비스 정상${NC}"
+fi
+
+echo -e "${BLUE}4️⃣ 외부 HTTPS 접근 테스트 (타임아웃 10초)${NC}"
+sleep 3
+
+# 더 짧은 타임아웃으로 빠른 실패
+EXTERNAL_TEST=$(curl -f -s -m 10 --connect-timeout 5 https://codelg.store/actuator/health 2>&1)
+CURL_EXIT_CODE=$?
+
+if [ $CURL_EXIT_CODE -eq 0 ]; then
+    echo -e "${GREEN}✅ 외부 접근 정상${NC}"
+    echo "응답: $EXTERNAL_TEST"
+else
+    echo -e "${RED}❌ 외부 접근 실패 (종료코드: $CURL_EXIT_CODE)${NC}"
+    
+    # curl 에러 코드별 메시지
+    case $CURL_EXIT_CODE in
+        6)  echo "DNS 해석 실패" ;;
+        7)  echo "서버 연결 실패" ;;
+        28) echo "타임아웃" ;;
+        22) echo "HTTP 에러 응답" ;;
+        *)  echo "기타 curl 오류" ;;
+    esac
+    
+    echo "상세 응답: $EXTERNAL_TEST"
+    
+    echo -e "${RED}=== 디버깅 정보 ===${NC}"
+    echo "Nginx 에러 로그 (최근 5줄):"
+    sudo tail -5 /var/log/nginx/error.log
+    
+    echo "Nginx 액세스 로그 (최근 3줄):"
+    sudo tail -3 /var/log/nginx/access.log
+    
+    echo "포트 상태:"
+    sudo netstat -tlnp | grep -E ":(443|80|808[01])"
+    
+    # 롤백
+    echo -e "${RED}롤백을 진행합니다${NC}"
     sudo cp /etc/nginx/conf.d/www.codelg.store.conf.backup /etc/nginx/conf.d/www.codelg.store.conf
     sudo nginx -s reload
     exit 1
