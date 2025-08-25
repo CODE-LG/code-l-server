@@ -27,7 +27,7 @@ jobs:
           mkdir -p src/main/resources
           cat <<EOF > src/main/resources/application.yml
           server:
-            port: 8080
+            port: ${SERVER_PORT:8080}
           security:
             jwt:
               token:
@@ -80,7 +80,7 @@ jobs:
           mkdir -p src/test/resources
           cat <<EOF > src/test/resources/application.yml
           server:
-            port: 8080
+            port: ${SERVER_PORT:8080}
           
           security:
             jwt:
@@ -149,21 +149,12 @@ jobs:
       - name: Push image to Docker Hub
         run: sudo docker push ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
 
-      - name: Prepare and run container locally (self-hosted)
+      - name: Zero-downtime Blue-Green Deploy
         run: |
-          echo "📁 Creating log directory..."
-          sudo mkdir -p /var/log/app
-          sudo chown $USER:$USER /var/log/app
-
-          echo "🧼 Cleaning up old container..."
-          sudo docker stop codel || true
-          sudo docker rm codel || true
-
-          echo "🐳 Pulling latest image from Docker Hub..."
-          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
-
-          echo "🚀 Starting container..."
-          sudo docker run -d --name codel -p 8080:8080 -v /var/log/app:/var/log/app -e JAVA_OPTS="-XX:+UnlockExperimentalVMOptions -XX:-UseContainerSupport" ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
-
-          echo "📄 Tail log output:"
-          sudo docker logs --tail=20 codel || true
+          echo "📦 이미지 정보: ${{ secrets.DOCKER_USERNAME }}/codel-app:latest"
+          
+          echo "🔑 배포 스크립트 실행 권한 부여"
+          chmod +x ./scripts/blue-green-deploy.sh
+          
+          echo "🚀 무중단 배포 시작"
+          ./scripts/blue-green-deploy.sh ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
