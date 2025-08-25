@@ -9,6 +9,7 @@ import codel.member.domain.*
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
+import codel.member.presentation.response.FullProfileResponse
 import codel.member.presentation.response.MemberProfileDetailResponse
 import codel.notification.business.NotificationService
 import codel.notification.domain.Notification
@@ -103,9 +104,10 @@ class MemberService(
     fun findRejectReason(member: Member): String = memberRepository.findRejectReason(member)
 
     @Transactional(readOnly = true)
-    fun findMemberProfile(member: Member): Member {
+    fun findMyProfile(member: Member): FullProfileResponse {
         val memberId = member.getIdOrThrow()
-        return memberRepository.findMember(memberId)
+        val findMember = memberRepository.findMember(memberId)
+        return FullProfileResponse.createFull(findMember, isMyProfile = true)
     }
 
     @Transactional(readOnly = true)

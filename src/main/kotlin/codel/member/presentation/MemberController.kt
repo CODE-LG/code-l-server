@@ -37,12 +37,12 @@ class MemberController(
         return ResponseEntity.ok().build()
     }
 
-    @GetMapping("/v1/member/profile")
-    override fun findMemberProfile(
+    @GetMapping("/v1/member/me")
+    override fun findMyProfile(
         @LoginMember member: Member,
     ): ResponseEntity<FullProfileResponse> {
-        val findMember = memberService.findMemberProfile(member)
-        return ResponseEntity.ok(FullProfileResponse.createFull(findMember, isMyProfile = true))
+        val findMyProfile = memberService.findMyProfile(member)
+        return ResponseEntity.ok(findMyProfile)
     }
 
     @GetMapping("/v1/member/recommend")

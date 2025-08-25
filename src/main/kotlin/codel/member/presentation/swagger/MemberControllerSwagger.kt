@@ -56,7 +56,7 @@ interface MemberControllerSwagger {
             ApiResponse(responseCode = "500", description = "서버 내부 오류"),
         ],
     )
-    fun findMemberProfile(
+    fun findMyProfile(
         @Parameter(hidden = true) @LoginMember member: Member,
     ): ResponseEntity<FullProfileResponse>
 
