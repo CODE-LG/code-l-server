@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
+import kotlin.compareTo
 
 data class PersonalityProfileRequest(
     val hairLength: String?,
@@ -24,12 +25,22 @@ data class PersonalityProfileRequest(
     
     @field:Size(min = 1, max = 5, message = "성격은 1-5개 사이여야 합니다")
     val personalities: List<String>,
+
+
+    @field:Size(min = 1, max = 5, message = "관심사는 1-5개 사이여야 합니다")
+    val interests: List<String>,
     
     val questionId: Long?,
     
     val answer: String?
 ) {
     fun validateSelf() {
+        // 관심사 개별 검증
+        interests.forEach { interest ->
+            require(interest.isNotBlank() && interest.length <= 20) {
+                "각 관심사는 1-20자 사이여야 합니다: '$interest'"
+            }
+        }
         // 성격 개별 검증
         personalities.forEach { personality ->
             require(personality.isNotBlank() && personality.length <= 15) {

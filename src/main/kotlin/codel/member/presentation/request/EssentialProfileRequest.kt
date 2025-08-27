@@ -22,18 +22,8 @@ data class EssentialProfileRequest(
     
     @field:NotBlank(message = "직업을 선택해주세요")
     val jobCategory: String,
-    
-    @field:Size(min = 1, max = 5, message = "관심사는 1-5개 사이여야 합니다")
-    val interests: List<String>
 ) {
     fun validateSelf() {
-        // 관심사 개별 검증
-        interests.forEach { interest ->
-            require(interest.isNotBlank() && interest.length <= 20) {
-                "각 관심사는 1-20자 사이여야 합니다: '$interest'"
-            }
-        }
-        
         // 나이 검증
         val birthDate = try {
             LocalDate.parse(this.birthDate)

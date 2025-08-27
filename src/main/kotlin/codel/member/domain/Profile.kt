@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.Period
+import kotlin.collections.isNotEmpty
 
 @Entity
 @Table(name = "profiles")
@@ -106,16 +107,14 @@ class Profile(
         sido: String,
         sigugun: String,
         jobCategory: String,
-        interests: List<String>
     ) {
-        validateEssentialInfoDomainRules(birthDate, interests)
+        validateEssentialInfoDomainRules(birthDate)
         
         this.codeName = codeName
         this.birthDate = birthDate
         this.bigCity = sido
         this.smallCity = sigugun
         this.job = jobCategory
-        this.interests = serializeList(interests)
         
         this.updatedAt = LocalDateTime.now()
     }
@@ -141,7 +140,7 @@ class Profile(
         codeImages: List<String>,
         interests: List<String>
     ) {
-        validateEssentialDomainRules(birthDate, codeImages, interests)
+        validateEssentialDomainRules(birthDate, codeImages)
         
         this.codeName = codeName
         this.birthDate = birthDate
@@ -165,10 +164,12 @@ class Profile(
         alcohol: String?,
         smoke: String?,
         personalities: List<String>,
-        representativeQuestion: codel.question.domain.Question?,
+        interests: List<String>,
+        representativeQuestion: Question?,
         representativeAnswer: String?
+
     ) {
-        validatePersonalityDomainRules(personalities, height, mbti)
+        validatePersonalityDomainRules(personalities, height, mbti, interests)
         
         this.hairLength = hairLength
         this.bodyType = bodyType
@@ -281,31 +282,28 @@ class Profile(
     
     // ===== 도메인 검증 (비즈니스 규칙만) =====
     private fun validateEssentialInfoDomainRules(
-        birthDate: LocalDate,
-        interests: List<String>
+        birthDate: LocalDate
     ) {
         require(!birthDate.isAfter(LocalDate.now())) {
             "생년월일은 미래 날짜일 수 없습니다"
         }
-        require(interests.isNotEmpty()) { "관심사가 필요합니다" }
     }
     
     private fun validateEssentialDomainRules(
         birthDate: LocalDate,
         codeImages: List<String>,
-        interests: List<String>
     ) {
         require(!birthDate.isAfter(LocalDate.now())) {
             "생년월일은 미래 날짜일 수 없습니다"
         }
         require(codeImages.isNotEmpty()) { "코드 이미지가 필요합니다" }
-        require(interests.isNotEmpty()) { "관심사가 필요합니다" }
     }
     
     private fun validatePersonalityDomainRules(
         personalities: List<String>,
         height: Int?,
-        mbti: String?
+        mbti: String?,
+        interests: List<String>
     ) {
         require(essentialCompleted) { "기본 프로필을 먼저 완성해야 합니다" }
         require(personalities.isNotEmpty()) { "성격을 최소 1개는 선택해야 합니다" }
@@ -319,6 +317,8 @@ class Profile(
                 "MBTI는 4자리 영문이어야 합니다"
             }
         }
+
+        require(interests.isNotEmpty()) { "관심사가 필요합니다" }
     }
     
     private fun validateHiddenInfoDomainRules() {

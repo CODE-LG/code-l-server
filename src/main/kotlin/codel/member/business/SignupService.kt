@@ -54,7 +54,6 @@ class SignupService(
             sido = request.bigCity,
             sigugun = request.smallCity,
             jobCategory = request.jobCategory,
-            interests = request.interests
         )
         memberJpaRepository.save(member)
     }
@@ -122,7 +121,8 @@ class SignupService(
             smoke = request.smokingStyle,
             personalities = request.personalities,
             representativeQuestion = representativeQuestion,
-            representativeAnswer = request.answer
+            representativeAnswer = request.answer,
+            interests = request.interests,
         )
         
         // Personality Profile 완료 상태로 변경
