@@ -11,7 +11,8 @@ data class SignUpStatusResponse(
     val isRegistrationComplete: Boolean,
     val canProceedToEssential: Boolean,
     val canProceedToPersonality: Boolean,
-    val canProceedToHidden: Boolean
+    val canProceedToHidden: Boolean,
+    val rejectReason : String?,
 ) {
     companion object {
         fun from(member: Member): SignUpStatusResponse {
@@ -26,7 +27,8 @@ data class SignUpStatusResponse(
                 isRegistrationComplete = member.memberStatus == MemberStatus.DONE,
                 canProceedToEssential = member.canProceedToEssential(),
                 canProceedToPersonality = member.canProceedToPersonality(),
-                canProceedToHidden = member.canProceedToHidden()
+                canProceedToHidden = member.canProceedToHidden(),
+                rejectReason = member.rejectReason
             )
         }
         
