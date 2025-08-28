@@ -73,9 +73,9 @@ class SignupService(
         
         // Profile 이미지 업데이트 및 완료 처리
         profile.updateEssentialProfileImages(codeImage.urls)
-        
+
         // Essential Profile 완료 상태로 변경
-        member.completeEssentialProfile()
+//        member.completeEssentialProfile()
 
         memberJpaRepository.save(member)
     }
@@ -125,8 +125,8 @@ class SignupService(
             interests = request.interests,
         )
         
-        // Personality Profile 완료 상태로 변경
-        member.completePersonalityProfile()
+        //TODO ::  Personality Profile 완료 상태로 변경  ( 다음 업데이트까지 세이브포인트 생략 )
+//        member.completePersonalityProfile()
 
         memberJpaRepository.save(member)
     }

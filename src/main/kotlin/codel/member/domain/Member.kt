@@ -158,7 +158,7 @@ class Member(
         return when (memberStatus) {
             MemberStatus.SIGNUP -> MemberStatus.PHONE_VERIFIED
             MemberStatus.PHONE_VERIFIED -> MemberStatus.ESSENTIAL_COMPLETED
-            MemberStatus.ESSENTIAL_COMPLETED -> MemberStatus.PERSONALITY_COMPLETED
+            MemberStatus.ESSENTIAL_COMPLETED -> MemberStatus.HIDDEN_COMPLETED
             MemberStatus.PERSONALITY_COMPLETED -> MemberStatus.HIDDEN_COMPLETED
             MemberStatus.HIDDEN_COMPLETED -> MemberStatus.PENDING
             else -> null
