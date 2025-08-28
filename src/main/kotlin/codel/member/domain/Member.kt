@@ -24,6 +24,8 @@ class Member(
     var oauthId: String,
     @Enumerated(EnumType.STRING)
     var memberStatus: MemberStatus,
+
+    var rejectReason: String? = null,
 ) {
     fun getIdOrThrow(): Long = id ?: throw MemberException(HttpStatus.BAD_REQUEST, "id가 없는 멤버 입니다.")
 
@@ -66,7 +68,7 @@ class Member(
     }
 
     // ===== 회원가입 단계 검증 및 상태 전환 메서드들 =====
-    
+
     /**
      * 전화번호 인증을 완료하고 상태를 PHONE_VERIFIED로 변경
      */
@@ -161,6 +163,11 @@ class Member(
             MemberStatus.HIDDEN_COMPLETED -> MemberStatus.PENDING
             else -> null
         }
+    }
+
+    fun reject(rejectReason: String) {
+        this.memberStatus = MemberStatus.REJECT
+        this.rejectReason = rejectReason
     }
 
 

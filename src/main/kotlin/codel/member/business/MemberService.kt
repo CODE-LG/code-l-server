@@ -95,7 +95,7 @@ class MemberService(
         val member = memberRepository.findMember(memberId)
 
         memberRepository.saveRejectReason(member, reason)
-        member.memberStatus = MemberStatus.REJECT
+        member.reject(reason)
 
         return memberRepository.updateMember(member)
     }
