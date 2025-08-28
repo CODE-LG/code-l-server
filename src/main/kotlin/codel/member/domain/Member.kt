@@ -169,6 +169,4 @@ class Member(
         this.memberStatus = MemberStatus.REJECT
         this.rejectReason = rejectReason
     }
-
-
 }
