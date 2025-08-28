@@ -7,8 +7,8 @@ class FaceImage(
     val urls: List<String>,
 ) {
     init {
-        if (urls.size != 3) {
-            throw MemberException(HttpStatus.BAD_REQUEST, "얼굴 이미지 URL은 정확히 3개여야 합니다.")
+        if (urls.size != 2) {
+            throw MemberException(HttpStatus.BAD_REQUEST, "얼굴 이미지 URL은 정확히 2개여야 합니다.")
         }
     }
 

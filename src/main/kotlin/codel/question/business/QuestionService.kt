@@ -25,6 +25,15 @@ class QuestionService(
     }
     
     /**
+     * ID로 질문 조회
+     */
+    fun findQuestionById(questionId: Long): Question {
+        return questionJpaRepository.findById(questionId).orElseThrow {
+            IllegalArgumentException("질문을 찾을 수 없습니다. ID: $questionId")
+        }
+    }
+    
+    /**
      * 채팅방에서 사용하지 않은 질문들 조회
      */
     fun findUnusedQuestionsByChatRoom(chatRoomId: Long): List<Question> {

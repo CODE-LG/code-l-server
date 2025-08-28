@@ -1,22 +1,21 @@
 package codel.signal.presentation.response
 
-import codel.member.domain.Member
-import codel.member.presentation.response.MemberProfileResponse
+import codel.member.presentation.response.FullProfileResponse
 import codel.signal.domain.Signal
 import codel.signal.domain.SignalStatus
 import java.time.LocalDateTime
 
 data class SignalMemberResponse(
     val signalId: Long,
-    val member: MemberProfileResponse,
-    val status : SignalStatus,
+    val member: FullProfileResponse,
+    val status: SignalStatus,
     val createAt: LocalDateTime
 ) {
     companion object {
         fun fromSend(signal: Signal): SignalMemberResponse =
             SignalMemberResponse(
                 signalId = signal.getIdOrThrow(),
-                member = MemberProfileResponse.toResponse(signal.toMember),
+                member = FullProfileResponse.createOpen(signal.toMember), // 시그널 단계에서는 Open만
                 status = signal.senderStatus,
                 createAt = signal.createdAt
             )
@@ -24,7 +23,7 @@ data class SignalMemberResponse(
         fun fromReceive(signal: Signal): SignalMemberResponse =
             SignalMemberResponse(
                 signalId = signal.getIdOrThrow(),
-                member = MemberProfileResponse.toResponse(signal.fromMember),
+                member = FullProfileResponse.createOpen(signal.fromMember), // 시그널 단계에서는 Open만
                 status = signal.receiverStatus,
                 createAt = signal.createdAt
             )

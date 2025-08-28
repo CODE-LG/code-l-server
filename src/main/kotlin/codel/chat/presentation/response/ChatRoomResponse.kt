@@ -4,16 +4,16 @@ import codel.chat.business.UnlockInfo
 import codel.chat.domain.ChatRoom
 import codel.chat.domain.ChatRoomStatus
 import codel.member.domain.Member
-import codel.member.presentation.response.MemberResponse
+import codel.member.presentation.response.FullProfileResponse
 import java.time.LocalDateTime
 
 data class ChatRoomResponse(
     val chatRoomId: Long,
     val unReadMessageCount: Int,
-    val partner: MemberResponse,
-    val lastReadChatId : Long?,
+    val partner: FullProfileResponse,
+    val lastReadChatId: Long?,
     val recentChat: ChatResponse?,
-    val chatRoomStatus : ChatRoomStatus,
+    val chatRoomStatus: ChatRoomStatus,
     val unlockInfo: UnlockInfoResponse,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
@@ -28,7 +28,7 @@ data class ChatRoomResponse(
         ): ChatRoomResponse =
             ChatRoomResponse(
                 chatRoomId = chatRoom.getIdOrThrow(),
-                partner = MemberResponse.toResponse(partner),
+                partner = FullProfileResponse.createOpen(partner), // 기본적으로는 Open만
                 lastReadChatId = lastReadChatId,
                 recentChat = chatRoom.recentChat?.let { ChatResponse.toResponse(requester, it) },
                 unReadMessageCount = unReadMessageCount,
@@ -50,7 +50,7 @@ data class ChatRoomResponse(
         ): ChatRoomResponse =
             ChatRoomResponse(
                 chatRoomId = chatRoom.getIdOrThrow(),
-                partner = MemberResponse.toResponse(partner),
+                partner = FullProfileResponse.createOpen(partner), // 기본적으로는 Open만
                 lastReadChatId = lastReadChatId,
                 recentChat = chatRoom.recentChat?.let { ChatResponse.toResponse(requester, it) },
                 unReadMessageCount = unReadMessageCount,
@@ -73,7 +73,11 @@ data class ChatRoomResponse(
         ): ChatRoomResponse =
             ChatRoomResponse(
                 chatRoomId = chatRoom.getIdOrThrow(),
-                partner = MemberResponse.toResponse(partner),
+                partner = if (unlockInfo.isUnlocked) {
+                    FullProfileResponse.createFull(partner) // 코드 해제된 경우 Full Profile
+                } else {
+                    FullProfileResponse.createOpen(partner) // 그렇지 않으면 Open만
+                },
                 lastReadChatId = lastReadChatId,
                 recentChat = chatRoom.recentChat?.let { ChatResponse.toResponse(requester, it) },
                 unReadMessageCount = unReadMessageCount,

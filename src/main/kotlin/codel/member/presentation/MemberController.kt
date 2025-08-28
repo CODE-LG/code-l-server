@@ -5,18 +5,11 @@ import codel.config.argumentresolver.LoginMember
 import codel.member.business.MemberService
 import codel.member.domain.Member
 import codel.member.presentation.request.MemberLoginRequest
-import codel.member.presentation.request.ProfileSavedRequest
-import codel.member.presentation.response.MemberLoginResponse
-import codel.member.presentation.response.MemberProfileDetailResponse
-import codel.member.presentation.response.MemberProfileResponse
-import codel.member.presentation.response.MemberRecommendResponses
-import codel.member.presentation.response.MemberResponse
+import codel.member.presentation.response.*
 import codel.member.presentation.swagger.MemberControllerSwagger
 import org.springframework.data.domain.Page
-import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
 
 @RestController
 class MemberController(
@@ -35,41 +28,6 @@ class MemberController(
             .body(MemberLoginResponse(member.getIdOrThrow(), member.memberStatus))
     }
 
-    @PostMapping("/v1/member/profile")
-    override fun saveProfile(
-        @LoginMember member: Member,
-        @RequestBody request: ProfileSavedRequest,
-    ): ResponseEntity<Unit> {
-        memberService.upsertProfile(member, request.toProfile())
-        return ResponseEntity.ok().build()
-    }
-
-    @PostMapping(
-        "/v1/member/codeimage",
-        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
-        produces = [MediaType.APPLICATION_JSON_VALUE],
-    )
-    override fun saveCodeImage(
-        @LoginMember member: Member,
-        @RequestPart files: List<MultipartFile>,
-    ): ResponseEntity<Unit> {
-        memberService.saveCodeImage(member, files)
-        return ResponseEntity.ok().build()
-    }
-
-    @PostMapping(
-        "/v1/member/faceimage",
-        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
-        produces = [MediaType.APPLICATION_JSON_VALUE],
-    )
-    override fun saveFaceImage(
-        @LoginMember member: Member,
-        @RequestPart files: List<MultipartFile>,
-    ): ResponseEntity<Unit> {
-        memberService.saveFaceImage(member, files)
-        return ResponseEntity.ok().build()
-    }
-
     @PostMapping("/v1/member/fcmtoken")
     override fun saveFcmToken(
         @LoginMember member: Member,
@@ -79,20 +37,20 @@ class MemberController(
         return ResponseEntity.ok().build()
     }
 
-    @GetMapping("/v1/member/profile")
-    override fun findMemberProfile(
+    @GetMapping("/v1/member/me")
+    override fun findMyProfile(
         @LoginMember member: Member,
-    ): ResponseEntity<MemberProfileResponse> {
-        val findMember = memberService.findMemberProfile(member)
-        return ResponseEntity.ok(MemberProfileResponse.toResponse(findMember))
+    ): ResponseEntity<FullProfileResponse> {
+        val findMyProfile = memberService.findMyProfile(member)
+        return ResponseEntity.ok(findMyProfile)
     }
 
     @GetMapping("/v1/member/recommend")
     override fun recommendMembers(
         @LoginMember member: Member,
-    ): ResponseEntity<MemberRecommendResponses> {
+    ): ResponseEntity<MemberRecommendResponse> {
         val members = memberService.recommendMembers(member)
-        return ResponseEntity.ok(MemberRecommendResponses.toResponse(members))
+        return ResponseEntity.ok(MemberRecommendResponse.from(members))
     }
 
     @GetMapping("/v1/member/all")
@@ -100,21 +58,21 @@ class MemberController(
         @LoginMember member: Member,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "8") size: Int,
-    ): ResponseEntity<Page<MemberResponse>> {
+    ): ResponseEntity<Page<FullProfileResponse>> {
         val memberPage = memberService.getRandomMembers(member, page, size)
 
         return ResponseEntity.ok(
             memberPage.map { member ->
-                MemberResponse.toResponse(member)
+                FullProfileResponse.createOpen(member)
             },
         )
     }
 
     @GetMapping("/v1/members/{id}")
     override fun getMemberProfileDetail(
-        @LoginMember me : Member,
+        @LoginMember me: Member,
         @PathVariable id: Long,
-    ) : ResponseEntity<MemberProfileDetailResponse>{
+    ): ResponseEntity<MemberProfileDetailResponse> {
         val memberProfileDetail = memberService.findMemberProfile(me, id)
 
         return ResponseEntity.ok(memberProfileDetail)

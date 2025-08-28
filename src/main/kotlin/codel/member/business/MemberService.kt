@@ -9,6 +9,7 @@ import codel.member.domain.*
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
+import codel.member.presentation.response.FullProfileResponse
 import codel.member.presentation.response.MemberProfileDetailResponse
 import codel.notification.business.NotificationService
 import codel.notification.domain.Notification
@@ -46,20 +47,6 @@ class MemberService(
         return loginMember
     }
 
-    fun upsertProfile(
-        member: Member,
-        profile: Profile,
-    ) {
-        val existingProfile = member.profile
-        if (existingProfile == null) {
-            val newProfile = profileJpaRepository.save(profile)
-            member.registerProfile(newProfile)
-        } else {
-            existingProfile.update(profile)
-        }
-        memberJpaRepository.save(member)
-    }
-
     @Transactional(readOnly = true)
     fun findMember(
         oauthType: OauthType,
@@ -69,38 +56,7 @@ class MemberService(
     @Transactional(readOnly = true)
     fun findMember(memberId: Long): Member = memberRepository.findMember(memberId)
 
-    fun saveCodeImage(
-        member: Member,
-        files: List<MultipartFile>,
-    ) {
-        val profile =
-            member.profile
-                ?: throw MemberException(HttpStatus.BAD_REQUEST, "프로필이 존재하지 않습니다. 먼저 프로필을 등록해주세요.")
-        if (member.memberStatus == MemberStatus.CODE_SURVEY) {
-            member.memberStatus = MemberStatus.CODE_PROFILE_IMAGE
-        }
-        val codeImage = uploadCodeImage(files)
-        val serializeCodeImages = codeImage.serializeAttribute()
-        memberRepository.updateMemberCodeImage(profile, serializeCodeImages)
-    }
-
     private fun uploadCodeImage(files: List<MultipartFile>): CodeImage = CodeImage(files.map { file -> imageUploader.uploadFile(file) })
-
-    fun saveFaceImage(
-        member: Member,
-        files: List<MultipartFile>,
-    ) {
-        val profile =
-            member.profile
-                ?: throw MemberException(HttpStatus.BAD_REQUEST, "프로필이 존재하지 않습니다. 먼저 프로필을 등록해주세요.")
-        if (member.memberStatus == MemberStatus.CODE_PROFILE_IMAGE) {
-            member.memberStatus = MemberStatus.PENDING
-        }
-        val faceImage = uploadFaceImage(files)
-        val serializeCodeImages = faceImage.serializeAttribute()
-        memberRepository.updateMemberFaceImage(profile, serializeCodeImages)
-        sendNotification(member)
-    }
 
     private fun sendNotification(member: Member) {
         notificationService.send(
@@ -108,7 +64,7 @@ class MemberService(
                 type = NotificationType.DISCORD,
                 targetId = member.getIdOrThrow().toString(), // DISCORD는 없어도 됨
                 title = "[회원가입 요청]",
-                body = member.getProfileOrThrow().codeName + "님이 회원가입을 요청했습니다.",
+                body = member.getProfileOrThrow().getCodeNameOrThrow() + "님이 회원가입을 요청했습니다.",
             ),
         )
     }
@@ -139,7 +95,7 @@ class MemberService(
         val member = memberRepository.findMember(memberId)
 
         memberRepository.saveRejectReason(member, reason)
-        member.memberStatus = MemberStatus.REJECT
+        member.reject(reason)
 
         return memberRepository.updateMember(member)
     }
@@ -148,9 +104,10 @@ class MemberService(
     fun findRejectReason(member: Member): String = memberRepository.findRejectReason(member)
 
     @Transactional(readOnly = true)
-    fun findMemberProfile(member: Member): Member {
+    fun findMyProfile(member: Member): FullProfileResponse {
         val memberId = member.getIdOrThrow()
-        return memberRepository.findMember(memberId)
+        val findMember = memberRepository.findMember(memberId)
+        return FullProfileResponse.createFull(findMember, isMyProfile = true)
     }
 
     @Transactional(readOnly = true)
@@ -253,7 +210,7 @@ class MemberService(
                 val daysBetween = ChronoUnit.DAYS.between(updatedAt, now)
 
                 if (daysBetween > 7) {
-                    return MemberProfileDetailResponse.toResponse(member, NONE)
+                    return MemberProfileDetailResponse.create(member, NONE)
                 }
             }
 
@@ -264,12 +221,16 @@ class MemberService(
                         ?: throw ChatException(HttpStatus.BAD_REQUEST, "상대방과 관련된 채팅방을 찾을 수 없습니다.")
 
                 return when (findChatRoomByMembers.status) {
-                    ChatRoomStatus.UNLOCKED -> MemberProfileDetailResponse.toResponse(member, status, true)
-                    else -> MemberProfileDetailResponse.toResponse(member, status, false)
+                    ChatRoomStatus.UNLOCKED -> MemberProfileDetailResponse.create(member, status, true)
+                    else -> MemberProfileDetailResponse.create(member, status, false)
                 }
             }
-            return MemberProfileDetailResponse.toResponse(member, status)
+            return MemberProfileDetailResponse.create(member, status)
         }
-        return MemberProfileDetailResponse.toResponse(member, NONE)
+        return MemberProfileDetailResponse.create(member, NONE)
+    }
+
+    fun completePhoneVerification(member: Member) {
+        member.completePhoneVerification()
     }
 }

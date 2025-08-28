@@ -123,7 +123,7 @@ class ChatService(
             Chat(
                 chatRoom = chatRoom,
                 fromChatRoomMember = fromApprover,
-                message = profile.question,
+                message = profile.getRepresentativeQuestionOrThrow().content,
                 sentAt = now,
                 senderType = ChatSenderType.SYSTEM,
                 chatContentType = ChatContentType.QUESTION
@@ -131,7 +131,7 @@ class ChatService(
             Chat(
                 chatRoom = chatRoom,
                 fromChatRoomMember = fromApprover,
-                message = profile.answer,
+                message = profile.getRepresentativeAnswerOrThrow(),
                 sentAt = now,
                 senderType = ChatSenderType.USER,
                 chatContentType = ChatContentType.TEXT

@@ -2,26 +2,14 @@ package codel.report.presentation.swagger
 
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
-import codel.member.presentation.request.MemberLoginRequest
-import codel.member.presentation.request.ProfileSavedRequest
-import codel.member.presentation.response.MemberLoginResponse
-import codel.member.presentation.response.MemberProfileDetailResponse
-import codel.member.presentation.response.MemberProfileResponse
-import codel.member.presentation.response.MemberRecommendResponses
-import codel.member.presentation.response.MemberResponse
 import codel.report.presentation.request.ReportRequest
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RequestPart
-import org.springframework.web.multipart.MultipartFile
 
 @Tag(name = "Report", description = "신고 관련 API")
 interface ReportControllerSwagger {

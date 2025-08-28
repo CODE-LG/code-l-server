@@ -1,0 +1,40 @@
+package codel.member.presentation.response
+
+import codel.member.domain.AccessLevel
+import codel.member.domain.Member
+
+/**
+ * 완전한 프로필 (오픈 + 숨김)
+ */
+data class FullProfileResponse(
+    val memberId: Long,
+    val openProfile: OpenProfileResponse,
+    val hiddenProfile: HiddenProfileResponse?,
+    val accessLevel: AccessLevel,
+    val isMyProfile: Boolean = false
+) {
+    companion object {
+        fun createOpen(member: Member): FullProfileResponse {
+            return FullProfileResponse(
+                memberId = member.getIdOrThrow(),
+                openProfile = OpenProfileResponse.from(member),
+                hiddenProfile = null,
+                accessLevel = AccessLevel.PUBLIC,
+                isMyProfile = false
+            )
+        }
+        
+        fun createFull(member: Member, isMyProfile: Boolean = false): FullProfileResponse {
+            val profile = member.getProfileOrThrow()
+            return FullProfileResponse(
+                memberId = member.getIdOrThrow(),
+                openProfile = OpenProfileResponse.from(member),
+                hiddenProfile = if (profile.hiddenCompleted) {
+                    HiddenProfileResponse.from(profile)
+                } else null,
+                accessLevel = if (isMyProfile) AccessLevel.SELF else AccessLevel.CODE_EXCHANGED,
+                isMyProfile = isMyProfile
+            )
+        }
+    }
+}
