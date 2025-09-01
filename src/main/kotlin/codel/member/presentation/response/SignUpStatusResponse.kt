@@ -34,6 +34,7 @@ data class SignUpStatusResponse(
         
         private fun getCompletedSteps(status: MemberStatus): List<MemberStatus> {
             return when (status) {
+                MemberStatus.WITHDRAWN -> emptyList()
                 MemberStatus.SIGNUP -> emptyList()
                 MemberStatus.PHONE_VERIFIED -> listOf(MemberStatus.PHONE_VERIFIED)
                 MemberStatus.ESSENTIAL_COMPLETED -> listOf(
