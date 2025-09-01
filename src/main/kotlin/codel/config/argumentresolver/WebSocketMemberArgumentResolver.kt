@@ -29,6 +29,13 @@ class WebSocketMemberArgumentResolver(
             sessionAttributes?.get("memberId") as? String
                 ?: throw AuthException(HttpStatus.UNAUTHORIZED, "memberId가 요청에 없습니다.")
 
-        return memberService.findMember(memberId.toLong())
+        val member = memberService.findMember(memberId.toLong())
+        
+        // 탈퇴한 회원 차단
+        if (member.isWithdrawn()) {
+            throw AuthException(HttpStatus.UNAUTHORIZED, "탈퇴한 회원입니다.")
+        }
+        
+        return member
     }
 }
