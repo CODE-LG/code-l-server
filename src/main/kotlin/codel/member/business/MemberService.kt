@@ -44,6 +44,19 @@ class MemberService(
     fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
 
+        if (loginMember.isWithdrawn()) {
+            val withdrawDate = loginMember.getUpdateDate()
+            val formattedDate = "%04d-%02d-%02d".format(
+                withdrawDate.year,
+                withdrawDate.monthValue,
+                withdrawDate.dayOfMonth
+            )
+
+            val errorMessage = "해당 계정은 $formattedDate 에 탈퇴 처리되어 로그인이 불가능합니다."
+
+            throw MemberException(HttpStatus.FORBIDDEN, errorMessage)
+        }
+
         return loginMember
     }
 
