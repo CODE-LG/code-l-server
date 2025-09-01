@@ -30,7 +30,7 @@ class SignupService(
      * 전화번호 인증 완료 처리
      */
     fun completePhoneVerification(member: Member) {
-        member.completePhoneVerification()
+//        member.completePhoneVerification()
         
         // Profile 객체 생성 (빈 상태로)
         member.createEmptyProfile()
@@ -43,7 +43,7 @@ class SignupService(
      */
     fun registerEssentialProfile(member: Member, request: EssentialProfileRequest) {
         // 단계별 검증
-        member.validateCanProceedToEssential()
+//        member.validateCanProceedToEssential()
         
         // 요청 데이터 검증
         request.validateSelf()
@@ -105,7 +105,7 @@ class SignupService(
      */
     fun registerPersonalityProfile(member: Member, request: PersonalityProfileRequest) {
         // 단계별 검증
-        member.validateCanProceedToPersonality()
+//        member.validateCanProceedToPersonality()
         
         // 요청 데이터 검증
         request.validateSelf()
@@ -146,7 +146,7 @@ class SignupService(
      */
     fun registerHiddenProfile(member: Member, request: HiddenProfileRequest) {
         // 단계별 검증
-        member.validateCanProceedToHidden()
+//        member.validateCanProceedToHidden()
         
         // Profile 정보 업데이트 (이미지 제외)
         val profile = member.getProfileOrThrow()
