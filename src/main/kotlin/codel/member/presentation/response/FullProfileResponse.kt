@@ -2,6 +2,7 @@ package codel.member.presentation.response
 
 import codel.member.domain.AccessLevel
 import codel.member.domain.Member
+import codel.member.domain.OauthType
 
 /**
  * 완전한 프로필 (오픈 + 숨김)
@@ -11,7 +12,8 @@ data class FullProfileResponse(
     val openProfile: OpenProfileResponse,
     val hiddenProfile: HiddenProfileResponse?,
     val accessLevel: AccessLevel,
-    val isMyProfile: Boolean = false
+    val isMyProfile: Boolean = false,
+    val oauthType : OauthType?
 ) {
     companion object {
         fun createOpen(member: Member): FullProfileResponse {
@@ -20,7 +22,8 @@ data class FullProfileResponse(
                 openProfile = OpenProfileResponse.from(member),
                 hiddenProfile = null,
                 accessLevel = AccessLevel.PUBLIC,
-                isMyProfile = false
+                isMyProfile = false,
+                oauthType = null,
             )
         }
         
@@ -33,7 +36,8 @@ data class FullProfileResponse(
                     HiddenProfileResponse.from(profile)
                 } else null,
                 accessLevel = if (isMyProfile) AccessLevel.SELF else AccessLevel.CODE_EXCHANGED,
-                isMyProfile = isMyProfile
+                isMyProfile = isMyProfile,
+                oauthType = if(isMyProfile) member.oauthType else null,
             )
         }
     }
