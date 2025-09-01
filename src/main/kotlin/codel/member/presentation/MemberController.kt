@@ -77,4 +77,12 @@ class MemberController(
 
         return ResponseEntity.ok(memberProfileDetail)
     }
+
+    @DeleteMapping("/v1/member/me")
+    override fun withdrawMember(
+        @LoginMember member: Member,
+    ): ResponseEntity<Void> {
+        memberService.withdrawMember(member)
+        return ResponseEntity.noContent().build()
+    }
 }

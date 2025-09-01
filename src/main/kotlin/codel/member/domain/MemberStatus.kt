@@ -9,4 +9,5 @@ enum class MemberStatus {
     PENDING,                  // 관리자 심사 중 (기존)
     REJECT,                   // 심사 거절 (기존)
     DONE,                     // 최종 승인 완료 (기존)
+    WITHDRAWN,                // 회원탈퇴 (신규)
 }

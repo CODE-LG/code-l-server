@@ -233,4 +233,15 @@ class MemberService(
     fun completePhoneVerification(member: Member) {
         member.completePhoneVerification()
     }
+
+    /**
+     * 회원 탈퇴 처리
+     */
+    fun withdrawMember(member: Member) {
+        member.withdraw()
+        memberRepository.updateMember(member)
+        
+        // TODO: JWT 토큰 블랙리스트 처리 고려
+        // TODO: 필요시 추가 처리 (알림, 로깅 등)
+    }
 }

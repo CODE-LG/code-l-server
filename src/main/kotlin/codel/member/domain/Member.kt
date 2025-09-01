@@ -169,4 +169,18 @@ class Member(
         this.memberStatus = MemberStatus.REJECT
         this.rejectReason = rejectReason
     }
+
+    // ===== 회원 탈퇴 관련 메서드들 (신규 추가) =====
+
+    /**
+     * 회원 탈퇴 처리
+     */
+    fun withdraw() {
+        this.memberStatus = MemberStatus.WITHDRAWN
+    }
+
+    /**
+     * 탈퇴한 회원인지 확인
+     */
+    fun isWithdrawn(): Boolean = memberStatus == MemberStatus.WITHDRAWN
 }
