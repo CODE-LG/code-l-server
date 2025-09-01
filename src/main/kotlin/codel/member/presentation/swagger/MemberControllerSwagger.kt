@@ -107,4 +107,19 @@ interface MemberControllerSwagger {
         @Parameter(hidden = true) @LoginMember me: Member,
         @PathVariable id: Long,
     ): ResponseEntity<MemberProfileDetailResponse>
+
+    @Operation(
+        summary = "회원 탈퇴",
+        description = "현재 로그인한 회원의 계정을 탈퇴 처리합니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "204", description = "탈퇴 성공"),
+            ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
+        ],
+    )
+    fun withdrawMember(
+        @Parameter(hidden = true) @LoginMember member: Member,
+    ): ResponseEntity<Void>
 }

@@ -44,6 +44,19 @@ class MemberService(
     fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
 
+        if (loginMember.isWithdrawn()) {
+            val withdrawDate = loginMember.getUpdateDate()
+            val formattedDate = "%04d-%02d-%02d".format(
+                withdrawDate.year,
+                withdrawDate.monthValue,
+                withdrawDate.dayOfMonth
+            )
+
+            val errorMessage = "해당 계정은 $formattedDate 에 탈퇴 처리되어 로그인이 불가능합니다."
+
+            throw MemberException(HttpStatus.FORBIDDEN, errorMessage)
+        }
+
         return loginMember
     }
 
@@ -232,5 +245,16 @@ class MemberService(
 
     fun completePhoneVerification(member: Member) {
         member.completePhoneVerification()
+    }
+
+    /**
+     * 회원 탈퇴 처리
+     */
+    fun withdrawMember(member: Member) {
+        member.withdraw()
+        memberRepository.updateMember(member)
+        
+        // TODO: JWT 토큰 블랙리스트 처리 고려
+        // TODO: 필요시 추가 처리 (알림, 로깅 등)
     }
 }

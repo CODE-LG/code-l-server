@@ -1,8 +1,10 @@
 package codel.member.domain
 
+import codel.common.domain.BaseTimeEntity
 import codel.member.exception.MemberException
 import jakarta.persistence.*
 import org.springframework.http.HttpStatus
+import java.time.LocalDate
 import kotlin.math.log
 
 @Entity
@@ -26,7 +28,7 @@ class Member(
     var memberStatus: MemberStatus,
 
     var rejectReason: String? = null,
-) {
+) : BaseTimeEntity() {
     fun getIdOrThrow(): Long = id ?: throw MemberException(HttpStatus.BAD_REQUEST, "id가 없는 멤버 입니다.")
 
     fun getProfileOrThrow(): Profile = profile ?: throw MemberException(HttpStatus.BAD_REQUEST, "프로필이 없는 멤버입니다.")
@@ -168,5 +170,23 @@ class Member(
     fun reject(rejectReason: String) {
         this.memberStatus = MemberStatus.REJECT
         this.rejectReason = rejectReason
+    }
+
+    // ===== 회원 탈퇴 관련 메서드들 (신규 추가) =====
+
+    /**
+     * 회원 탈퇴 처리
+     */
+    fun withdraw() {
+        this.memberStatus = MemberStatus.WITHDRAWN
+    }
+
+    /**
+     * 탈퇴한 회원인지 확인
+     */
+    fun isWithdrawn(): Boolean = memberStatus == MemberStatus.WITHDRAWN
+
+    fun getUpdateDate() : LocalDate{
+        return updatedAt.toLocalDate()
     }
 }
