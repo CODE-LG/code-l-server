@@ -108,7 +108,7 @@ class Profile(
         sigugun: String,
         jobCategory: String,
     ) {
-        validateEssentialInfoDomainRules(birthDate)
+//        validateEssentialInfoDomainRules(birthDate)
         
         this.codeName = codeName
         this.birthDate = birthDate
@@ -140,7 +140,7 @@ class Profile(
         codeImages: List<String>,
         interests: List<String>
     ) {
-        validateEssentialDomainRules(birthDate, codeImages)
+//        validateEssentialDomainRules(birthDate, codeImages)
         
         this.codeName = codeName
         this.birthDate = birthDate
@@ -169,7 +169,7 @@ class Profile(
         representativeAnswer: String?
 
     ) {
-        validatePersonalityDomainRules(personalities, height, mbti, interests)
+//        validatePersonalityDomainRules(personalities, height, mbti, interests)
         
         this.hairLength = hairLength
         this.bodyType = bodyType
@@ -196,7 +196,7 @@ class Profile(
         relationshipValues: String,
         faceImages: List<String>
     ) {
-        validateHiddenDomainRules(faceImages)
+//        validateHiddenDomainRules(faceImages)
         
         this.loveLanguage = loveLanguage
         this.affectionStyle = affectionStyle
@@ -219,7 +219,7 @@ class Profile(
         conflictResolutionStyle: String,
         relationshipValues: String
     ) {
-        validateHiddenInfoDomainRules()
+//        validateHiddenInfoDomainRules()
         
         this.loveLanguage = loveLanguage
         this.affectionStyle = affectionStyle

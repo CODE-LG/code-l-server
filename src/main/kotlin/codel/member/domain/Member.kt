@@ -101,7 +101,7 @@ class Member(
      * Essential Profile 완료 상태로 변경
      */
     fun completeEssentialProfile() {
-        validateCanProceedToEssential()
+//        validateCanProceedToEssential()
         memberStatus = MemberStatus.ESSENTIAL_COMPLETED
     }
 
@@ -125,7 +125,7 @@ class Member(
      * Personality Profile 완료 상태로 변경
      */
     fun completePersonalityProfile() {
-        validateCanProceedToPersonality()
+//        validateCanProceedToPersonality()
         memberStatus = MemberStatus.PERSONALITY_COMPLETED
     }
 
@@ -149,7 +149,7 @@ class Member(
      * Hidden Profile 완료 상태로 변경 (최종 단계 - PENDING 상태로)
      */
     fun completeHiddenProfile() {
-        validateCanProceedToHidden()
+//        validateCanProceedToHidden()
         memberStatus = MemberStatus.PENDING
     }
 
