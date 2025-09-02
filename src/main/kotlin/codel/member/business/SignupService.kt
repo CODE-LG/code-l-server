@@ -132,7 +132,7 @@ class SignupService(
         )
         
         //TODO ::  Personality Profile 완료 상태로 변경  ( 다음 업데이트까지 세이브포인트 생략 )
-//        member.completePersonalityProfile()
+        member.completePersonalityProfile()
 
         if(member.memberStatus == MemberStatus.REJECT){
             member.memberStatus = MemberStatus.PENDING

@@ -59,6 +59,11 @@ jobs:
               url: jdbc:mysql://codel-db.cbu0ugiswpor.ap-northeast-2.rds.amazonaws.com:3306/codel
               username: ${{ secrets.DEV_RDS_USER_NAME }}
               password: ${{ secrets.DEV_RDS_USER_PASSWORD }}
+            
+            servlet:
+              multipart:
+                max-file-size: 20MB
+                max-request-size: 40MB
           
             jpa:
               open-in-view: false
