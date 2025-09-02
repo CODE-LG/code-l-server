@@ -20,7 +20,7 @@ data class FullProfileResponse(
             return FullProfileResponse(
                 memberId = member.getIdOrThrow(),
                 openProfile = OpenProfileResponse.from(member),
-                hiddenProfile = null,
+                hiddenProfile = HiddenProfileResponse.from(member.getProfileOrThrow()),
                 accessLevel = AccessLevel.PUBLIC,
                 isMyProfile = false,
                 oauthType = null,
