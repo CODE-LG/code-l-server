@@ -5,6 +5,7 @@ import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -26,10 +27,15 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
 
     fun countByMemberStatus(memberStatus: MemberStatus): Long
 
-    @Query(
-        value = "SELECT * FROM member WHERE id <> :excludeId AND member_status = 'DONE' ORDER BY RAND(:seed)",
-        nativeQuery = true,
-    )
+
+    @EntityGraph(attributePaths = ["profile", "profile.representativeQuestion"])
+    @Query("""
+        SELECT m
+        FROM Member m
+        WHERE m.id <> :excludeId
+          AND m.memberStatus = codel.member.domain.MemberStatus.DONE
+        ORDER BY function('RAND', :seed)
+    """)
     fun findRandomMembersStatusDone(
         @Param("excludeId") excludeId: Long,
         @Param("seed") seed: Long,
@@ -43,10 +49,14 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
         @Param("excludeId") excludeId: Long
     ): List<Member>
 
-    @Query(
-        value = "SELECT m FROM Member m JOIN FETCH m.profile WHERE m.id <> :excludeId AND m.memberStatus = 'DONE' ORDER BY function('RAND', :seed)",
-        countQuery = "SELECT COUNT(m) FROM Member m WHERE m.id <> :excludeId AND m.memberStatus = 'DONE'"
-    )
+    @EntityGraph(attributePaths = ["profile", "profile.representativeQuestion"])
+    @Query("""
+        SELECT m
+        FROM Member m
+        WHERE m.id <> :excludeId
+          AND m.memberStatus = 'DONE'
+        ORDER BY function('RAND', :seed)
+    """)
     fun findRandomMembersStatusDoneWithProfile(
         @Param("excludeId") excludeId: Long,
         @Param("seed") seed: Long,
