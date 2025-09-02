@@ -17,6 +17,7 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
     SELECT s FROM Signal s
         JOIN FETCH s.fromMember fm
         JOIN FETCH fm.profile
+        JOIN FETCH fm.profile.representativeQuestion
         JOIN FETCH s.toMember tm
         WHERE s.toMember = :member
         AND s.senderStatus = :status
@@ -32,6 +33,7 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
     SELECT DISTINCT s FROM Signal s
         JOIN FETCH s.fromMember fm
         JOIN FETCH fm.profile
+        JOIN FETCH fm.profile.representativeQuestion
         JOIN FETCH s.toMember tm
         JOIN FETCH tm.profile
         WHERE s.senderStatus = :status
@@ -45,6 +47,7 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
     SELECT DISTINCT s FROM Signal s
         JOIN FETCH s.fromMember fm
         JOIN FETCH fm.profile
+        JOIN FETCH fm.profile.representativeQuestion
         JOIN FETCH s.toMember tm
         JOIN FETCH tm.profile
         WHERE s.fromMember = :member
