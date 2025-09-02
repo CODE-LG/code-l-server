@@ -83,4 +83,8 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
 
     @Query("SELECT m FROM Member m JOIN FETCH m.profile WHERE m.id = :memberId")
     fun findByMemberId(memberId: Long) : Member?
+
+    @EntityGraph(attributePaths = ["profile", "profile.representativeQuestion"])
+    @Query("select m from Member m where m.id = :id")
+    fun findMemberWithProfileAndQuestion(@Param("id") id: Long): Member?
 }

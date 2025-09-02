@@ -112,4 +112,8 @@ class MemberRepository(
         member.fcmToken = fcmToken
         memberJpaRepository.save(member)
     }
+
+    fun findMemberWithProfileAndQuestion(id: Long) : Member? {
+        return memberJpaRepository.findMemberWithProfileAndQuestion(id)
+    }
 }

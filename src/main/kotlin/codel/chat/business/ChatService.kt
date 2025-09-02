@@ -51,23 +51,27 @@ class ChatService(
         responseOfApproverQuestion : String
     ) : ChatRoomResponse{
         // 1. 채팅방 생성
+        val managedApprover = memberRepository.findMemberWithProfileAndQuestion(
+            approver.getIdOrThrow()
+        ) ?: throw ChatException(HttpStatus.NOT_FOUND, "approver를 찾을 수 없습니다.")
+
         val newChatRoom = ChatRoom()
         val savedChatRoom = chatRoomJpaRepository.save(newChatRoom)
 
         // 2. 멤버 등록
-        val approverMember = ChatRoomMember(chatRoom = savedChatRoom, member = approver)
+        val approverMember = ChatRoomMember(chatRoom = savedChatRoom, member = managedApprover)
         val senderMember = ChatRoomMember(chatRoom = savedChatRoom, member = sender)
         val savedApprover = chatRoomMemberJpaRepository.save(approverMember)
         val savedSender = chatRoomMemberJpaRepository.save(senderMember)
 
         // 3. 메시지 생성
         saveSystemMessages(savedChatRoom, savedApprover)
-        saveUserMessages(savedChatRoom, savedApprover, senderMember, approver, responseOfApproverQuestion)
+        saveUserMessages(savedChatRoom, savedApprover, senderMember, managedApprover, responseOfApproverQuestion)
 
         // 4. 생성된 채팅방의 읽지 않은 메시지 수 계산 (시그널 발송자 기준)
         val senderUnReadCount = chatRepository.getUnReadMessageCount(savedChatRoom, sender)
 
-        return ChatRoomResponse.toResponse(newChatRoom, sender, null, approver, senderUnReadCount)
+        return ChatRoomResponse.toResponse(newChatRoom, sender, null, managedApprover, senderUnReadCount)
     }
 
     private fun saveSystemMessages(chatRoom: ChatRoom, from: ChatRoomMember) {
