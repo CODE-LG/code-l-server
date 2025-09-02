@@ -50,6 +50,7 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
         JOIN FETCH fm.profile.representativeQuestion
         JOIN FETCH s.toMember tm
         JOIN FETCH tm.profile
+        JOIN FETCH tm.profile.representativeQuestion
         WHERE s.fromMember = :member
         AND s.senderStatus = :status
         AND NOT EXISTS (
