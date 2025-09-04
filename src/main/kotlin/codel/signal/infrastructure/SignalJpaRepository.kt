@@ -20,14 +20,13 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
         JOIN FETCH fm.profile.representativeQuestion
         JOIN FETCH s.toMember tm
         WHERE s.toMember = :member
-        AND s.senderStatus = :status
+        AND s.receiverStatus = :status
         AND NOT EXISTS (
             SELECT 1 FROM BlockMemberRelation b
             WHERE b.blockerMember = :member AND b.blockedMember.id = fm.id
             AND b.status = 'BLOCKED')
         """)
     fun findByToMemberAndStatus(member: Member, @Param("status") signalStatus: SignalStatus): List<Signal>
-
     @Query(
         """
     SELECT DISTINCT s FROM Signal s
