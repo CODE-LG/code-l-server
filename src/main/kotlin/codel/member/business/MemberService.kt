@@ -14,6 +14,8 @@ import codel.member.presentation.response.MemberProfileDetailResponse
 import codel.notification.business.NotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
+import codel.signal.domain.Signal
+import codel.signal.domain.SignalStatus
 import codel.signal.domain.SignalStatus.*
 import codel.signal.infrastructure.SignalJpaRepository
 import org.springframework.data.domain.Page
@@ -234,41 +236,246 @@ class MemberService(
         me: Member,
         partnerId: Long,
     ): MemberProfileDetailResponse {
-        val member =
-            memberJpaRepository.findByMemberId(partnerId) ?: throw MemberException(
-                HttpStatus.BAD_REQUEST,
-                "해당 id에 일치하는 멤버가 없습니다.",
-            )
 
-        val findTopByFromMemberAndToMemberOrderByIdDesc =
-            signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(me, member)
-
-        if (findTopByFromMemberAndToMemberOrderByIdDesc != null) {
-            val status = findTopByFromMemberAndToMemberOrderByIdDesc.senderStatus
-            if (status == REJECTED) {
-                val updatedAt = findTopByFromMemberAndToMemberOrderByIdDesc.updatedAt.toLocalDate()
-                val now = LocalDate.now()
-                val daysBetween = ChronoUnit.DAYS.between(updatedAt, now)
-
-                if (daysBetween > 7) {
-                    return MemberProfileDetailResponse.create(member, NONE)
-                }
-            }
-
-            if (status == APPROVED) {
-                // 상대와 관련된 ChatRoom을 찾아와서 ChatRoomId값을 찾는다.
-                val findChatRoomByMembers =
-                    chatRoomJpaRepository.findChatRoomByMembers(member.getIdOrThrow(), partnerId)
-                        ?: throw ChatException(HttpStatus.BAD_REQUEST, "상대방과 관련된 채팅방을 찾을 수 없습니다.")
-
-                return when (findChatRoomByMembers.status) {
-                    ChatRoomStatus.UNLOCKED -> MemberProfileDetailResponse.create(member, status, true)
-                    else -> MemberProfileDetailResponse.create(member, status, false)
-                }
-            }
-            return MemberProfileDetailResponse.create(member, status)
+        if(me.getIdOrThrow() == partnerId){
+            return MemberProfileDetailResponse.createMyProfileResponse(memberRepository.findMember(me.getIdOrThrow()))
         }
-        return MemberProfileDetailResponse.create(member, NONE)
+        val partner = memberJpaRepository.findByMemberId(partnerId) 
+            ?: throw MemberException(HttpStatus.BAD_REQUEST, "해당 id에 일치하는 멤버가 없습니다.")
+
+        // 1. 차단 상태 확인 (시그널 상태보다 우선)
+        if (isBlockedRelationship(me, partner)) {
+            throw MemberException(HttpStatus.FORBIDDEN, "차단된 사용자입니다.")
+        }
+
+        // 2. 양방향 시그널 상태 확인 - 더 최근 시그널을 우선으로
+        val myLatestSignal = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(me, partner)
+        val partnerLatestSignal = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(partner, me)
+
+        // 3. 시그널 상태에 따른 처리
+        return when {
+            // 양쪽 모두 시그널이 없는 경우
+            myLatestSignal == null && partnerLatestSignal == null -> {
+                MemberProfileDetailResponse.create(partner, SignalStatus.NONE)
+            }
+            
+            // 양쪽 모두 시그널이 있는 경우 - 더 최근 것을 기준으로 판단
+            myLatestSignal != null && partnerLatestSignal != null -> {
+                handleBothSignalsExist(me, partner, myLatestSignal, partnerLatestSignal)
+            }
+            
+            // 내가 보낸 시그널만 있는 경우
+            myLatestSignal != null && partnerLatestSignal == null -> {
+                handleOnlyMySignalExists(me, partner, myLatestSignal)
+            }
+            
+            // 상대가 보낸 시그널만 있는 경우  
+            myLatestSignal == null && partnerLatestSignal != null -> {
+                handleOnlyPartnerSignalExists(me, partner, partnerLatestSignal)
+            }
+            
+            else -> {
+                MemberProfileDetailResponse.create(partner, SignalStatus.NONE)
+            }
+        }
+    }
+
+    /**
+     * 차단 관계 확인
+     */
+    private fun isBlockedRelationship(me: Member, partner: Member): Boolean {
+        val myBlockedMemberIds = blockMemberRelationJpaRepository.findBlockMembersBy(me.getIdOrThrow())
+            .mapNotNull { it.blockedMember.id }
+        val partnerBlockedMemberIds = blockMemberRelationJpaRepository.findBlockMembersBy(partner.getIdOrThrow())
+            .mapNotNull { it.blockedMember.id }
+        
+        return partner.getIdOrThrow() in myBlockedMemberIds || 
+               me.getIdOrThrow() in partnerBlockedMemberIds
+    }
+
+    /**
+     * 내가 보낸 시그널만 있는 경우
+     */
+    private fun handleOnlyMySignalExists(me: Member, partner: Member, mySignal: Signal): MemberProfileDetailResponse {
+        return when (mySignal.senderStatus) {
+            PENDING, PENDING_HIDDEN -> {
+                // 내 시그널이 대기 중
+                MemberProfileDetailResponse.create(partner, mySignal.senderStatus)
+            }
+            
+            REJECTED -> {
+                // 내가 거절당한 경우 - 7일 쿨다운 확인
+                if (isRejectionCooldownExpired(mySignal)) {
+                    MemberProfileDetailResponse.create(partner, NONE)
+                } else {
+                    MemberProfileDetailResponse.create(partner, REJECTED)
+                }
+            }
+            
+            APPROVED -> {
+                // 내 시그널이 승인된 경우 - 채팅방 상태 확인
+                handleApprovedSignal(me, partner, mySignal.senderStatus)
+            }
+
+            NONE -> {
+                MemberProfileDetailResponse.create(partner, NONE)
+            }
+        }
+    }
+
+    /**
+     * 상대가 보낸 시그널만 있는 경우
+     */
+    private fun handleOnlyPartnerSignalExists(me: Member, partner: Member, partnerSignal: Signal): MemberProfileDetailResponse {
+        return when (partnerSignal.senderStatus) {
+            PENDING, PENDING_HIDDEN -> {
+                // 상대의 시그널이 대기 중 - 내가 응답해야 함
+                MemberProfileDetailResponse.create(partner, PENDING)
+            }
+            
+            REJECTED -> {
+                // 상대가 나를 거절한 경우 - 7일 쿨다운 확인  
+                if (isRejectionCooldownExpired(partnerSignal)) {
+                    MemberProfileDetailResponse.create(partner, NONE)
+                } else {
+                    MemberProfileDetailResponse.create(partner, REJECTED)
+                }
+            }
+            
+            APPROVED -> {
+                // 상대가 나를 승인한 경우 - 채팅방 상태 확인
+                handleApprovedSignal(me, partner, partnerSignal.senderStatus)
+            }
+
+            NONE -> {
+                MemberProfileDetailResponse.create(partner, NONE)
+            }
+        }
+    }
+
+    /**
+     * 양쪽 모두 시그널이 있는 경우
+     */
+    private fun handleBothSignalsExist(
+        me: Member,
+        partner: Member, 
+        mySignal: Signal, 
+        partnerSignal: Signal
+    ): MemberProfileDetailResponse {
+        
+        // 더 최근 시그널을 기준으로 상태 결정
+        val latestSignal = if (mySignal.updatedAt.isAfter(partnerSignal.updatedAt)) {
+            mySignal
+        } else {
+            partnerSignal
+        }
+        
+        val isMySignalLatest = (latestSignal == mySignal)
+        
+        return when {
+            // 둘 다 승인 상태인 경우
+            mySignal.senderStatus in listOf(APPROVED) &&
+            partnerSignal.senderStatus in listOf(APPROVED) -> {
+                handleApprovedSignal(me, partner, APPROVED)
+            }
+            
+            // 최신 시그널이 거절인 경우
+            latestSignal.senderStatus == REJECTED -> {
+                if (isRejectionCooldownExpired(latestSignal)) {
+                    MemberProfileDetailResponse.create(partner, NONE)
+                } else {
+                    MemberProfileDetailResponse.create(partner, REJECTED)
+                }
+            }
+            
+            // 최신 시그널이 대기 중인 경우
+            latestSignal.senderStatus in listOf(PENDING, PENDING_HIDDEN) -> {
+                MemberProfileDetailResponse.create(partner, PENDING)
+            }
+            
+            // 한쪽은 승인, 한쪽은 대기/거절인 경우
+            else -> {
+                // 승인된 시그널이 있다면 채팅방 상태 확인
+                val approvedSignal = listOf(mySignal, partnerSignal).find { 
+                    it.senderStatus in listOf(APPROVED)
+                }
+                
+                if (approvedSignal != null) {
+                    handleApprovedSignal(me, partner, approvedSignal.senderStatus)
+                } else {
+                    // 둘 다 승인이 아닌 경우 최신 상태 반환
+                    MemberProfileDetailResponse.create(partner, latestSignal.senderStatus)
+                }
+            }
+        }
+    }
+
+    /**
+     * 승인된 시그널 처리 - 채팅방 상태 확인
+     */
+    private fun handleApprovedSignal(me: Member, partner: Member, signalStatus: SignalStatus): MemberProfileDetailResponse {
+        val chatRoom = chatRoomJpaRepository.findChatRoomByMembers(
+            me.getIdOrThrow(), 
+            partner.getIdOrThrow()
+        ) ?: throw ChatException(HttpStatus.BAD_REQUEST, "승인된 관계이지만 채팅방을 찾을 수 없습니다.")
+        
+        val isUnlocked = (chatRoom.status == ChatRoomStatus.UNLOCKED)
+        return MemberProfileDetailResponse.create(partner, signalStatus, isUnlocked)
+    }
+
+    /**
+     * 거절 쿨다운 만료 확인
+     */
+    private fun isRejectionCooldownExpired(signal: Signal): Boolean {
+        val daysSinceRejection = ChronoUnit.DAYS.between(
+            signal.updatedAt.toLocalDate(),
+            LocalDate.now()
+        )
+        return daysSinceRejection > 7
+    }
+
+    /**
+     * 시그널 전송 가능 여부 확인 (별도 메서드로 제공)
+     * 프론트엔드에서 버튼 활성화 여부 판단에 사용
+     */
+    fun canSendSignalTo(me: Member, partnerId: Long): Boolean {
+        return try {
+            val partner = memberJpaRepository.findByMemberId(partnerId) ?: return false
+            
+            // 차단된 관계면 불가능
+            if (isBlockedRelationship(me, partner)) return false
+            
+            val myLatestSignal = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(me, partner)
+            val partnerLatestSignal = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(partner, me)
+            
+            when {
+                // 시그널이 아예 없으면 가능
+                myLatestSignal == null && partnerLatestSignal == null -> true
+                
+                // 내 시그널만 있는 경우
+                myLatestSignal != null && partnerLatestSignal == null -> {
+                    when (myLatestSignal.senderStatus) {
+                        REJECTED -> isRejectionCooldownExpired(myLatestSignal)
+                        APPROVED -> false // 이미 승인됨
+                        else -> false // 대기 중이면 불가능
+                    }
+                }
+                
+                // 상대 시그널만 있는 경우 - 응답할 수 있음
+                myLatestSignal == null && partnerLatestSignal != null -> {
+                    when (partnerLatestSignal.senderStatus) {
+                        PENDING, PENDING_HIDDEN -> true // 응답 가능
+                        REJECTED -> isRejectionCooldownExpired(partnerLatestSignal)
+                        else -> false
+                    }
+                }
+                
+                // 둘 다 있는 경우 - 복잡한 로직이므로 안전하게 false
+                else -> false
+            }
+        } catch (e: Exception) {
+            false
+        }
     }
 
     fun completePhoneVerification(member: Member) {
