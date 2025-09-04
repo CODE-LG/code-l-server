@@ -202,6 +202,12 @@ class MemberService(
 
         val allExcludeIds = makeExcludesMemberIds(member, candidates, sevenDaysAgo, todayMidnight)
 
+
+        val currentlyBlockedIds = blockMemberRelationJpaRepository.findBlockMembersBy(member.getIdOrThrow())
+            .mapNotNull { it.blockedMember.id }
+
+        allExcludeIds += currentlyBlockedIds
+
         val result = candidates.filter { candidate ->
             candidate.id !in allExcludeIds
         }.take(size)
