@@ -185,6 +185,7 @@ class Profile(
         this.personalityCompleted = true
         this.personalityCompletedAt = LocalDateTime.now()
         this.updatedAt = LocalDateTime.now()
+        this.interests = serializeList(interests)
     }
     
     fun updateHiddenProfile(
