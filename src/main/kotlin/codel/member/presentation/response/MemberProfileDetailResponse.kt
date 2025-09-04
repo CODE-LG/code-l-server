@@ -29,5 +29,17 @@ data class MemberProfileDetailResponse(
                 isUnlocked = isUnlocked
             )
         }
+
+        fun createMyProfileResponse(
+            member: Member,
+        ): MemberProfileDetailResponse {
+            val profileResponse = FullProfileResponse.createFull(member, true)
+
+            return MemberProfileDetailResponse(
+                profile = profileResponse,
+                signalStatus = SignalStatus.NONE,
+                isUnlocked = true
+            )
+        }
     }
 }
