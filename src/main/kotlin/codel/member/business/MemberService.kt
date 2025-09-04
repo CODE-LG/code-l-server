@@ -133,19 +133,42 @@ class MemberService(
 
         if (candidates.isEmpty()) return emptyList()
 
-        // 1. 00시 기준(오늘 00시 이전) 제외 조건 적용 → 5명만 고정
-        val allExcludeIds = makeExcludesMemberIds(member, candidates, sevenDaysAgo, todayMidnight)
+        // 1. 가장 최근 추천 시간 기준으로 추천 풀 생성
+        val lastRecommendationTime = getLastRecommendationTime(now)
+        val excludeIds = makeExcludesMemberIds(member, candidates, sevenDaysAgo, lastRecommendationTime)
 
-        return candidates.filter { candidate ->
-            candidate.id !in allExcludeIds
+        val recommendationPool = candidates.filter { candidate ->
+            candidate.id !in excludeIds
         }.take(5)
+
+        // 2. 현재 차단된 사용자들을 실시간으로 제외
+        val currentlyBlockedIds = blockMemberRelationJpaRepository.findBlockMembersBy(member.getIdOrThrow())
+            .mapNotNull { it.blockedMember.id }
+
+        return recommendationPool.filter { candidate ->
+            candidate.id !in currentlyBlockedIds
+        }
+    }
+
+    /**
+     * 가장 최근의 추천 시간을 구합니다. (10시 또는 22시)
+     */
+    private fun getLastRecommendationTime(now: LocalDateTime): LocalDateTime {
+        val currentHour = now.hour
+        val today = now.toLocalDate()
+
+        return when {
+            currentHour >= 22 -> today.atTime(22, 0) // 오늘 22시
+            currentHour >= 10 -> today.atTime(10, 0) // 오늘 10시
+            else -> today.minusDays(1).atTime(22, 0) // 어제 22시
+        }
     }
 
     private fun makeExcludesMemberIds(
         member: Member,
         candidates: List<Member>,
         sevenDaysAgo: LocalDateTime,
-        todayMidnight: LocalDateTime
+        targetTime: LocalDateTime
     ): MutableList<Long> {
         val excludeIdsByTimeAndStatus =
             signalJpaRepository
@@ -153,12 +176,11 @@ class MemberService(
                     member,
                     candidates,
                     sevenDaysAgo,
-                    todayMidnight,
+                    targetTime,
                 ).toMutableList()
 
-
-        val blockedMemberIds = blockMemberRelationJpaRepository.findBlockMembersBy(member.getIdOrThrow())
-            .mapNotNull { it.blockedMember.id }
+        // targetTime 기준으로 차단된 사용자들만 포함 (실시간 차단은 별도 처리)
+        val blockedMemberIds = blockMemberRelationJpaRepository.findBlockMembersBeforeTime(member.getIdOrThrow(), targetTime)
 
         val allExcludeIds = excludeIdsByTimeAndStatus
         allExcludeIds += blockedMemberIds
