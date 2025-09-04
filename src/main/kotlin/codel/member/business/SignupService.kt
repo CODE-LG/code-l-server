@@ -30,7 +30,7 @@ class SignupService(
      * 전화번호 인증 완료 처리
      */
     fun completePhoneVerification(member: Member) {
-//        member.completePhoneVerification()
+        member.completePhoneVerification()
         
         // Profile 객체 생성 (빈 상태로)
         member.createEmptyProfile()
