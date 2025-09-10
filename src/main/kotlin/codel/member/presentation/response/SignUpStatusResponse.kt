@@ -50,6 +50,7 @@ data class SignUpStatusResponse(
                 )
                 MemberStatus.PENDING, MemberStatus.REJECT, MemberStatus.DONE -> 
                     MemberStatus.values().filter { it != MemberStatus.SIGNUP }
+                MemberStatus.ADMIN -> emptyList()
             }
         }
     }

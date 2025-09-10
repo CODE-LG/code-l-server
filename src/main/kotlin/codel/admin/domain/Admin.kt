@@ -9,7 +9,7 @@ class Admin(
     val password: String,
     val oauthType: OauthType = OauthType.ADMIN,
     val oauthId: String = "admin",
-    val memberStatus: MemberStatus = MemberStatus.DONE,
+    val memberStatus: MemberStatus = MemberStatus.ADMIN,
 ) {
     fun validatePassword(targetPassword: String) {
         if (password != targetPassword) {
