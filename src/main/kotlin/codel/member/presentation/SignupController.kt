@@ -9,6 +9,9 @@ import codel.member.presentation.request.HiddenProfileRequest
 import codel.member.presentation.request.PersonalityProfileRequest
 import codel.member.presentation.response.SignUpStatusResponse
 import codel.member.presentation.swagger.SignupControllerSwagger
+import codel.notification.business.NotificationService
+import codel.notification.domain.Notification
+import codel.notification.domain.NotificationType
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -18,7 +21,8 @@ import org.springframework.web.multipart.MultipartFile
 @RequestMapping("/v1/signup")
 class SignupController(
     private val memberService: MemberService,
-    private val signupService: SignupService
+    private val signupService: SignupService,
+    private val notificationService: NotificationService
 ) : SignupControllerSwagger {
 
     @GetMapping("/status")
@@ -79,6 +83,15 @@ class SignupController(
         @RequestPart images: List<MultipartFile>
     ): ResponseEntity<Unit> {
         signupService.registerHiddenImages(member, images)
+        notificationService.send(
+            notification =
+                Notification(
+                    type = NotificationType.DISCORD,
+                    targetId = member.getIdOrThrow().toString(),
+                    title = "심사가 완료되었습니다.",
+                    body = "code:L 프로필 심사가 완료되었습니다.",
+                ),
+        )
         return ResponseEntity.ok().build()
     }
 }
