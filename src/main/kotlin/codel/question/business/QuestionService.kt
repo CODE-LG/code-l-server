@@ -2,10 +2,13 @@ package codel.question.business
 
 import codel.question.infrastructure.QuestionJpaRepository
 import codel.question.domain.Question
+import codel.question.domain.QuestionCategory
 import codel.chat.domain.ChatRoomQuestion
 import codel.chat.infrastructure.ChatRoomQuestionJpaRepository
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.member.domain.Member
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -61,5 +64,81 @@ class QuestionService(
         
         val chatRoomQuestion = ChatRoomQuestion.create(chatRoom, question, requestedBy)
         chatRoomQuestionJpaRepository.save(chatRoomQuestion)
+    }
+
+    // ========== 관리자용 메서드들 ==========
+    
+    /**
+     * 필터 조건으로 질문 목록 조회
+     */
+    fun findQuestionsWithFilter(
+        keyword: String?,
+        category: String?,
+        isActive: Boolean?,
+        pageable: Pageable
+    ): Page<Question> {
+        val categoryEnum = if (category.isNullOrBlank()) null else QuestionCategory.valueOf(category)
+        return questionJpaRepository.findAllWithFilter(keyword, categoryEnum, isActive, pageable)
+    }
+    
+    /**
+     * 새 질문 생성
+     */
+    @Transactional
+    fun createQuestion(
+        content: String,
+        category: QuestionCategory,
+        description: String?,
+        isActive: Boolean
+    ): Question {
+        val question = Question(
+            content = content,
+            category = category,
+            description = description,
+            isActive = isActive
+        )
+        return questionJpaRepository.save(question)
+    }
+    
+    /**
+     * 질문 수정
+     */
+    @Transactional
+    fun updateQuestion(
+        questionId: Long,
+        content: String,
+        category: QuestionCategory,
+        description: String?,
+        isActive: Boolean
+    ): Question {
+        val question = findQuestionById(questionId)
+        
+        question.updateContent(content)
+        question.updateCategory(category)
+        question.updateDescription(description)
+        question.updateIsActive(isActive)
+        
+        return questionJpaRepository.save(question)
+    }
+    
+    /**
+     * 질문 삭제
+     */
+    @Transactional
+    fun deleteQuestion(questionId: Long) {
+        if (!questionJpaRepository.existsById(questionId)) {
+            throw IllegalArgumentException("질문을 찾을 수 없습니다. ID: $questionId")
+        }
+        questionJpaRepository.deleteById(questionId)
+    }
+    
+    /**
+     * 질문 상태 토글
+     */
+    @Transactional
+    fun toggleQuestionStatus(questionId: Long): Question {
+        val question = findQuestionById(questionId)
+        question.toggleActive()
+        return questionJpaRepository.save(question)
     }
 }

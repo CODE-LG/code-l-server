@@ -9,17 +9,17 @@ class Question(
     val id: Long? = null,
     
     @Column(nullable = false, length = 500)
-    val content: String,
+    var content: String,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 100)
-    val category: QuestionCategory,
+    var category: QuestionCategory,
     
     @Column(nullable = false)
-    val isActive: Boolean = true,
+    var isActive: Boolean = true,
     
     @Column(nullable = true, length = 1000)
-    val description: String? = null  // 질문 설명
+    var description: String? = null  // 질문 설명
 ) : BaseTimeEntity() {
     
     fun getIdOrThrow(): Long = id ?: throw IllegalStateException("질문이 존재하지 않습니다.")
@@ -27,6 +27,26 @@ class Question(
     fun isAvailable(): Boolean = isActive
     
     fun isSameCategory(other: Question): Boolean = this.category == other.category
+    
+    fun updateContent(newContent: String) {
+        this.content = newContent
+    }
+    
+    fun updateCategory(newCategory: QuestionCategory) {
+        this.category = newCategory
+    }
+    
+    fun updateDescription(newDescription: String?) {
+        this.description = newDescription
+    }
+    
+    fun toggleActive() {
+        this.isActive = !this.isActive
+    }
+    
+    fun updateIsActive(newIsActive: Boolean) {
+        this.isActive = newIsActive
+    }
     
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
