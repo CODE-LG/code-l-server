@@ -5,6 +5,7 @@ import codel.admin.domain.Admin
 import codel.admin.exception.AdminException
 import codel.admin.presentation.request.AdminLoginRequest
 import codel.member.domain.Member
+import codel.question.domain.QuestionCategory
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.data.domain.Page
@@ -13,6 +14,7 @@ import org.springframework.data.web.PageableDefault
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.servlet.mvc.support.RedirectAttributes
 
 @Controller
 class AdminController(
@@ -105,5 +107,109 @@ class AdminController(
         model.addAttribute("members", members)
         model.addAttribute("param", mapOf("keyword" to (keyword ?: ""), "status" to (status ?: "")))
         return "memberList"
+    }
+
+    // ========== 질문 관리 ==========
+    
+    @GetMapping("/v1/admin/questions")
+    fun questionList(
+        model: Model,
+        @RequestParam(required = false) keyword: String?,
+        @RequestParam(required = false) category: String?,
+        @RequestParam(required = false) isActive: Boolean?,
+        @PageableDefault(size = 20) pageable: Pageable
+    ): String {
+        val questions = adminService.findQuestionsWithFilter(keyword, category, isActive, pageable)
+        model.addAttribute("questions", questions)
+        model.addAttribute("categories", QuestionCategory.values())
+        model.addAttribute("param", mapOf(
+            "keyword" to (keyword ?: ""),
+            "category" to (category ?: ""),
+            "isActive" to (isActive?.toString() ?: "")
+        ))
+        return "questionList"
+    }
+
+    @GetMapping("/v1/admin/questions/new")
+    fun questionForm(model: Model): String {
+        model.addAttribute("categories", QuestionCategory.values())
+        return "questionForm"
+    }
+
+    @PostMapping("/v1/admin/questions")
+    fun createQuestion(
+        @RequestParam content: String,
+        @RequestParam category: String,
+        @RequestParam(required = false) description: String?,
+        @RequestParam(defaultValue = "true") isActive: Boolean,
+        redirectAttributes: RedirectAttributes
+    ): String {
+        try {
+            val questionCategory = QuestionCategory.valueOf(category)
+            adminService.createQuestion(content, questionCategory, description, isActive)
+            redirectAttributes.addFlashAttribute("success", "질문이 성공적으로 등록되었습니다.")
+        } catch (e: Exception) {
+            redirectAttributes.addFlashAttribute("error", "질문 등록에 실패했습니다: ${e.message}")
+        }
+        return "redirect:/v1/admin/questions"
+    }
+
+    @GetMapping("/v1/admin/questions/{questionId}/edit")
+    fun editQuestionForm(
+        @PathVariable questionId: Long,
+        model: Model
+    ): String {
+        val question = adminService.findQuestionById(questionId)
+        model.addAttribute("question", question)
+        model.addAttribute("categories", QuestionCategory.values())
+        return "questionEditForm"
+    }
+
+    @PostMapping("/v1/admin/questions/{questionId}")
+    fun updateQuestion(
+        @PathVariable questionId: Long,
+        @RequestParam content: String,
+        @RequestParam category: String,
+        @RequestParam(required = false) description: String?,
+        @RequestParam(defaultValue = "false") isActive: Boolean,
+        redirectAttributes: RedirectAttributes
+    ): String {
+        try {
+            val questionCategory = QuestionCategory.valueOf(category)
+            adminService.updateQuestion(questionId, content, questionCategory, description, isActive)
+            redirectAttributes.addFlashAttribute("success", "질문이 성공적으로 수정되었습니다.")
+        } catch (e: Exception) {
+            redirectAttributes.addFlashAttribute("error", "질문 수정에 실패했습니다: ${e.message}")
+        }
+        return "redirect:/v1/admin/questions"
+    }
+
+    @PostMapping("/v1/admin/questions/{questionId}/delete")
+    fun deleteQuestion(
+        @PathVariable questionId: Long,
+        redirectAttributes: RedirectAttributes
+    ): String {
+        try {
+            adminService.deleteQuestion(questionId)
+            redirectAttributes.addFlashAttribute("success", "질문이 성공적으로 삭제되었습니다.")
+        } catch (e: Exception) {
+            redirectAttributes.addFlashAttribute("error", "질문 삭제에 실패했습니다: ${e.message}")
+        }
+        return "redirect:/v1/admin/questions"
+    }
+
+    @PostMapping("/v1/admin/questions/{questionId}/toggle")
+    fun toggleQuestionStatus(
+        @PathVariable questionId: Long,
+        redirectAttributes: RedirectAttributes
+    ): String {
+        try {
+            val question = adminService.toggleQuestionStatus(questionId)
+            val status = if (question.isActive) "활성화" else "비활성화"
+            redirectAttributes.addFlashAttribute("success", "질문이 성공적으로 ${status}되었습니다.")
+        } catch (e: Exception) {
+            redirectAttributes.addFlashAttribute("error", "질문 상태 변경에 실패했습니다: ${e.message}")
+        }
+        return "redirect:/v1/admin/questions"
     }
 }

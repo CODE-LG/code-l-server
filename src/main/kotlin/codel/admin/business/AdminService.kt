@@ -7,16 +7,22 @@ import codel.member.domain.Member
 import codel.notification.business.NotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
+import codel.question.business.QuestionService
+import codel.question.domain.Question
+import codel.question.domain.QuestionCategory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
+@Transactional(readOnly = true)
 class AdminService(
     private val memberService: MemberService,
     private val authService: AuthService,
     private val notificationService: NotificationService,
+    private val questionService: QuestionService,
     @Value("\${security.admin.password}")
     private val answerPassword: String,
 ) {
@@ -40,11 +46,13 @@ class AdminService(
 
     fun findMember(memberId: Long): Member = memberService.findMember(memberId)
 
+    @Transactional
     fun approveMemberProfile(memberId: Long) {
         val approvedMember = memberService.approveMember(memberId)
 //        sendNotification(approvedMember)
     }
 
+    @Transactional
     fun rejectMemberProfile(
         memberId: Long,
         reason: String,
@@ -76,4 +84,38 @@ class AdminService(
         status: String?,
         pageable: Pageable,
     ): Page<Member> = memberService.findMembersWithFilter(keyword, status, pageable)
+
+    // ========== 질문 관리 ==========
+    
+    fun findQuestionsWithFilter(
+        keyword: String?,
+        category: String?,
+        isActive: Boolean?,
+        pageable: Pageable
+    ): Page<Question> = questionService.findQuestionsWithFilter(keyword, category, isActive, pageable)
+    
+    fun findQuestionById(questionId: Long): Question = questionService.findQuestionById(questionId)
+    
+    @Transactional
+    fun createQuestion(
+        content: String,
+        category: QuestionCategory,
+        description: String?,
+        isActive: Boolean
+    ): Question = questionService.createQuestion(content, category, description, isActive)
+    
+    @Transactional
+    fun updateQuestion(
+        questionId: Long,
+        content: String,
+        category: QuestionCategory,
+        description: String?,
+        isActive: Boolean
+    ): Question = questionService.updateQuestion(questionId, content, category, description, isActive)
+    
+    @Transactional
+    fun deleteQuestion(questionId: Long) = questionService.deleteQuestion(questionId)
+    
+    @Transactional
+    fun toggleQuestionStatus(questionId: Long): Question = questionService.toggleQuestionStatus(questionId)
 }

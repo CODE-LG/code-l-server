@@ -1,6 +1,9 @@
 package codel.question.infrastructure
 
 import codel.question.domain.Question
+import codel.question.domain.QuestionCategory
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -21,4 +24,18 @@ interface QuestionJpaRepository : JpaRepository<Question, Long> {
         )
     """)
     fun findUnusedQuestionsByChatRoom(@Param("chatRoomId") chatRoomId: Long): List<Question>
+    
+    @Query("""
+        SELECT q FROM Question q 
+        WHERE (:keyword IS NULL OR :keyword = '' OR q.content LIKE CONCAT('%', :keyword, '%') OR q.description LIKE CONCAT('%', :keyword, '%'))
+        AND (:category IS NULL OR q.category = :category)
+        AND (:isActive IS NULL OR q.isActive = :isActive)
+        ORDER BY q.createdAt DESC
+    """)
+    fun findAllWithFilter(
+        @Param("keyword") keyword: String?,
+        @Param("category") category: QuestionCategory?,
+        @Param("isActive") isActive: Boolean?,
+        pageable: Pageable
+    ): Page<Question>
 }
