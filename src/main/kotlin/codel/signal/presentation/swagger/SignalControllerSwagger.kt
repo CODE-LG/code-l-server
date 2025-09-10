@@ -5,6 +5,7 @@ import codel.member.domain.Member
 import codel.member.presentation.response.UnlockedMemberProfileResponse
 import codel.signal.presentation.request.HideSignalRequest
 import codel.signal.presentation.request.SendSignalRequest
+import codel.signal.presentation.response.ReceivedSignalMemberResponse
 import codel.signal.presentation.response.SignalMemberResponse
 import codel.signal.presentation.response.SignalResponse
 import io.swagger.v3.oas.annotations.Operation
@@ -67,7 +68,7 @@ interface SignalControllerSwagger {
         @Parameter(hidden = true) @LoginMember me: Member,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int
-    ): ResponseEntity<Page<SignalMemberResponse>>
+    ): ResponseEntity<Page<ReceivedSignalMemberResponse>>
 
     @Operation(
         summary = "내가 보낸 시그널 목록 조회",

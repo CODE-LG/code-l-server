@@ -7,6 +7,7 @@ import codel.member.presentation.response.FullProfileResponse
 import codel.signal.business.SignalService
 import codel.signal.presentation.request.HideSignalRequest
 import codel.signal.presentation.request.SendSignalRequest
+import codel.signal.presentation.response.ReceivedSignalMemberResponse
 import codel.signal.presentation.response.SignalMemberResponse
 import codel.signal.presentation.response.SignalResponse
 import codel.signal.presentation.swagger.SignalControllerSwagger
@@ -35,9 +36,9 @@ class SignalController(
         @LoginMember me: Member,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
-    ): ResponseEntity<Page<SignalMemberResponse>> {
+    ): ResponseEntity<Page<ReceivedSignalMemberResponse>> {
         val signals = signalService.getReceivedSignals(me, page, size)
-        return ResponseEntity.ok(signals.map { SignalMemberResponse.fromReceive(it) });
+        return ResponseEntity.ok(signals.map { ReceivedSignalMemberResponse.fromReceive(it) });
     }
 
     @GetMapping("/send")
