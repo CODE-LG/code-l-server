@@ -9,7 +9,7 @@ data class SignalMemberResponse(
     val signalId: Long,
     val member: FullProfileResponse,
     val status: SignalStatus,
-    val createAt: LocalDateTime
+    val createAt: String
 ) {
     companion object {
         fun fromSend(signal: Signal): SignalMemberResponse =
@@ -17,7 +17,7 @@ data class SignalMemberResponse(
                 signalId = signal.getIdOrThrow(),
                 member = FullProfileResponse.createOpen(signal.toMember), // 시그널 단계에서는 Open만
                 status = signal.senderStatus,
-                createAt = signal.createdAt
+                createAt = signal.createdAt.toString()
             )
 
         fun fromReceive(signal: Signal): SignalMemberResponse =
@@ -25,7 +25,7 @@ data class SignalMemberResponse(
                 signalId = signal.getIdOrThrow(),
                 member = FullProfileResponse.createOpen(signal.fromMember), // 시그널 단계에서는 Open만
                 status = signal.receiverStatus,
-                createAt = signal.createdAt
+                createAt = signal.createdAt.toString()
             )
     }
 }
