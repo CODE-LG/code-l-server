@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.time.LocalDateTime
 
 @Repository
 interface MemberJpaRepository : JpaRepository<Member, Long> {
@@ -87,4 +88,47 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
     @EntityGraph(attributePaths = ["profile", "profile.representativeQuestion"])
     @Query("select m from Member m where m.id = :id")
     fun findMemberWithProfileAndQuestion(@Param("id") id: Long): Member?
+
+    // ========== 통계용 쿼리 ==========
+    
+    @Query("""
+        SELECT DATE(m.createdAt) as date, COUNT(m) as count
+        FROM Member m 
+        WHERE m.createdAt >= :startDate
+        GROUP BY DATE(m.createdAt)
+        ORDER BY DATE(m.createdAt) DESC
+    """)
+    fun getDailySignupStats(@Param("startDate") startDate: LocalDateTime): List<Array<Any>>
+    
+    @Query("""
+        SELECT m.memberStatus, COUNT(m) 
+        FROM Member m 
+        GROUP BY m.memberStatus
+    """)
+    fun getMemberStatusStats(): List<Array<Any>>
+    
+    @Query("""
+        SELECT EXTRACT(YEAR FROM m.createdAt) as year, 
+               EXTRACT(MONTH FROM m.createdAt) as month, 
+               COUNT(m) as count
+        FROM Member m 
+        WHERE m.createdAt >= :startDate
+        GROUP BY EXTRACT(YEAR FROM m.createdAt), EXTRACT(MONTH FROM m.createdAt)
+        ORDER BY year DESC, month DESC
+    """)
+    fun getMonthlySignupStats(@Param("startDate") startDate: LocalDateTime): List<Array<Any>>
+    
+    @Query("""
+        SELECT COUNT(m) 
+        FROM Member m 
+        WHERE DATE(m.createdAt) = CURRENT_DATE
+    """)
+    fun getTodaySignupCount(): Long
+    
+    @Query("""
+        SELECT COUNT(m) 
+        FROM Member m 
+        WHERE m.createdAt >= :startDate
+    """)
+    fun getRecentSignupCount(@Param("startDate") startDate: LocalDateTime): Long
 }

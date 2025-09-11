@@ -54,10 +54,33 @@ class AdminController(
 
     @GetMapping("/v1/admin/home")
     fun home(model: Model): String {
+        // 기본 통계
         val totalMembers = adminService.countAllMembers()
         val pendingMembers = adminService.countPendingMembers()
+        val todaySignups = adminService.getTodaySignupCount()
+        val weeklySignups = adminService.getWeeklySignupCount()
+        val monthlySignups = adminService.getMonthlySignupCount()
+        val approvalRate = adminService.getApprovalRate()
+        
+        // 상태별 통계
+        val statusStats = adminService.getMemberStatusStats()
+        
+        // 일별 가입자 통계 (차트용)
+        val dailyStats = adminService.getDailySignupStats()
+        
+        // 월별 가입자 통계
+        val monthlyStats = adminService.getMonthlySignupStats()
+        
         model.addAttribute("totalMembers", totalMembers)
         model.addAttribute("pendingMembers", pendingMembers)
+        model.addAttribute("todaySignups", todaySignups)
+        model.addAttribute("weeklySignups", weeklySignups)
+        model.addAttribute("monthlySignups", monthlySignups)
+        model.addAttribute("approvalRate", String.format("%.1f", approvalRate))
+        model.addAttribute("statusStats", statusStats)
+        model.addAttribute("dailyStats", dailyStats)
+        model.addAttribute("monthlyStats", monthlyStats)
+        
         return "home"
     }
 

@@ -68,6 +68,8 @@
         <!-- Main -->
         <main class="col-md-10 ms-sm-auto px-md-5 py-5">
             <h1 class="mb-4 fw-bold">관리자 대시보드</h1>
+
+            <!-- 통계 카드들 -->
             <div class="row g-4 mb-5">
                 <div class="col-md-3">
                     <div class="card dashboard-card text-center">
@@ -82,15 +84,215 @@
                     <div class="card dashboard-card text-center">
                         <div class="card-body">
                             <div class="dashboard-icon mb-2"><i class="fa-solid fa-user-clock"></i></div>
-                            <h6 class="card-title">PENDING</h6>
+                            <h6 class="card-title">심사 대기</h6>
                             <p class="display-6 fw-bold mb-0" th:text="${pendingMembers}">0</p>
                         </div>
                     </div>
                 </div>
-                <!-- 추가 지표 카드 (오늘 가입자, 신고 등) -->
+                <div class="col-md-3">
+                    <div class="card dashboard-card text-center">
+                        <div class="card-body">
+                            <div class="dashboard-icon mb-2"><i class="fa-solid fa-user-plus"></i></div>
+                            <h6 class="card-title">오늘 가입</h6>
+                            <p class="display-6 fw-bold mb-0" th:text="${todaySignups}">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card dashboard-card text-center">
+                        <div class="card-body">
+                            <div class="dashboard-icon mb-2"><i class="fa-solid fa-chart-line"></i></div>
+                            <h6 class="card-title">승인률</h6>
+                            <p class="display-6 fw-bold mb-0"><span th:text="${approvalRate}">0</span>%</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <!-- 추후 그래프/차트/공지 등 추가 가능 -->
+
+            <!-- 추가 통계 카드들 -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-4">
+                    <div class="card dashboard-card text-center">
+                        <div class="card-body">
+                            <h6 class="card-title"><i class="fa-solid fa-calendar-week"></i> 주간 가입자</h6>
+                            <p class="h4 fw-bold mb-0" th:text="${weeklySignups}">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dashboard-card text-center">
+                        <div class="card-body">
+                            <h6 class="card-title"><i class="fa-solid fa-calendar-alt"></i> 월간 가입자</h6>
+                            <p class="h4 fw-bold mb-0" th:text="${monthlySignups}">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dashboard-card text-center">
+                        <div class="card-body">
+                            <h6 class="card-title"><i class="fa-solid fa-check-circle"></i> 승인 완료</h6>
+                            <p class="h4 fw-bold mb-0" th:text="${statusStats['DONE'] ?: 0}">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 상태별 회원 현황 -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-6">
+                    <div class="card dashboard-card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fa-solid fa-pie-chart"></i> 회원 상태별 현황</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="statusChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card dashboard-card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fa-solid fa-list"></i> 상태별 상세</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <div class="border rounded p-3 text-center">
+                                        <div class="text-warning"><i class="fa-solid fa-clock"></i></div>
+                                        <div class="fw-bold">PENDING</div>
+                                        <div th:text="${statusStats['PENDING'] ?: 0}">0</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded p-3 text-center">
+                                        <div class="text-success"><i class="fa-solid fa-check"></i></div>
+                                        <div class="fw-bold">DONE</div>
+                                        <div th:text="${statusStats['DONE'] ?: 0}">0</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded p-3 text-center">
+                                        <div class="text-danger"><i class="fa-solid fa-times"></i></div>
+                                        <div class="fw-bold">REJECT</div>
+                                        <div th:text="${statusStats['REJECT'] ?: 0}">0</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded p-3 text-center">
+                                        <div class="text-info"><i class="fa-solid fa-user"></i></div>
+                                        <div class="fw-bold">SIGNUP</div>
+                                        <div th:text="${statusStats['SIGNUP'] ?: 0}">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 일별 가입자 추이 -->
+            <div class="row g-4 mb-5">
+                <div class="col-12">
+                    <div class="card dashboard-card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fa-solid fa-chart-line"></i> 최근 30일 가입자 추이</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="dailyChart" width="400" height="100"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 빠른 액션 버튼들 -->
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <a href="/v1/admin/members?status=PENDING" class="btn btn-warning btn-lg w-100">
+                        <i class="fa-solid fa-user-clock"></i> 대기 중인 회원 심사
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="/v1/admin/members" class="btn btn-primary btn-lg w-100">
+                        <i class="fa-solid fa-users"></i> 전체 회원 관리
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="/v1/admin/questions" class="btn btn-info btn-lg w-100">
+                        <i class="fa-solid fa-circle-question"></i> 질문 관리
+                    </a>
+                </div>
+            </div>
         </main>
+    </div>
+</div>
+
+<!-- Chart.js 추가 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script th:inline="javascript">
+    // 상태별 회원 차트
+    const statusData = [[${statusStats}]];
+    const statusLabels = Object.keys(statusData);
+    const statusValues = Object.values(statusData);
+
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                data: statusValues,
+                backgroundColor: [
+                    '#ffc107', // PENDING - 노란색
+                    '#28a745', // DONE - 초록색
+                    '#dc3545', // REJECT - 빨간색
+                    '#17a2b8'  // SIGNUP - 파란색
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // 일별 가입자 차트
+    const dailyData = [[${dailyStats}]];
+    const dailyLabels = dailyData.map(item => item[0]);
+    const dailyValues = dailyData.map(item => item[1]);
+
+    const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+    new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: dailyLabels.reverse(),
+            datasets: [{
+                label: '일별 가입자',
+                data: dailyValues.reverse(),
+                borderColor: '#6c63ff',
+                backgroundColor: 'rgba(108, 99, 255, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+</script>
     </div>
 </div>
 </body>

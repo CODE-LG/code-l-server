@@ -492,4 +492,69 @@ class MemberService(
         // TODO: JWT 토큰 블랙리스트 처리 고려
         // TODO: 필요시 추가 처리 (알림, 로깅 등)
     }
+
+    // ========== 통계 관련 메서드 ==========
+    
+    /**
+     * 일별 가입자 통계 (최근 30일)
+     */
+    fun getDailySignupStats(): List<Pair<String, Long>> {
+        val startDate = LocalDateTime.now().minusDays(30)
+        val rawData = memberJpaRepository.getDailySignupStats(startDate)
+        
+        return rawData.map { row ->
+            val date = row[0].toString()
+            val count = (row[1] as Number).toLong()
+            date to count
+        }
+    }
+    
+    /**
+     * 회원 상태별 통계
+     */
+    fun getMemberStatusStats(): Map<String, Long> {
+        val rawData = memberJpaRepository.getMemberStatusStats()
+        
+        return rawData.associate { row ->
+            val status = row[0].toString()
+            val count = (row[1] as Number).toLong()
+            status to count
+        }
+    }
+    
+    /**
+     * 월별 가입자 통계 (최근 12개월)
+     */
+    fun getMonthlySignupStats(): List<Triple<Int, Int, Long>> {
+        val startDate = LocalDateTime.now().minusMonths(12)
+        val rawData = memberJpaRepository.getMonthlySignupStats(startDate)
+        
+        return rawData.map { row ->
+            val year = (row[0] as Number).toInt()
+            val month = (row[1] as Number).toInt()
+            val count = (row[2] as Number).toLong()
+            Triple(year, month, count)
+        }
+    }
+    
+    /**
+     * 오늘 가입자 수
+     */
+    fun getTodaySignupCount(): Long = memberJpaRepository.getTodaySignupCount()
+    
+    /**
+     * 최근 7일 가입자 수
+     */
+    fun getWeeklySignupCount(): Long {
+        val startDate = LocalDateTime.now().minusDays(7)
+        return memberJpaRepository.getRecentSignupCount(startDate)
+    }
+    
+    /**
+     * 최근 30일 가입자 수
+     */
+    fun getMonthlySignupCount(): Long {
+        val startDate = LocalDateTime.now().minusDays(30)
+        return memberJpaRepository.getRecentSignupCount(startDate)
+    }
 }

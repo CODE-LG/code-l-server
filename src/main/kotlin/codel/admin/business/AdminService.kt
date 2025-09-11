@@ -118,4 +118,32 @@ class AdminService(
     
     @Transactional
     fun toggleQuestionStatus(questionId: Long): Question = questionService.toggleQuestionStatus(questionId)
+
+    // ========== 통계 관련 메서드 ==========
+    
+    fun getDailySignupStats(): List<Pair<String, Long>> = memberService.getDailySignupStats()
+    
+    fun getMemberStatusStats(): Map<String, Long> = memberService.getMemberStatusStats()
+    
+    fun getMonthlySignupStats(): List<Triple<Int, Int, Long>> = memberService.getMonthlySignupStats()
+    
+    fun getTodaySignupCount(): Long = memberService.getTodaySignupCount()
+    
+    fun getWeeklySignupCount(): Long = memberService.getWeeklySignupCount()
+    
+    fun getMonthlySignupCount(): Long = memberService.getMonthlySignupCount()
+    
+    fun getApprovalRate(): Double {
+        val statusStats = getMemberStatusStats()
+        val doneCount = statusStats["DONE"] ?: 0L
+        val pendingCount = statusStats["PENDING"] ?: 0L
+        val rejectCount = statusStats["REJECT"] ?: 0L
+        
+        val totalProcessed = doneCount + rejectCount
+        return if (totalProcessed > 0) {
+            (doneCount.toDouble() / totalProcessed.toDouble()) * 100
+        } else {
+            0.0
+        }
+    }
 }
