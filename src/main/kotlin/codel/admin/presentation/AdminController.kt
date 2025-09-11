@@ -89,13 +89,96 @@ class AdminController(
         model: Model,
         @PathVariable memberId: Long,
     ): String {
+        // 기본 회원 정보 조회
         val member = adminService.findMember(memberId)
-        val codeImages = member.getProfileOrThrow().getCodeImageOrThrow()
-        val faceImages = member.getProfileOrThrow().getFaceImageOrThrow()
+        
+        // 프로필 정보 안전하게 가져오기
+        val profile = member.profile
+        
+        // 이미지 리스트 안전하게 가져오기
+        val codeImages = try {
+            profile?.getCodeImageList() ?: emptyList()
+        } catch (e: Exception) {
+            emptyList<String>()
+        }
+        
+        val faceImages = try {
+            profile?.getFaceImageList() ?: emptyList()
+        } catch (e: Exception) {
+            emptyList<String>()
+        }
 
+        // 추가 정보들 조회 (옵셔널)
+        val activityHistory = try {
+            // adminService.getMemberActivityHistory(memberId)
+            emptyList<Any>() // 명시적 타입 지정
+        } catch (e: Exception) {
+            emptyList<Any>()
+        }
+        
+        val statusHistory = try {
+            // adminService.getMemberStatusHistory(memberId)
+            emptyList<Any>() // 명시적 타입 지정
+        } catch (e: Exception) {
+            emptyList<Any>()
+        }
+        
+        val loginHistory = try {
+            // adminService.getMemberLoginHistory(memberId, 10)
+            emptyList<Any>() // 명시적 타입 지정
+        } catch (e: Exception) {
+            emptyList<Any>()
+        }
+        
+        val reportHistory = try {
+            // adminService.getMemberReportHistory(memberId)
+            emptyList<Any>() // 명시적 타입 지정
+        } catch (e: Exception) {
+            emptyList<Any>()
+        }
+        
+        val adminNotes = try {
+            // adminService.getAdminNotes(memberId)
+            emptyList<Any>() // 명시적 타입 지정
+        } catch (e: Exception) {
+            emptyList<Any>()
+        }
+        
+        val recentActivity = try {
+            // adminService.getRecentMemberActivity(memberId, 5)
+            emptyList<Any>() // 명시적 타입 지정
+        } catch (e: Exception) {
+            emptyList<Any>()
+        }
+        
+        // 회원 통계 정보 (옵셔널)
+        val memberStats = try {
+            // adminService.getMemberStatistics(memberId)
+            null // 임시로 null
+        } catch (e: Exception) {
+            null
+        }
+
+        val repQuestionContent = try {
+            val repQId = profile?.getRepresentativeQuestionOrThrow()?.getIdOrThrow()
+            if (repQId != null) adminService.findQuestionById(repQId).content else null
+        } catch (e: Exception) {
+            null
+        }
+
+
+        // 모델에 모든 데이터 추가
         model.addAttribute("member", member)
         model.addAttribute("codeImages", codeImages)
         model.addAttribute("faceImages", faceImages)
+        model.addAttribute("activityHistory", activityHistory)
+        model.addAttribute("statusHistory", statusHistory)
+        model.addAttribute("loginHistory", loginHistory)
+        model.addAttribute("repQuestionContent", repQuestionContent)
+        model.addAttribute("reportHistory", reportHistory)
+        model.addAttribute("adminNotes", adminNotes)
+        model.addAttribute("recentActivity", recentActivity)
+        model.addAttribute("memberStats", memberStats)
 
         return "memberDetail"
     }
