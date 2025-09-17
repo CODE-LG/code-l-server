@@ -557,4 +557,71 @@ class MemberService(
         val startDate = LocalDateTime.now().minusDays(30)
         return memberJpaRepository.getRecentSignupCount(startDate)
     }
+    
+    /**
+     * 고급 필터링을 지원하는 회원 목록 조회
+     */
+    fun findMembersWithFilter(
+        keyword: String?,
+        status: String?,
+        startDate: String?,
+        endDate: String?,
+        sort: String?,
+        direction: String?,
+        pageable: Pageable
+    ): Page<Member> {
+        val statusEnum = if (!status.isNullOrBlank()) {
+            try {
+                MemberStatus.valueOf(status)
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+        } else {
+            null
+        }
+        
+        // 정렬 처리를 위한 새로운 Pageable 생성
+        val sortedPageable = createSortedPageable(pageable, sort, direction)
+        
+        // 새로운 메서드 사용
+        return memberJpaRepository.findMembersWithFilterAdvanced(keyword, statusEnum, sortedPageable)
+    }
+    
+    /**
+     * 정렬 옵션에 따른 Pageable 생성
+     */
+    private fun createSortedPageable(pageable: Pageable, sort: String?, direction: String?): Pageable {
+        val sortDirection = if (direction == "asc") {
+            org.springframework.data.domain.Sort.Direction.ASC
+        } else {
+            org.springframework.data.domain.Sort.Direction.DESC
+        }
+        
+        val sortBy = when (sort) {
+            "id" -> "id"
+            "email" -> "email"
+            "codeName" -> "profile.codeName"
+            "memberStatus" -> "memberStatus"
+            "createdAt" -> "createdAt"
+            else -> "createdAt"
+        }
+        
+        return PageRequest.of(
+            pageable.pageNumber,
+            pageable.pageSize,
+            org.springframework.data.domain.Sort.by(sortDirection, sortBy)
+        )
+    }
+    
+    /**
+     * 상태별 회원 수 조회
+     */
+    fun countMembersByStatus(status: String): Long {
+        return try {
+            val statusEnum = MemberStatus.valueOf(status)
+            memberJpaRepository.countByMemberStatus(statusEnum)
+        } catch (e: IllegalArgumentException) {
+            0L
+        }
+    }
 }

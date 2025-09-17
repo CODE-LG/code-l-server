@@ -26,8 +26,6 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
 
     fun findByMemberStatus(memberStatus: MemberStatus): List<Member>
 
-    fun countByMemberStatus(memberStatus: MemberStatus): Long
-
 
     @EntityGraph(attributePaths = ["profile", "profile.representativeQuestion"])
     @Query("""
@@ -80,6 +78,25 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
         @Param("status") status: MemberStatus?,
         pageable: Pageable
     ): Page<Member>
+
+    @Query(
+        """
+        SELECT m FROM Member m JOIN FETCH m.profile p
+        WHERE (:status IS NULL OR m.memberStatus = :status)
+          AND (
+            :keyword IS NULL OR :keyword = ''
+            OR LOWER(m.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(p.codeName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+          )
+        """
+    )
+    fun findMembersWithFilterAdvanced(
+        @Param("keyword") keyword: String?,
+        @Param("status") status: MemberStatus?,
+        pageable: Pageable
+    ): Page<Member>
+
+    fun countByMemberStatus(status: MemberStatus): Long
 
 
     @Query("SELECT m FROM Member m JOIN FETCH m.profile WHERE m.id = :memberId")

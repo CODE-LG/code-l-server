@@ -84,6 +84,18 @@ class AdminService(
         status: String?,
         pageable: Pageable,
     ): Page<Member> = memberService.findMembersWithFilter(keyword, status, pageable)
+    
+    fun findMembersWithFilter(
+        keyword: String?,
+        status: String?,
+        startDate: String?,
+        endDate: String?,
+        sort: String?,
+        direction: String?,
+        pageable: Pageable,
+    ): Page<Member> = memberService.findMembersWithFilter(keyword, status, startDate, endDate, sort, direction, pageable)
+    
+    fun countMembersByStatus(status: String): Long = memberService.countMembersByStatus(status)
 
     // ========== 질문 관리 ==========
     
