@@ -492,4 +492,136 @@ class MemberService(
         // TODO: JWT 토큰 블랙리스트 처리 고려
         // TODO: 필요시 추가 처리 (알림, 로깅 등)
     }
+
+    // ========== 통계 관련 메서드 ==========
+    
+    /**
+     * 일별 가입자 통계 (최근 30일)
+     */
+    fun getDailySignupStats(): List<Pair<String, Long>> {
+        val startDate = LocalDateTime.now().minusDays(30)
+        val rawData = memberJpaRepository.getDailySignupStats(startDate)
+        
+        return rawData.map { row ->
+            val date = row[0].toString()
+            val count = (row[1] as Number).toLong()
+            date to count
+        }
+    }
+    
+    /**
+     * 회원 상태별 통계
+     */
+    fun getMemberStatusStats(): Map<String, Long> {
+        val rawData = memberJpaRepository.getMemberStatusStats()
+        
+        return rawData.associate { row ->
+            val status = row[0].toString()
+            val count = (row[1] as Number).toLong()
+            status to count
+        }
+    }
+    
+    /**
+     * 월별 가입자 통계 (최근 12개월)
+     */
+    fun getMonthlySignupStats(): List<Triple<Int, Int, Long>> {
+        val startDate = LocalDateTime.now().minusMonths(12)
+        val rawData = memberJpaRepository.getMonthlySignupStats(startDate)
+        
+        return rawData.map { row ->
+            val year = (row[0] as Number).toInt()
+            val month = (row[1] as Number).toInt()
+            val count = (row[2] as Number).toLong()
+            Triple(year, month, count)
+        }
+    }
+    
+    /**
+     * 오늘 가입자 수
+     */
+    fun getTodaySignupCount(): Long = memberJpaRepository.getTodaySignupCount()
+    
+    /**
+     * 최근 7일 가입자 수
+     */
+    fun getWeeklySignupCount(): Long {
+        val startDate = LocalDateTime.now().minusDays(7)
+        return memberJpaRepository.getRecentSignupCount(startDate)
+    }
+    
+    /**
+     * 최근 30일 가입자 수
+     */
+    fun getMonthlySignupCount(): Long {
+        val startDate = LocalDateTime.now().minusDays(30)
+        return memberJpaRepository.getRecentSignupCount(startDate)
+    }
+    
+    /**
+     * 고급 필터링을 지원하는 회원 목록 조회
+     */
+    fun findMembersWithFilter(
+        keyword: String?,
+        status: String?,
+        startDate: String?,
+        endDate: String?,
+        sort: String?,
+        direction: String?,
+        pageable: Pageable
+    ): Page<Member> {
+        val statusEnum = if (!status.isNullOrBlank()) {
+            try {
+                MemberStatus.valueOf(status)
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+        } else {
+            null
+        }
+        
+        // 정렬 처리를 위한 새로운 Pageable 생성
+        val sortedPageable = createSortedPageable(pageable, sort, direction)
+        
+        // 새로운 메서드 사용
+        return memberJpaRepository.findMembersWithFilterAdvanced(keyword, statusEnum, sortedPageable)
+    }
+    
+    /**
+     * 정렬 옵션에 따른 Pageable 생성
+     */
+    private fun createSortedPageable(pageable: Pageable, sort: String?, direction: String?): Pageable {
+        val sortDirection = if (direction == "asc") {
+            org.springframework.data.domain.Sort.Direction.ASC
+        } else {
+            org.springframework.data.domain.Sort.Direction.DESC
+        }
+        
+        val sortBy = when (sort) {
+            "id" -> "id"
+            "email" -> "email"
+            "codeName" -> "profile.codeName"
+            "memberStatus" -> "memberStatus"
+            "createdAt" -> "createdAt"
+            else -> "createdAt"
+        }
+        
+        return PageRequest.of(
+            pageable.pageNumber,
+            pageable.pageSize,
+            org.springframework.data.domain.Sort.by(sortDirection, sortBy)
+        )
+    }
+    
+    /**
+     * 상태별 회원 수 조회
+     */
+    fun countMembersByStatus(status: String): Long {
+        return try {
+            val statusEnum = MemberStatus.valueOf(status)
+            memberJpaRepository.countByMemberStatus(statusEnum)
+        } catch (e: IllegalArgumentException) {
+            0L
+        }
+    }
 }

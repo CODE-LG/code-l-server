@@ -29,7 +29,7 @@
         }
 
         .badge {
-            font-size: 1em;
+            font-size: 0.9em;
         }
 
         /* 커스텀 상태별 배지 색상 */
@@ -51,6 +51,100 @@
         .badge-signup {
             background: #6c757d !important;
             color: #fff !important;
+        }
+
+        /* 탭 스타일 개선 */
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 8px 8px 0 0;
+            margin-right: 5px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: #fff;
+            color: #495057;
+            border: 1px solid #dee2e6;
+            border-bottom: 1px solid #fff;
+        }
+
+        .nav-tabs .nav-link:hover:not(.active) {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+        }
+
+        /* 빠른 액션 영역 */
+        .quick-actions {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* 검색 필터 영역 */
+        .filter-section {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* 테이블 개선 */
+        .member-table {
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .table th {
+            background: #f8f9fa;
+            border-top: none;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        /* 체크박스 스타일 */
+        .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        /* 통계 카드 */
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* 애니메이션 */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 모바일 반응형 */
+        @media (max-width: 768px) {
+            .filter-section .row > div {
+                margin-bottom: 10px;
+            }
+
+            .quick-actions {
+                text-align: center;
+            }
+
+            .table-responsive {
+                font-size: 0.85em;
+            }
         }
     </style>
 </head>
@@ -75,97 +169,304 @@
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link active" href="/v1/admin/questions">
+                        <a class="nav-link" href="/v1/admin/questions">
                             <i class="fa-solid fa-circle-question"></i> 질문 관리
                         </a>
                     </li>
                 </ul>
             </div>
         </nav>
+
         <!-- Main -->
         <main class="col-md-10 ms-sm-auto px-md-5 py-5">
-            <h2 class="mb-4 fw-bold">회원 관리</h2>
-            <!-- 검색/필터 UI (기본) -->
-            <form class="row g-3 mb-4" method="get" th:action="@{/v1/admin/members}">
-                <div class="col-md-3">
-                    <input class="form-control" name="keyword" placeholder="이름 검색" th:value="${param.keyword}"
-                           type="text">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">
+                    <i class="fa-solid fa-users me-2"></i>회원 관리
+                </h2>
+                <div class="text-muted">
+                    <i class="fa-solid fa-clock me-1"></i>
+                    <span id="currentTime"></span>
                 </div>
-                <div class="col-md-2">
-                    <select class="form-select" name="status">
-                        <option value="">전체 상태</option>
-                        <option th:selected="${param.status == 'PENDING'}" value="PENDING">PENDING</option>
-                        <option th:selected="${param.status == 'DONE'}" value="DONE">DONE</option>
-                        <option th:selected="${param.status == 'REJECT'}" value="REJECT">REJECT</option>
-                        <option th:selected="${param.status == 'SIGNUP'}" value="SIGNUP">SIGNUP</option>
-                    </select>
+            </div>
+
+            <!-- 통계 요약 카드 -->
+            <div class="stats-card fade-in">
+                <div class="row text-center">
+                    <div class="col-md-2">
+                        <h4 th:text="${statusCounts.total}">0</h4>
+                        <small>전체 회원</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h4 th:text="${statusCounts.PENDING}">0</h4>
+                        <small>승인 대기</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h4 th:text="${statusCounts.DONE}">0</h4>
+                        <small>승인 완료</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h4 th:text="${statusCounts.REJECT}">0</h4>
+                        <small>거부됨</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h4 th:text="${statusCounts.SIGNUP}">0</h4>
+                        <small>가입만 완료</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h4 th:text="${#numbers.formatDecimal((statusCounts.DONE * 100.0) / (statusCounts.DONE + statusCounts.REJECT), 1, 1) + '%'}">0%</h4>
+                        <small>승인율</small>
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <button class="btn btn-primary" type="submit"><i class="fa-solid fa-search"></i> 검색</button>
-                </div>
-            </form>
-            <!-- 회원 목록 탭 -->
-            <ul class="nav nav-tabs mb-3">
+            </div>
+
+            <!-- 검색/필터 섹션 -->
+            <div class="filter-section fade-in">
+                <form method="get" th:action="@{/v1/admin/members}">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label"><i class="fa-solid fa-search me-1"></i>이름 검색</label>
+                            <input class="form-control" name="keyword" placeholder="회원 이름을 입력하세요"
+                                   th:value="${param.keyword}" type="text">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label"><i class="fa-solid fa-filter me-1"></i>상태 필터</label>
+                            <select class="form-select" name="status">
+                                <option value="">전체 상태</option>
+                                <option th:selected="${param.status == 'PENDING'}" value="PENDING">승인 대기</option>
+                                <option th:selected="${param.status == 'DONE'}" value="DONE">승인 완료</option>
+                                <option th:selected="${param.status == 'REJECT'}" value="REJECT">거부됨</option>
+                                <option th:selected="${param.status == 'SIGNUP'}" value="SIGNUP">가입만 완료</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label"><i class="fa-solid fa-calendar me-1"></i>시작일</label>
+                            <input class="form-control" name="startDate" type="date" th:value="${param.startDate}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label"><i class="fa-solid fa-calendar me-1"></i>종료일</label>
+                            <input class="form-control" name="endDate" type="date" th:value="${param.endDate}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label"><i class="fa-solid fa-sort me-1"></i>정렬</label>
+                            <select class="form-select" name="sort">
+                                <option th:selected="${param.sort == 'createdAt'}" value="createdAt">가입일</option>
+                                <option th:selected="${param.sort == 'codeName'}" value="codeName">이름</option>
+                                <option th:selected="${param.sort == 'email'}" value="email">이메일</option>
+                                <option th:selected="${param.sort == 'memberStatus'}" value="memberStatus">상태</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label"><i class="fa-solid fa-arrow-up-down me-1"></i>순서</label>
+                            <select class="form-select" name="direction">
+                                <option th:selected="${param.direction == 'desc'}" value="desc">내림차순</option>
+                                <option th:selected="${param.direction == 'asc'}" value="asc">오름차순</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button class="btn btn-primary me-2" type="submit">
+                                <i class="fa-solid fa-search me-1"></i>검색
+                            </button>
+                            <a class="btn btn-outline-secondary" th:href="@{/v1/admin/members}">
+                                <i class="fa-solid fa-refresh me-1"></i>초기화
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 회원 목록 탭 (개선된 버전) -->
+            <ul class="nav nav-tabs mb-3 fade-in">
                 <li class="nav-item">
-                    <a class="nav-link" th:classappend="${param.status} == '' ? 'active'"
-                       th:href="@{/v1/admin/members}">전체 회원</a>
+                    <a class="nav-link d-flex align-items-center"
+                       th:classappend="${param.status == '' or param.status == null} ? 'active'"
+                       th:href="@{/v1/admin/members}">
+                        <span>전체 회원</span>
+                        <span class="badge bg-primary ms-2" th:text="${statusCounts.total}">0</span>
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" th:classappend="${param.status} == 'PENDING' ? 'active'"
-                       th:href="@{/v1/admin/members(status='PENDING')}">대기 중인 회원</a>
+                    <a class="nav-link d-flex align-items-center"
+                       th:classappend="${param.status == 'PENDING'} ? 'active'"
+                       th:href="@{/v1/admin/members(status='PENDING')}">
+                        <span>승인 대기</span>
+                        <span class="badge badge-pending ms-2" th:text="${statusCounts.PENDING}">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center"
+                       th:classappend="${param.status == 'DONE'} ? 'active'"
+                       th:href="@{/v1/admin/members(status='DONE')}">
+                        <span>승인 완료</span>
+                        <span class="badge badge-done ms-2" th:text="${statusCounts.DONE}">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center"
+                       th:classappend="${param.status == 'REJECT'} ? 'active'"
+                       th:href="@{/v1/admin/members(status='REJECT')}">
+                        <span>거부됨</span>
+                        <span class="badge badge-reject ms-2" th:text="${statusCounts.REJECT}">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center"
+                       th:classappend="${param.status == 'SIGNUP'} ? 'active'"
+                       th:href="@{/v1/admin/members(status='SIGNUP')}">
+                        <span>가입만 완료</span>
+                        <span class="badge badge-signup ms-2" th:text="${statusCounts.SIGNUP}">0</span>
+                    </a>
                 </li>
             </ul>
-            <!-- 페이지 정보 -->
-            <div class="mb-2 text-end">
-                <span th:text="'Page ' + (${members.number + 1}) + ' of ' + ${members.totalPages} + ' (총 ' + ${members.totalElements} + '명)'"></span>
+
+            <!-- 빠른 액션 바 -->
+            <div class="quick-actions fade-in" th:if="${param.status == 'PENDING'}">
+                <form id="bulkActionForm" method="post" th:action="@{/v1/admin/members/bulk-action}">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <span class="me-3 fw-semibold">
+                                    <i class="fa-solid fa-bolt me-1 text-warning"></i>빠른 작업:
+                                </span>
+                                <button type="button" class="btn btn-success btn-sm me-2" onclick="bulkApprove()">
+                                    <i class="fa-solid fa-check me-1"></i>선택한 회원 승인
+                                </button>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="bulkReject()">
+                                    <i class="fa-solid fa-times me-1"></i>선택한 회원 거부
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <span id="selectedCount" class="text-muted">0개 선택됨</span>
+                        </div>
+                    </div>
+                    <input type="hidden" name="action" id="bulkAction">
+                    <input type="hidden" name="rejectReason" id="bulkRejectReason">
+                </form>
             </div>
-            <!-- 회원 목록 테이블 -->
-            <div class="card p-3 shadow-sm">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                    <tr>
-                        <th>ID</th>
-                        <th>이메일</th>
-                        <th>이름</th>
-                        <th>상태</th>
-                        <th>가입일</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr style="cursor:pointer;" th:each="member : ${members}"
-                        th:onclick="|location.href='/v1/admin/member/' + ${member.id}|">
-                        <td th:text="${member.id}"></td>
-                        <td th:text="${member.email}"></td>
-                        <td th:text="${member.profile.codeName}"></td>
-                        <td>
-                            <span th:switch="${member.memberStatus.name()}">
-                                <span class="badge badge-pending" th:case="'PENDING'">PENDING</span>
-                                <span class="badge badge-done" th:case="'DONE'">DONE</span>
-                                <span class="badge badge-reject" th:case="'REJECT'">REJECT</span>
-                                <span class="badge badge-signup" th:case="'SIGNUP'">SIGNUP</span>
-                                <span class="badge bg-light text-dark" th:case="*"
-                                      th:text="${member.memberStatus}"></span>
-                            </span>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-                <!-- 페이지네이션 UI -->
+
+            <!-- 페이지 정보 및 내보내기 -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="text-muted">
+                    <i class="fa-solid fa-info-circle me-1"></i>
+                    Page <strong th:text="${members.number + 1}">1</strong> of
+                    <strong th:text="${members.totalPages}">1</strong>
+                    (총 <strong th:text="${members.totalElements}">0</strong>명)
+                </span>
+                <div>
+                    <button class="btn btn-outline-primary btn-sm" onclick="exportToCSV()">
+                        <i class="fa-solid fa-download me-1"></i>CSV 내보내기
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" onclick="refreshPage()">
+                        <i class="fa-solid fa-refresh me-1"></i>새로고침
+                    </button>
+                </div>
+            </div>
+
+            <!-- 회원 목록 테이블 (완전 개선) -->
+            <div class="member-table fade-in">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th width="50" th:if="${param.status == 'PENDING'}">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAll"
+                                           onchange="toggleAllCheckboxes(this)">
+                                </div>
+                            </th>
+                            <th width="80">ID</th>
+                            <th>이메일</th>
+                            <th>이름</th>
+                            <th width="120">상태</th>
+                            <th width="150">가입일</th>
+                            <th width="120" th:if="${param.status == 'PENDING'}">빠른 액션</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="member : ${members}" class="member-row"
+                            th:data-member-id="${member.id}" style="cursor:pointer;">
+                            <td th:if="${param.status == 'PENDING'}" onclick="event.stopPropagation()">
+                                <div class="form-check">
+                                    <input class="form-check-input member-checkbox" type="checkbox"
+                                           th:value="${member.id}" onchange="updateSelectedCount()">
+                                </div>
+                            </td>
+                            <td th:onclick="|viewMemberDetail(event, ${member.id})|" class="fw-bold text-primary">
+                                <a th:href="@{/v1/admin/member/{memberId}(memberId=${member.id})}" class="text-decoration-none">
+                                    #<span th:text="${member.id}"></span>
+                                </a>
+                            </td>
+                            <td th:onclick="|viewMemberDetail(event, ${member.id})|">
+                                <span th:text="${member.email}"></span>
+                            </td>
+                            <td th:onclick="|viewMemberDetail(event, ${member.id})|">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-placeholder bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                                         style="width: 32px; height: 32px; font-size: 12px;">
+                                        <span th:text="${#strings.substring(member.profile.codeName, 0, 1)}">U</span>
+                                    </div>
+                                    <span th:text="${member.profile.codeName}"></span>
+                                </div>
+                            </td>
+                            <td th:onclick="|viewMemberDetail(event, ${member.id})|">
+                                <span th:switch="${member.memberStatus.name()}">
+                                    <span class="badge badge-pending" th:case="'PENDING'">
+                                        <i class="fa-solid fa-clock me-1"></i>승인 대기
+                                    </span>
+                                    <span class="badge badge-done" th:case="'DONE'">
+                                        <i class="fa-solid fa-check me-1"></i>승인 완료
+                                    </span>
+                                    <span class="badge badge-reject" th:case="'REJECT'">
+                                        <i class="fa-solid fa-times me-1"></i>거부됨
+                                    </span>
+                                    <span class="badge badge-signup" th:case="'SIGNUP'">
+                                        <i class="fa-solid fa-user-plus me-1"></i>가입만 완료
+                                    </span>
+                                    <span class="badge bg-light text-dark" th:case="*" th:text="${member.memberStatus}"></span>
+                                </span>
+                            </td>
+                            <td th:onclick="|viewMemberDetail(event, ${member.id})|" class="text-muted">
+                                <small th:text="${#temporals.format(member.createdAt, 'yyyy-MM-dd HH:mm')}"></small>
+                            </td>
+                            <td th:if="${param.status == 'PENDING'}" onclick="event.stopPropagation()">
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-success btn-sm"
+                                            th:onclick="|approveMember(${member.id})|" title="승인">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm"
+                                            th:onclick="|rejectMember(${member.id})|" title="거부">
+                                        <i class="fa-solid fa-times"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 페이지네이션 (개선된 버전) -->
                 <nav class="mt-4" th:if="${members.totalPages > 1}">
                     <ul class="pagination justify-content-center">
                         <li class="page-item" th:classappend="${members.first} ? 'disabled'">
-                            <a class="page-link"
-                               th:href="@{/v1/admin/members(page=${members.number - 1}, size=${members.size}, keyword=${param.keyword}, status=${param.status})}">이전</a>
+                            <a class="page-link" th:href="@{/v1/admin/members(page=${members.number - 1}, size=${members.size}, keyword=${param.keyword}, status=${param.status}, startDate=${param.startDate}, endDate=${param.endDate}, sort=${param.sort}, direction=${param.direction})}">
+                                <i class="fa-solid fa-chevron-left"></i> 이전
+                            </a>
                         </li>
-                        <li class="page-item" th:classappend="${members.number == pageNum} ? 'active'"
-                            th:each="pageNum : ${#numbers.sequence(0, members.totalPages - 1)}">
-                            <a class="page-link"
-                               th:href="@{/v1/admin/members(page=${pageNum}, size=${members.size}, keyword=${param.keyword}, status=${param.status})}"
-                               th:text="${pageNum + 1}"></a>
+
+                        <!-- 페이지 번호들 (최대 10개만 표시) -->
+                        <li class="page-item"
+                            th:each="pageNum : ${#numbers.sequence(T(java.lang.Math).max(0, members.number - 5), T(java.lang.Math).min(members.totalPages - 1, members.number + 4))}"
+                            th:classappend="${members.number == pageNum} ? 'active'">
+                            <a class="page-link" th:href="@{/v1/admin/members(page=${pageNum}, size=${members.size}, keyword=${param.keyword}, status=${param.status}, startDate=${param.startDate}, endDate=${param.endDate}, sort=${param.sort}, direction=${param.direction})}" th:text="${pageNum + 1}"></a>
                         </li>
+
                         <li class="page-item" th:classappend="${members.last} ? 'disabled'">
-                            <a class="page-link"
-                               th:href="@{/v1/admin/members(page=${members.number + 1}, size=${members.size}, keyword=${param.keyword}, status=${param.status})}">다음</a>
+                            <a class="page-link" th:href="@{/v1/admin/members(page=${members.number + 1}, size=${members.size}, keyword=${param.keyword}, status=${param.status}, startDate=${param.startDate}, endDate=${param.endDate}, sort=${param.sort}, direction=${param.direction})}">
+                                다음 <i class="fa-solid fa-chevron-right"></i>
+                            </a>
                         </li>
                     </ul>
                 </nav>
@@ -173,5 +474,217 @@
         </main>
     </div>
 </div>
+
+<!-- JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 현재 시간 표시
+    function updateTime() {
+        const now = new Date();
+        document.getElementById('currentTime').textContent = now.toLocaleString('ko-KR');
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+
+    // 회원 상세 보기
+    function viewMemberDetail(event, memberId) {
+        console.log('viewMemberDetail 호출됨 - memberId:', memberId);
+        console.log('event.target:', event.target);
+        console.log('event.target.type:', event.target.type);
+        console.log('closest button:', event.target.closest('button'));
+
+        if (event.target.type !== 'checkbox' && !event.target.closest('button')) {
+            console.log('이동할 URL:', `/v1/admin/member/${memberId}`);
+            window.location.href = `/v1/admin/member/${memberId}`;
+        } else {
+            console.log('이동하지 않음 - 체크박스 또는 버튼 클릭');
+        }
+    }
+
+    // 전체 선택/해제
+    function toggleAllCheckboxes(source) {
+        const checkboxes = document.querySelectorAll('.member-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = source.checked;
+        });
+        updateSelectedCount();
+    }
+
+    // 선택된 항목 수 업데이트
+    function updateSelectedCount() {
+        const selectedCheckboxes = document.querySelectorAll('.member-checkbox:checked');
+        const count = selectedCheckboxes.length;
+        document.getElementById('selectedCount').textContent = `${count}개 선택됨`;
+
+        // 전체 선택 체크박스 상태 업데이트
+        const selectAllCheckbox = document.getElementById('selectAll');
+        if (selectAllCheckbox) {
+            const allCheckboxes = document.querySelectorAll('.member-checkbox');
+            selectAllCheckbox.checked = count === allCheckboxes.length && count > 0;
+            selectAllCheckbox.indeterminate = count > 0 && count < allCheckboxes.length;
+        }
+    }
+
+    // 개별 회원 승인
+    function approveMember(memberId) {
+        if (confirm('이 회원을 승인하시겠습니까?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/v1/admin/approval/${memberId}`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+
+    // 개별 회원 거부
+    function rejectMember(memberId) {
+        const reason = prompt('거부 사유를 입력해주세요:');
+        if (reason && reason.trim() !== '') {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/v1/admin/reject/${memberId}`;
+
+            const reasonInput = document.createElement('input');
+            reasonInput.type = 'hidden';
+            reasonInput.name = 'rejectReason';
+            reasonInput.value = reason.trim();
+            form.appendChild(reasonInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+
+    // 일괄 승인
+    function bulkApprove() {
+        const selectedCheckboxes = document.querySelectorAll('.member-checkbox:checked');
+        if (selectedCheckboxes.length === 0) {
+            alert('승인할 회원을 선택해주세요.');
+            return;
+        }
+
+        if (confirm(`선택한 ${selectedCheckboxes.length}명의 회원을 승인하시겠습니까?`)) {
+            submitBulkAction('approve', selectedCheckboxes);
+        }
+    }
+
+    // 일괄 거부
+    function bulkReject() {
+        const selectedCheckboxes = document.querySelectorAll('.member-checkbox:checked');
+        if (selectedCheckboxes.length === 0) {
+            alert('거부할 회원을 선택해주세요.');
+            return;
+        }
+
+        const reason = prompt('거부 사유를 입력해주세요:');
+        if (reason && reason.trim() !== '') {
+            if (confirm(`선택한 ${selectedCheckboxes.length}명의 회원을 거부하시겠습니까?`)) {
+                document.getElementById('bulkRejectReason').value = reason.trim();
+                submitBulkAction('reject', selectedCheckboxes);
+            }
+        }
+    }
+
+    // 일괄 작업 실행
+    function submitBulkAction(action, selectedCheckboxes) {
+        const form = document.getElementById('bulkActionForm');
+        document.getElementById('bulkAction').value = action;
+
+        // 기존 memberIds 입력 필드 제거
+        const existingInputs = form.querySelectorAll('input[name="memberIds"]');
+        existingInputs.forEach(input => input.remove());
+
+        // 선택된 회원 ID들 추가
+        selectedCheckboxes.forEach(checkbox => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'memberIds';
+            input.value = checkbox.value;
+            form.appendChild(input);
+        });
+
+        form.submit();
+    }
+
+    // CSV 내보내기
+    function exportToCSV() {
+        const currentParams = new URLSearchParams(window.location.search);
+        const exportUrl = `/v1/admin/members/export?${currentParams.toString()}`;
+
+        // 임시로 알림 표시 (실제로는 서버에서 CSV 파일 생성 후 다운로드)
+        alert('CSV 내보내기 기능은 서버 구현이 필요합니다.');
+        // window.location.href = exportUrl;
+    }
+
+    // 페이지 새로고침
+    function refreshPage() {
+        window.location.reload();
+    }
+
+    // 페이지 로드 시 초기화
+    document.addEventListener('DOMContentLoaded', function() {
+        updateSelectedCount();
+
+        // 엔터키로 검색 실행
+        document.querySelectorAll('input[name="keyword"]').forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.target.closest('form').submit();
+                }
+            });
+        });
+    });
+
+    // 키보드 단축키
+    document.addEventListener('keydown', function(e) {
+        // Ctrl + R: 새로고침
+        if (e.ctrlKey && e.key === 'r') {
+            e.preventDefault();
+            refreshPage();
+        }
+
+        // Ctrl + A: 전체 선택 (PENDING 탭에서만)
+        if (e.ctrlKey && e.key === 'a') {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            if (selectAllCheckbox) {
+                e.preventDefault();
+                selectAllCheckbox.checked = !selectAllCheckbox.checked;
+                toggleAllCheckboxes(selectAllCheckbox);
+            }
+        }
+    });
+
+    // 테이블 행 호버 효과 개선
+    document.querySelectorAll('.member-row').forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#f8f9fa';
+        });
+
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+
+    // 반응형 테이블 처리
+    function handleResponsiveTable() {
+        const table = document.querySelector('.table-responsive');
+        if (window.innerWidth < 768) {
+            table.style.fontSize = '0.8rem';
+        } else {
+            table.style.fontSize = '';
+        }
+    }
+
+    window.addEventListener('resize', handleResponsiveTable);
+    handleResponsiveTable();
+
+    // 툴팁 초기화 (Bootstrap)
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    console.log('✅ 회원 관리 페이지가 완전히 로드되었습니다.');
+</script>
 </body>
 </html>

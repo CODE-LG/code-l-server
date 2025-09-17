@@ -84,6 +84,18 @@ class AdminService(
         status: String?,
         pageable: Pageable,
     ): Page<Member> = memberService.findMembersWithFilter(keyword, status, pageable)
+    
+    fun findMembersWithFilter(
+        keyword: String?,
+        status: String?,
+        startDate: String?,
+        endDate: String?,
+        sort: String?,
+        direction: String?,
+        pageable: Pageable,
+    ): Page<Member> = memberService.findMembersWithFilter(keyword, status, startDate, endDate, sort, direction, pageable)
+    
+    fun countMembersByStatus(status: String): Long = memberService.countMembersByStatus(status)
 
     // ========== 질문 관리 ==========
     
@@ -118,4 +130,130 @@ class AdminService(
     
     @Transactional
     fun toggleQuestionStatus(questionId: Long): Question = questionService.toggleQuestionStatus(questionId)
+
+    // ========== 통계 관련 메서드 ==========
+    
+    fun getDailySignupStats(): List<Pair<String, Long>> = memberService.getDailySignupStats()
+    
+    fun getMemberStatusStats(): Map<String, Long> = memberService.getMemberStatusStats()
+    
+    fun getMonthlySignupStats(): List<Triple<Int, Int, Long>> = memberService.getMonthlySignupStats()
+    
+    fun getTodaySignupCount(): Long = memberService.getTodaySignupCount()
+    
+    fun getWeeklySignupCount(): Long = memberService.getWeeklySignupCount()
+    
+    fun getMonthlySignupCount(): Long = memberService.getMonthlySignupCount()
+    
+    fun getApprovalRate(): Double {
+        val statusStats = getMemberStatusStats()
+        val doneCount = statusStats["DONE"] ?: 0L
+        val pendingCount = statusStats["PENDING"] ?: 0L
+        val rejectCount = statusStats["REJECT"] ?: 0L
+        
+        val totalProcessed = doneCount + rejectCount
+        return if (totalProcessed > 0) {
+            (doneCount.toDouble() / totalProcessed.toDouble()) * 100
+        } else {
+            0.0
+        }
+    }
+
+    // ========== 프로필 관련 추가 메서드들 ==========
+    
+    // 회원 활동 히스토리 조회 (임시 구현)
+    fun getMemberActivityHistory(memberId: Long): List<MemberActivity> {
+        // 실제 구현에서는 활동 기록을 저장하는 테이블에서 조회
+        return emptyList()
+    }
+    
+    // 회원 상태 변경 히스토리 조회 (임시 구현)
+    fun getMemberStatusHistory(memberId: Long): List<MemberStatusHistory> {
+        // 실제 구현에서는 상태 변경 이력을 저장하는 테이블에서 조회
+        return emptyList()
+    }
+    
+    // 회원 로그인 히스토리 조회 (임시 구현)
+    fun getMemberLoginHistory(memberId: Long, limit: Int): List<MemberLoginHistory> {
+        // 실제 구현에서는 로그인 기록을 저장하는 테이블에서 조회
+        return emptyList()
+    }
+    
+    // 회원 신고 히스토리 조회 (임시 구현)
+    fun getMemberReportHistory(memberId: Long): List<MemberReport> {
+        // 실제 구현에서는 신고 기록을 저장하는 테이블에서 조회
+        return emptyList()
+    }
+    
+    // 관리자 메모 조회 (임시 구현)
+    fun getAdminNotes(memberId: Long): List<AdminNote> {
+        // 실제 구현에서는 관리자 메모를 저장하는 테이블에서 조회
+        return emptyList()
+    }
+    
+    // 최근 회원 활동 조회 (임시 구현)
+    fun getRecentMemberActivity(memberId: Long, limit: Int): List<MemberActivity> {
+        // 실제 구현에서는 최근 활동을 조회
+        return emptyList()
+    }
+    
+    // 회원 통계 조회 (임시 구현)
+    fun getMemberStatistics(memberId: Long): MemberStatistics? {
+        // 실제 구현에서는 회원별 통계를 계산
+        return null
+    }
+
+    // ========== 데이터 클래스들 ==========
+    
+    data class MemberActivity(
+        val id: Long?,
+        val memberId: Long,
+        val type: String,
+        val description: String,
+        val createdAt: java.time.LocalDateTime
+    )
+    
+    data class MemberStatusHistory(
+        val id: Long?,
+        val memberId: Long,
+        val fromStatus: String,
+        val toStatus: String,
+        val reason: String?,
+        val createdAt: java.time.LocalDateTime
+    )
+    
+    data class MemberLoginHistory(
+        val id: Long?,
+        val memberId: Long,
+        val loginAt: java.time.LocalDateTime,
+        val ipAddress: String?,
+        val userAgent: String?
+    )
+    
+    data class MemberReport(
+        val id: Long?,
+        val memberId: Long,
+        val reporterName: String,
+        val reason: String,
+        val createdAt: java.time.LocalDateTime
+    )
+    
+    data class AdminNote(
+        val id: Long?,
+        val memberId: Long,
+        val adminName: String,
+        val content: String,
+        val createdAt: java.time.LocalDateTime
+    )
+    
+    data class MemberStatistics(
+        val loginCount: Int,
+        val activityScore: Double,
+        val reportCount: Int,
+        val daysSinceJoin: Int,
+        val profileCompletionRate: Double,
+        val lastActiveDate: java.time.LocalDate?,
+        val totalImages: Int,
+        val hasIntroduce: Boolean
+    )
 }
