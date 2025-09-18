@@ -11,6 +11,9 @@ interface BlockMemberRelationJpaRepository : JpaRepository<BlockMemberRelation, 
     @Query("SELECT bmr FROM BlockMemberRelation bmr WHERE bmr.blockerMember.id = :blockerId AND bmr.status = 'BLOCKED'")
     fun findBlockMembersBy(blockerId: Long) : List<BlockMemberRelation>
 
+    @Query("SELECT bmr FROM BlockMemberRelation bmr WHERE bmr.blockedMember.id = :blockedId AND bmr.status = 'BLOCKED'")
+    fun findBlockerMembersTo(blockedId: Long) : List<BlockMemberRelation>
+
     @Query("SELECT bmr FROM BlockMemberRelation bmr WHERE bmr.blockerMember.id = :blockerMemberId AND bmr.blockedMember.id = :blockedMemberId")
     fun findByBlockerMemberAndBlockedMember(blockerMemberId : Long, blockedMemberId: Long) : BlockMemberRelation?
 
@@ -22,8 +25,21 @@ interface BlockMemberRelationJpaRepository : JpaRepository<BlockMemberRelation, 
           AND bmr.createdAt < :beforeTime
         """
     )
-    fun findBlockMembersBeforeTime(
+    fun findBlockedMemberIdByMeBeforeTime(
         @Param("blockerId") blockerId: Long,
+        @Param("beforeTime") beforeTime: LocalDateTime
+    ): List<Long>
+
+    @Query(
+        """
+        SELECT bmr.blockerMember.id FROM BlockMemberRelation bmr
+        WHERE bmr.blockedMember.id = :blockedId
+          AND bmr.status = 'BLOCKED'
+          AND bmr.createdAt < :beforeTime
+        """
+    )
+    fun findBlockMembersByOtherBeforeTime(
+        @Param("blockedId") blockedId: Long,
         @Param("beforeTime") beforeTime: LocalDateTime
     ): List<Long>
 }
