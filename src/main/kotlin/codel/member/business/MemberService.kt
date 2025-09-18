@@ -144,12 +144,14 @@ class MemberService(
             candidate.id !in excludeIds
         }.take(5)
 
-        // 2. 현재 차단된 사용자들을 실시간으로 제외
+        // 내가 차단한, 나를 차단한 사용자들을 실시간으로 제외
         val currentlyBlockedIds = blockMemberRelationJpaRepository.findBlockMembersBy(member.getIdOrThrow())
+            .mapNotNull { it.blockedMember.id }
+        val currentlyBlockerIds = blockMemberRelationJpaRepository.findBlockerMembersTo(member.getIdOrThrow())
             .mapNotNull { it.blockedMember.id }
 
         return recommendationPool.filter { candidate ->
-            candidate.id !in currentlyBlockedIds
+            candidate.id !in currentlyBlockedIds + currentlyBlockerIds
         }
     }
 
@@ -192,12 +194,15 @@ class MemberService(
                 ).toMutableList()
 
         // targetTime 기준으로 차단된 사용자들만 포함 (실시간 차단은 별도 처리)
-        val blockedMemberIds = blockMemberRelationJpaRepository.findBlockMembersBeforeTime(member.getIdOrThrow(), targetTime)
+        val blockedMemberIdsByMe = blockMemberRelationJpaRepository.findBlockedMemberIdByMeBeforeTime(member.getIdOrThrow(), targetTime)
+        val blockerMemberIdsToMe = blockMemberRelationJpaRepository.findBlockMembersByOtherBeforeTime(member.getIdOrThrow(), targetTime)
 
         val allExcludeIds = excludeFromMemberIdsAtMidnight
         allExcludeIds += excludeToMemberIdsAtMidnight
 
-        allExcludeIds += blockedMemberIds
+        allExcludeIds += blockedMemberIdsByMe
+        allExcludeIds += blockerMemberIdsToMe
+
         return allExcludeIds
     }
 
