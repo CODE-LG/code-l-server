@@ -5,6 +5,7 @@ import codel.chat.domain.ChatRoomStatus
 import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
+import codel.config.Loggable
 import codel.member.domain.*
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
@@ -42,7 +43,7 @@ class MemberService(
     private val chatRoomJpaRepository: ChatRoomJpaRepository,
     private val notificationService: NotificationService,
     private val blockMemberRelationJpaRepository: BlockMemberRelationJpaRepository,
-) {
+){
     fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
 
@@ -172,7 +173,16 @@ class MemberService(
         sevenDaysAgo: LocalDateTime,
         targetTime: LocalDateTime
     ): MutableList<Long> {
-        val excludeIdsByTimeAndStatus =
+        val excludeFromMemberIdsAtMidnight =
+            signalJpaRepository
+                .findExcludedFromMemberIdsAtMidnight(
+                    member,
+                    candidates,
+                    sevenDaysAgo,
+                    targetTime,
+                ).toMutableList()
+
+        val excludeToMemberIdsAtMidnight =
             signalJpaRepository
                 .findExcludedToMemberIdsAtMidnight(
                     member,
@@ -184,7 +194,9 @@ class MemberService(
         // targetTime 기준으로 차단된 사용자들만 포함 (실시간 차단은 별도 처리)
         val blockedMemberIds = blockMemberRelationJpaRepository.findBlockMembersBeforeTime(member.getIdOrThrow(), targetTime)
 
-        val allExcludeIds = excludeIdsByTimeAndStatus
+        val allExcludeIds = excludeFromMemberIdsAtMidnight
+        allExcludeIds += excludeToMemberIdsAtMidnight
+
         allExcludeIds += blockedMemberIds
         return allExcludeIds
     }

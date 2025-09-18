@@ -85,6 +85,29 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
 
     @Query(
         """
+    SELECT s.fromMember.id FROM Signal s
+    WHERE s.toMember = :toMember
+      AND s.fromMember IN :candidates
+      AND (
+        (s.senderStatus = 'REJECTED' AND s.updatedAt >= :sevenDaysAgo AND s.updatedAt < :todayMidnight)
+        OR (s.senderStatus IN ('ACCEPTED', 'PENDING', 'PENDING_HIDDEN') AND s.updatedAt < :todayMidnight)
+      )
+      AND s.id IN (
+        SELECT MAX(s2.id) FROM Signal s2
+        WHERE s2.toMember = :toMember AND s2.fromMember IN :candidates
+        GROUP BY s2.toMember
+      )
+    """
+    )
+    fun findExcludedFromMemberIdsAtMidnight(
+        @Param("toMember") toMember: Member,
+        @Param("candidates") candidates: List<Member>,
+        @Param("sevenDaysAgo") sevenDaysAgo: LocalDateTime,
+        @Param("todayMidnight") todayMidnight: LocalDateTime
+    ): List<Long>
+
+    @Query(
+        """
     SELECT s.toMember.id FROM Signal s
     WHERE s.fromMember = :fromMember
       AND s.toMember IN :candidates
@@ -95,7 +118,7 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
       AND s.id IN (
         SELECT MAX(s2.id) FROM Signal s2
         WHERE s2.fromMember = :fromMember AND s2.toMember IN :candidates
-        GROUP BY s2.toMember
+        GROUP BY s2.fromMember
       )
     """
     )
