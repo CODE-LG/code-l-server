@@ -30,7 +30,7 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMember, Long> {
         SELECT crmOther
         FROM ChatRoomMember crmMe
         JOIN crmMe.chatRoom cr
-        JOIN FETCH ChatRoomMember crmOther ON crmOther.chatRoom = cr
+        JOIN ChatRoomMember crmOther ON crmOther.chatRoom = cr
         JOIN FETCH crmOther.member m
         JOIN FETCH m.profile p
         WHERE crmMe.member = :me

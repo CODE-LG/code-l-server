@@ -60,7 +60,7 @@ class CodeUnlockService(
         val isUnlocked = chatRoom.isUnlocked
         val canRequest = policyService.canRequest(chatRoom, requester)
 
-        val currentRequest = codeUnlockRequestRepository.findLatestPendingByChatRoomId(chatRoom.getIdOrThrow())
+        val currentRequest = codeUnlockRequestRepository.findLatestPendingByChatRoomId(chatRoom.getIdOrThrow()).firstOrNull()
 
         return UnlockInfo(
             isUnlocked = isUnlocked,

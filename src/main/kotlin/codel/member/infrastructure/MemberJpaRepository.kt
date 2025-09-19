@@ -109,11 +109,11 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
     // ========== 통계용 쿼리 ==========
     
     @Query("""
-        SELECT DATE(m.createdAt) as date, COUNT(m) as count
+        SELECT CAST(m.createdAt AS date) as date, COUNT(m) as count
         FROM Member m 
         WHERE m.createdAt >= :startDate
-        GROUP BY DATE(m.createdAt)
-        ORDER BY DATE(m.createdAt) DESC
+        GROUP BY CAST(m.createdAt AS date)
+        ORDER BY CAST(m.createdAt AS date) DESC
     """)
     fun getDailySignupStats(@Param("startDate") startDate: LocalDateTime): List<Array<Any>>
     
@@ -125,20 +125,22 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
     fun getMemberStatusStats(): List<Array<Any>>
     
     @Query("""
-        SELECT EXTRACT(YEAR FROM m.createdAt) as year, 
-               EXTRACT(MONTH FROM m.createdAt) as month, 
+        SELECT YEAR(m.createdAt) as year, 
+               MONTH(m.createdAt) as month, 
                COUNT(m) as count
         FROM Member m 
         WHERE m.createdAt >= :startDate
-        GROUP BY EXTRACT(YEAR FROM m.createdAt), EXTRACT(MONTH FROM m.createdAt)
-        ORDER BY year DESC, month DESC
+        GROUP BY YEAR(m.createdAt), MONTH(m.createdAt)
+        ORDER BY YEAR(m.createdAt) DESC, MONTH(m.createdAt) DESC
     """)
     fun getMonthlySignupStats(@Param("startDate") startDate: LocalDateTime): List<Array<Any>>
     
     @Query("""
         SELECT COUNT(m) 
         FROM Member m 
-        WHERE DATE(m.createdAt) = CURRENT_DATE
+        WHERE YEAR(m.createdAt) = YEAR(CURRENT_DATE) 
+        AND MONTH(m.createdAt) = MONTH(CURRENT_DATE)
+        AND DAY(m.createdAt) = DAY(CURRENT_DATE)
     """)
     fun getTodaySignupCount(): Long
     
