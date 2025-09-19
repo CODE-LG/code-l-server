@@ -19,6 +19,7 @@ import codel.chat.repository.ChatRepository
 import codel.chat.repository.ChatRoomRepository
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
+import codel.member.infrastructure.MemberJpaRepository
 import codel.signal.infrastructure.SignalJpaRepository
 import codel.question.business.QuestionService
 import codel.question.domain.Question
@@ -41,7 +42,8 @@ class ChatService(
     private val chatRoomJpaRepository: ChatRoomJpaRepository,
     private val chatJpaRepository: ChatJpaRepository,
     private val questionService: QuestionService,
-    private val codeUnlockService: CodeUnlockService
+    private val codeUnlockService: CodeUnlockService,
+    private val memberJpaRepository: MemberJpaRepository
 ) {
 
 
@@ -207,6 +209,14 @@ class ChatService(
         requester: Member,
         chatSendRequest: ChatSendRequest,
     ): SavedChatDto {
+        val findMemberWithProfileAndQuestion =
+            memberJpaRepository.findMemberWithProfileAndQuestion(requester.getIdOrThrow())
+
+        if(findMemberWithProfileAndQuestion == null){
+            throw ChatException(HttpStatus.BAD_REQUEST, "회원을 찾을 수 없습니다.")
+        }
+
+
         // 메시지 전송 가능 여부 확인
         validateCanSendMessage(chatRoomId, requester)
         
@@ -232,13 +242,13 @@ class ChatService(
         
         // 발송자용 채팅방 응답 (본인 기준 읽지 않은 수)
         val requesterChatRoomResponse = ChatRoomResponse.toResponse(
-            chatRoom, requester, savedChat.getIdOrThrow(), partner, 
+            chatRoom, requester, savedChat.getIdOrThrow(), findMemberWithProfileAndQuestion,
             requesterUnReadCount
         )
         
         // 수신자용 채팅방 응답 (상대방 기준 읽지 않은 수 - 새 메시지로 인해 증가)
         val partnerChatRoomResponse = ChatRoomResponse.toResponse(
-            chatRoom, partner, null, requester, 
+            chatRoom, partner, null, findMemberWithProfileAndQuestion,
             partnerUnReadCount
         )
 
