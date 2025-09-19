@@ -34,7 +34,7 @@ class MemberRepository(
     fun findMember(memberId: Long): Member = findMemberById(memberId)
 
     private fun findMemberById(memberId: Long) =
-        memberJpaRepository.findByIdOrNull(memberId) ?: throw MemberException(
+        memberJpaRepository.findMemberWithProfileAndQuestion(memberId) ?: throw MemberException(
             HttpStatus.BAD_REQUEST,
             "해당 id에 일치하는 멤버가 없습니다.",
         )
