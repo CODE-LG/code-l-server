@@ -84,7 +84,7 @@ interface ChatJpaRepository : JpaRepository<Chat, Long> {
     SELECT c
         FROM Chat c
         WHERE c.chatRoom = :chatRoom
-        AND c.id <= :lastChatId
+        AND c.id < :lastChatId
         ORDER BY c.id DESC 
     """)
     fun findPrevChats(
