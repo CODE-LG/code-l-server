@@ -28,9 +28,8 @@ interface CodeUnlockRequestJpaRepository : JpaRepository<CodeUnlockRequest, Long
         SELECT cur FROM CodeUnlockRequest cur 
         WHERE cur.chatRoom.id = :chatRoomId 
         ORDER BY cur.requestedAt DESC
-        LIMIT 1
     """)
-    fun findLatestByChatRoomId(chatRoomId: Long): CodeUnlockRequest?
+    fun findLatestByChatRoomId(chatRoomId: Long): List<CodeUnlockRequest>
 
     /**
      * ID로 코드해제 요청 조회 (2단계에서 사용)
@@ -40,9 +39,8 @@ interface CodeUnlockRequestJpaRepository : JpaRepository<CodeUnlockRequest, Long
     @Query("""
         SELECT cur FROM CodeUnlockRequest cur
         WHERE cur.chatRoom.id = :chatRoomId
-        AND cur.status = "PENDING"
+        AND cur.status = 'PENDING'
         ORDER BY cur.requestedAt DESC
-        LIMIT 1
     """)
-    fun findLatestPendingByChatRoomId(chatRoomId: Any) : CodeUnlockRequest?
+    fun findLatestPendingByChatRoomId(chatRoomId: Any) : List<CodeUnlockRequest>
 }
