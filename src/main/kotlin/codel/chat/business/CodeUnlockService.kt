@@ -6,6 +6,7 @@ import codel.chat.infrastructure.CodeUnlockRequestJpaRepository
 import codel.chat.infrastructure.ChatJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.chat.repository.ChatRoomRepository
+import codel.config.Loggable
 import codel.member.domain.Member
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -19,17 +20,20 @@ class CodeUnlockService(
     private val chatJpaRepository: ChatJpaRepository,
     private val policyService: CodeUnlockPolicyService,
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository
-) {
+) : Loggable{
 
     /**
      * 코드해제 요청 (1단계)
      */
     fun requestUnlock(chatRoomId: Long, requester: Member): CodeUnlockRequest {
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
-        
+        val findPartnerChatRoomMember =
+            chatRoomMemberJpaRepository.findByChatRoomIdAndMemberNot(chatRoomId, requester) ?: throw UnlockException(
+                HttpStatus.BAD_REQUEST, "상대방의 정보를 찾을 수 없습니다."
+            )
         // 정책 검증
-        policyService.validateCanRequest(chatRoom, requester)
-        
+        policyService.validateCanRequest(chatRoom, requester, findPartnerChatRoomMember.member)
+
         // 요청 생성
         val unlockRequest = CodeUnlockRequest(
             chatRoom = chatRoom,
@@ -58,7 +62,12 @@ class CodeUnlockService(
     @Transactional(readOnly = true)
     fun getUnlockInfo(chatRoom: ChatRoom, requester: Member): UnlockInfo {
         val isUnlocked = chatRoom.isUnlocked
-        val canRequest = policyService.canRequest(chatRoom, requester)
+        val findPartner =
+            chatRoomMemberJpaRepository.findByChatRoomIdAndMemberNot(chatRoom.getIdOrThrow(), requester) ?: throw UnlockException(
+                HttpStatus.BAD_REQUEST, "상대방의 정보를 찾을 수 없습니다."
+            )
+
+        val canRequest = policyService.canRequest(chatRoom, requester, findPartner.member)
 
         val currentRequest = codeUnlockRequestRepository.findLatestPendingByChatRoomId(chatRoom.getIdOrThrow()).firstOrNull()
 
