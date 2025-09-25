@@ -16,19 +16,28 @@ class CodeUnlockPolicyService(
     /**
      * 코드해제 요청 가능 여부 검증
      */
-    fun validateCanRequest(chatRoom: ChatRoom, requester: Member) {
+    fun validateCanRequest(chatRoom: ChatRoom, requester: Member, partner: Member) {
         // 1. 이미 해제된 경우
         if (chatRoom.isUnlocked) {
             throw ChatException(HttpStatus.BAD_REQUEST, "이미 코드가 해제된 채팅방입니다.")
         }
 
         // 2. 진행 중인 요청이 있는 경우
-        val existingRequest = codeUnlockRequestRepository.findPendingRequestByRequester(
+        val prevCodeExchangeRequestByMe = codeUnlockRequestRepository.findPendingRequestByRequester(
             chatRoom.getIdOrThrow(), 
             requester
         )
-        if (existingRequest != null) {
+        if (prevCodeExchangeRequestByMe != null) {
             throw ChatException(HttpStatus.BAD_REQUEST, "이미 코드해제 요청을 보낸 상태입니다.")
+        }
+
+        val prevCodeExchangeRequestByPartner = codeUnlockRequestRepository.findPendingRequestByRequester(
+            chatRoom.getIdOrThrow(),
+            partner
+        )
+
+        if (prevCodeExchangeRequestByPartner != null) {
+            throw ChatException(HttpStatus.BAD_REQUEST, "상대방으로부터 코드해제 요청을 받은 상태입니다.")
         }
 
         // 3. 채팅방 상태 검증
@@ -40,9 +49,9 @@ class CodeUnlockPolicyService(
     /**
      * 요청 가능 여부 확인 (예외 발생 없음)
      */
-    fun canRequest(chatRoom: ChatRoom, requester: Member): Boolean {
+    fun canRequest(chatRoom: ChatRoom, requester: Member, partner : Member): Boolean {
         return try {
-            validateCanRequest(chatRoom, requester)
+            validateCanRequest(chatRoom, requester, partner)
             true
         } catch (e: ChatException) {
             false
