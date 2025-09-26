@@ -502,8 +502,8 @@ class MemberService(
     /**
      * 회원 탈퇴 처리
      */
-    fun withdrawMember(member: Member) {
-        member.withdraw()
+    fun withdrawMember(member: Member, reason :  String) {
+        member.withdraw(reason)
         memberRepository.updateMember(member)
         
         // TODO: JWT 토큰 블랙리스트 처리 고려

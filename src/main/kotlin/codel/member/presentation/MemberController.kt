@@ -5,6 +5,7 @@ import codel.config.argumentresolver.LoginMember
 import codel.member.business.MemberService
 import codel.member.domain.Member
 import codel.member.presentation.request.MemberLoginRequest
+import codel.member.presentation.request.WithdrawnRequest
 import codel.member.presentation.response.*
 import codel.member.presentation.swagger.MemberControllerSwagger
 import org.springframework.data.domain.Page
@@ -81,8 +82,9 @@ class MemberController(
     @DeleteMapping("/v1/member/me")
     override fun withdrawMember(
         @LoginMember member: Member,
+        @RequestBody request : WithdrawnRequest
     ): ResponseEntity<Void> {
-        memberService.withdrawMember(member)
+        memberService.withdrawMember(member, request.reason)
         return ResponseEntity.noContent().build()
     }
 }
