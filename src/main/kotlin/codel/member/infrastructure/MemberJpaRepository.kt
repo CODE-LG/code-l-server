@@ -150,4 +150,80 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
         WHERE m.createdAt >= :startDate
     """)
     fun getRecentSignupCount(@Param("startDate") startDate: LocalDateTime): Long
+    
+    // ========== 추천 시스템용 버킷 쿼리 ==========
+    
+    /**
+     * B1 버킷: 동일한 mainRegion과 subRegion을 가진 사용자들 조회
+     * 타이브레이커: 최근 접속순 → 가입일 최신순
+     */
+    @EntityGraph(attributePaths = ["profile", "profile.representativeQuestion"])
+    @Query("""
+        SELECT m
+        FROM Member m JOIN m.profile p
+        WHERE m.memberStatus = 'DONE'
+          AND p.bigCity = :mainRegion
+          AND p.smallCity = :subRegion
+          AND m.id NOT IN :excludeIds
+        ORDER BY m.updatedAt DESC, m.createdAt DESC
+    """)
+    fun findByMainRegionAndSubRegionAndStatusDone(
+        @Param("mainRegion") mainRegion: String,
+        @Param("subRegion") subRegion: String,
+        @Param("excludeIds") excludeIds: Set<Long>
+    ): List<Member>
+    
+    /**
+     * B2 버킷: 동일한 mainRegion이지만 다른 subRegion을 가진 사용자들 조회
+     * 타이브레이커: 최근 접속순 → 가입일 최신순
+     */
+    @EntityGraph(attributePaths = ["profile", "profile.representativeQuestion"])
+    @Query("""
+        SELECT m
+        FROM Member m JOIN m.profile p
+        WHERE m.memberStatus = 'DONE'
+          AND p.bigCity = :mainRegion
+          AND p.smallCity != :excludeSubRegion
+          AND m.id NOT IN :excludeIds
+        ORDER BY m.updatedAt DESC, m.createdAt DESC
+    """)
+    fun findByMainRegionAndNotSubRegionAndStatusDone(
+        @Param("mainRegion") mainRegion: String,
+        @Param("excludeSubRegion") excludeSubRegion: String,
+        @Param("excludeIds") excludeIds: Set<Long>
+    ): List<Member>
+    
+    /**
+     * B3 버킷: 특정 mainRegion 목록에 속하는 사용자들 조회 (인접 지역)
+     * 타이브레이커: 최근 접속순 → 가입일 최신순
+     */
+    @EntityGraph(attributePaths = ["profile", "profile.representativeQuestion"])
+    @Query("""
+        SELECT m
+        FROM Member m JOIN m.profile p
+        WHERE m.memberStatus = 'DONE'
+          AND p.bigCity IN :adjacentRegions
+          AND m.id NOT IN :excludeIds
+        ORDER BY m.updatedAt DESC, m.createdAt DESC
+    """)
+    fun findByAdjacentMainRegionsAndStatusDone(
+        @Param("adjacentRegions") adjacentRegions: List<String>,
+        @Param("excludeIds") excludeIds: Set<Long>
+    ): List<Member>
+    
+    /**
+     * B4 버킷: 전국 범위에서 랜덤하게 사용자들 조회 (최후 보충)
+     * 랜덤 정렬로 공정성 보장
+     */
+    @EntityGraph(attributePaths = ["profile", "profile.representativeQuestion"])
+    @Query("""
+        SELECT m
+        FROM Member m JOIN m.profile p
+        WHERE m.memberStatus = 'DONE'
+          AND m.id NOT IN :excludeIds
+        ORDER BY function('RAND')
+    """)
+    fun findByStatusDoneExcludingIds(
+        @Param("excludeIds") excludeIds: Set<Long>
+    ): List<Member>
 }
