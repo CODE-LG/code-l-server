@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import java.time.LocalDateTime
 import java.time.LocalDate
 
 /**
@@ -23,11 +24,11 @@ interface RecommendationHistoryJpaRepository : JpaRepository<RecommendationHisto
         SELECT rh.recommendedUser.id 
         FROM RecommendationHistory rh 
         WHERE rh.user = :user 
-        AND rh.recommendedDate >= :fromDate
+        AND rh.recommendedAt >= :fromDateTime
     """)
     fun findRecommendedUserIdsInPeriod(
         @Param("user") user: Member,
-        @Param("fromDate") fromDate: LocalDate
+        @Param("fromDateTime") fromDateTime: LocalDateTime
     ): List<Long>
     
     /**
@@ -39,12 +40,12 @@ interface RecommendationHistoryJpaRepository : JpaRepository<RecommendationHisto
         FROM RecommendationHistory rh 
         WHERE rh.user = :user 
         AND rh.recommendationType = :type 
-        AND rh.recommendedDate >= :fromDate
+        AND rh.recommendedAt >= :fromDateTime
     """)
     fun findRecommendedUserIdsByTypeInPeriod(
         @Param("user") user: Member,
         @Param("type") type: RecommendationType,
-        @Param("fromDate") fromDate: LocalDate
+        @Param("fromDateTime") fromDateTime: LocalDateTime
     ): List<Long>
     
     /**
@@ -56,7 +57,7 @@ interface RecommendationHistoryJpaRepository : JpaRepository<RecommendationHisto
         FROM RecommendationHistory rh 
         WHERE rh.user = :user 
         AND rh.recommendationType = 'DAILY_CODE_MATCHING'
-        AND rh.recommendedDate = :today
+        AND DATE(rh.recommendedAt) = :today
         ORDER BY rh.createdAt ASC
     """)
     fun findTodayDailyCodeMatchingIds(
@@ -74,7 +75,7 @@ interface RecommendationHistoryJpaRepository : JpaRepository<RecommendationHisto
         WHERE rh.user = :user 
         AND rh.recommendationType = 'CODE_TIME'
         AND rh.recommendationTimeSlot = :timeSlot
-        AND rh.recommendedDate = :today
+        AND DATE(rh.recommendedAt) = :today
         ORDER BY rh.createdAt ASC
     """)
     fun findTodayCodeTimeIdsBySlot(
@@ -92,7 +93,7 @@ interface RecommendationHistoryJpaRepository : JpaRepository<RecommendationHisto
         FROM RecommendationHistory rh 
         WHERE rh.user = :user 
         AND rh.recommendationType = :type
-        AND rh.recommendedDate = :date
+        AND DATE(rh.recommendedAt) = :date
     """)
     fun existsByUserAndTypeAndDate(
         @Param("user") user: Member,
@@ -109,7 +110,7 @@ interface RecommendationHistoryJpaRepository : JpaRepository<RecommendationHisto
         WHERE rh.user = :user 
         AND rh.recommendationType = 'CODE_TIME'
         AND rh.recommendationTimeSlot = :timeSlot
-        AND rh.recommendedDate = :date
+        AND DATE(rh.recommendedAt) = :date
     """)
     fun existsByUserAndTimeSlotAndDate(
         @Param("user") user: Member,
@@ -121,7 +122,7 @@ interface RecommendationHistoryJpaRepository : JpaRepository<RecommendationHisto
      * 오래된 추천 이력 삭제 (성능 최적화용)
      * 배치 작업에서 사용하여 테이블 크기 관리
      */
-    fun deleteByRecommendedDateBefore(cutoffDate: LocalDate): Long
+    fun deleteByRecommendedAtBefore(cutoffDateTime: LocalDateTime): Long
 
     /**
      * 사용자별 추천 이력 삭제 (회원 탈퇴 시)
@@ -137,13 +138,13 @@ interface RecommendationHistoryJpaRepository : JpaRepository<RecommendationHisto
      * 통계를 위한 날짜별 추천 수 조회
      */
     @Query("""
-        SELECT rh.recommendedDate, COUNT(rh)
+        SELECT DATE(rh.recommendedAt), COUNT(rh)
         FROM RecommendationHistory rh 
-        WHERE rh.recommendedDate >= :fromDate
-        GROUP BY rh.recommendedDate
-        ORDER BY rh.recommendedDate DESC
+        WHERE rh.recommendedAt >= :fromDateTime
+        GROUP BY DATE(rh.recommendedAt)
+        ORDER BY DATE(rh.recommendedAt) DESC
     """)
-    fun countRecommendationsByDate(@Param("fromDate") fromDate: LocalDate): List<Array<Any>>
+    fun countRecommendationsByDate(@Param("fromDateTime") fromDateTime: LocalDateTime): List<Array<Any>>
 
     /**
      * 사용자별 총 추천 받은 횟수
@@ -161,12 +162,12 @@ interface RecommendationHistoryJpaRepository : JpaRepository<RecommendationHisto
     @Query("""
         SELECT rh.recommendedUser.id, COUNT(rh) as recommendCount
         FROM RecommendationHistory rh 
-        WHERE rh.recommendedDate >= :fromDate
+        WHERE rh.recommendedAt >= :fromDateTime
         GROUP BY rh.recommendedUser.id
         ORDER BY recommendCount DESC
     """)
     fun findMostRecommendedUsers(
-        @Param("fromDate") fromDate: LocalDate,
+        @Param("fromDateTime") fromDateTime: LocalDateTime,
         pageable: org.springframework.data.domain.Pageable
     ): List<Array<Any>>
 }

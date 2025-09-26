@@ -3,7 +3,7 @@ package codel.recommendation.domain
 import codel.common.domain.BaseTimeEntity
 import codel.member.domain.Member
 import jakarta.persistence.*
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  * 추천 이력 관리 엔티티
@@ -11,11 +11,11 @@ import java.time.LocalDate
  */
 @Entity
 @Table(
-    name = "recommendation_histories",
+    name = "recommendation_history",
     indexes = [
-        Index(name = "idx_user_recommended_date", columnList = "user_id,recommended_user_id,recommended_date"),
-        Index(name = "idx_user_date", columnList = "user_id,recommended_date"),
-        Index(name = "idx_recommended_date", columnList = "recommended_date")
+        Index(name = "idx_user_recommended_at", columnList = "user_id,recommended_user_id,recommended_at"),
+        Index(name = "idx_user_recommended_at_only", columnList = "user_id,recommended_at"),
+        Index(name = "idx_recommended_at", columnList = "recommended_at")
     ]
 )
 class RecommendationHistory(
@@ -38,10 +38,10 @@ class RecommendationHistory(
     val recommendedUser: Member,
 
     /**
-     * 추천된 날짜
+     * 추천된 시각
      */
-    @Column(name = "recommended_date", nullable = false)
-    val recommendedDate: LocalDate,
+    @Column(name = "recommended_at", nullable = false)
+    val recommendedAt: LocalDateTime,
 
     /**
      * 추천 타입 (오늘의 코드매칭 or 코드타임)
