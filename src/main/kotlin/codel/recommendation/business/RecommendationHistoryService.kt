@@ -38,6 +38,7 @@ class RecommendationHistoryService(
      * @param timeSlot 코드타임의 경우 시간대 정보 (예: "10:00", "22:00")
      * @param dateTime 추천 시각 (기본값: 현재 시각)
      */
+    @Transactional(readOnly = false)
     fun saveRecommendationHistory(
         user: Member,
         recommendedUsers: List<Member>,
@@ -250,6 +251,7 @@ class RecommendationHistoryService(
      * @param user 삭제할 사용자
      * @return 삭제된 이력 수
      */
+    @Transactional(readOnly = false)
     fun deleteAllHistoryForUser(user: Member): Long {
         val deletedCount = recommendationHistoryJpaRepository.deleteByUser(user) + 
                           recommendationHistoryJpaRepository.deleteByRecommendedUser(user)
@@ -269,6 +271,7 @@ class RecommendationHistoryService(
      * @param cutoffDays 보관 기간 (일) - 이보다 오래된 이력 삭제
      * @return 삭제된 이력 수
      */
+    @Transactional(readOnly = false)
     fun cleanupOldHistories(cutoffDays: Int = 90): Long {
         val cutoffDateTime = LocalDateTime.now().minusDays(cutoffDays.toLong())
         

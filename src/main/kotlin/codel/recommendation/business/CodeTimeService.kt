@@ -202,23 +202,15 @@ class CodeTimeService(
     }
     
     fun getNextTimeSlot(): String? {
+        // 간단한 하드코딩된 로직으로 임시 해결
         val currentTime = LocalTime.now()
+        val currentHour = currentTime.hour
         
-        val sortedSlots = config.codeTimeSlots.sortedBy { timeSlot ->
-            val parts = timeSlot.split(":")
-            LocalTime.of(parts[0].toInt(), parts[1].toInt())
+        return when {
+            currentHour < 10 -> "10:00"
+            currentHour < 22 -> "22:00" 
+            else -> "10:00" // 다음날 10:00
         }
-        
-        for (timeSlot in sortedSlots) {
-            val parts = timeSlot.split(":")
-            val slotTime = LocalTime.of(parts[0].toInt(), parts[1].toInt())
-            
-            if (slotTime.isAfter(currentTime)) {
-                return timeSlot
-            }
-        }
-        
-        return sortedSlots.firstOrNull()
     }
     
     fun hasCodeTimeHistory(
