@@ -183,4 +183,40 @@ class RecommendationBucketService(
         
         return stats
     }
+    
+    /**
+     * ID 목록으로부터 Member 객체들을 조회합니다.
+     * 추천 이력에서 실제 Member 객체를 가져올 때 사용합니다.
+     * 
+     * @param memberIds 조회할 Member ID 목록
+     * @return ID 순서대로 정렬된 Member 목록 (존재하지 않는 ID는 제외)
+     */
+    fun getMembersByIds(memberIds: List<Long>): List<Member> {
+        if (memberIds.isEmpty()) {
+            return emptyList()
+        }
+        
+        // ID 목록으로 Member들 조회
+        val membersMap = memberJpaRepository.findAllById(memberIds)
+            .associateBy { it.getIdOrThrow() }
+        
+        // 원본 순서 유지하면서 존재하는 Member만 반환
+        val result = memberIds.mapNotNull { id ->
+            membersMap[id]
+        }
+        
+        if (result.size != memberIds.size) {
+            logger.warn { 
+                "일부 Member ID가 존재하지 않음 - requested: ${memberIds.size}개, " +
+                "found: ${result.size}개, missing: ${memberIds - result.map { it.getIdOrThrow() }.toSet()}" 
+            }
+        }
+        
+        logger.debug { 
+            "Member ID 목록 조회 완료 - requested: ${memberIds.size}개, " +
+            "found: ${result.size}개" 
+        }
+        
+        return result
+    }
 }
