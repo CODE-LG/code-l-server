@@ -60,9 +60,11 @@ interface MemberControllerSwagger {
         @Parameter(hidden = true) @LoginMember member: Member,
     ): ResponseEntity<FullProfileResponse>
 
+    @Deprecated("Use /api/v1/recommendations/daily-code-matching instead")
     @Operation(
-        summary = "홈 코드 추천 매칭 조회",
-        description = "코드 추천 매칭 목록을 받습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
+        summary = "[Deprecated] 홈 코드 추천 매칭 조회", 
+        description = "⚠️ DEPRECATED: /api/v1/recommendations/daily-code-matching을 사용하세요. " +
+                     "코드 추천 매칭 목록을 받습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
     )
     @ApiResponses(
         value = [
@@ -75,9 +77,11 @@ interface MemberControllerSwagger {
         @Parameter(hidden = true) @LoginMember member: Member,
     ): ResponseEntity<MemberRecommendResponse>
 
+    @Deprecated("Use /api/v1/recommendations/random instead")
     @Operation(
-        summary = "홈 파도타기 조회",
-        description = "홈 파도 타기 목록을 받습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
+        summary = "[Deprecated] 홈 파도타기 조회",
+        description = "⚠️ DEPRECATED: /api/v1/recommendations/random을 사용하세요. " +
+                     "홈 파도 타기 목록을 받습니다. (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)"
     )
     @ApiResponses(
         value = [

@@ -3,6 +3,8 @@ package codel.recommendation.presentation.swagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import codel.recommendation.presentation.response.*
+import codel.member.presentation.response.MemberRecommendResponse
+import codel.member.presentation.response.FullProfileResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -10,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -65,4 +68,38 @@ interface RecommendationSwagger {
     
     @Operation(summary = "시스템 헬스체크", description = "추천 시스템의 전반적인 상태를 확인합니다.")
     fun getSystemHealthCheck(): ResponseEntity<Map<String, Any>>
+    
+    // ===== Legacy API 호환성 (Deprecated) =====
+    
+    @Deprecated("Use getDailyCodeMatching instead")
+    @Operation(
+        summary = "[Deprecated] 홈 코드 추천 매칭 조회", 
+        description = "⚠️ DEPRECATED: /api/v1/recommendations/daily-code-matching을 사용하세요."
+    )
+    fun legacyRecommendMembers(
+        @LoginMember member: Member
+    ): ResponseEntity<MemberRecommendResponse>
+    
+    @Deprecated("Use getRandomMembers instead") 
+    @Operation(
+        summary = "[Deprecated] 홈 파도타기 조회",
+        description = "⚠️ DEPRECATED: /api/v1/recommendations/random을 사용하세요."
+    )
+    fun legacyGetRandomMembers(
+        @LoginMember member: Member,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "8") size: Int
+    ): ResponseEntity<Page<FullProfileResponse>>
+    
+    // ===== 새로운 통합 추천 API =====
+    
+    @Operation(
+        summary = "랜덤 회원 추천 (파도타기)", 
+        description = "페이지네이션을 지원하는 랜덤 회원 추천을 제공합니다."
+    )
+    fun getRandomMembers(
+        @LoginMember member: Member,
+        @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") page: Int,
+        @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "8") size: Int
+    ): ResponseEntity<Page<FullProfileResponse>>
 }

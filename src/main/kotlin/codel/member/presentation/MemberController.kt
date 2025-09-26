@@ -46,6 +46,7 @@ class MemberController(
     }
 
     @GetMapping("/v1/member/recommend")
+    @Deprecated("Use /api/v1/recommendations/daily-code-matching or /api/v1/recommendations/legacy/recommend instead")
     override fun recommendMembers(
         @LoginMember member: Member,
     ): ResponseEntity<MemberRecommendResponse> {
@@ -54,6 +55,7 @@ class MemberController(
     }
 
     @GetMapping("/v1/member/all")
+    @Deprecated("Use /api/v1/recommendations/random or /api/v1/recommendations/legacy/all instead")
     override fun getRecommendMemberAtTenHourCycle(
         @LoginMember member: Member,
         @RequestParam(defaultValue = "0") page: Int,

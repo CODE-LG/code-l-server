@@ -5,6 +5,8 @@ import codel.member.domain.Member
 import codel.recommendation.domain.CodeTimeRecommendationResult
 import codel.recommendation.domain.RecommendationConfig
 import codel.recommendation.domain.RecommendationType
+import codel.member.business.MemberService
+import org.springframework.data.domain.Page
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -26,6 +28,7 @@ class RecommendationService(
     private val codeTimeService: CodeTimeService,
     private val bucketService: RecommendationBucketService,
     private val historyService: RecommendationHistoryService,
+    private val memberService: MemberService,
     private val config: RecommendationConfig
 ) : Loggable {
     
@@ -277,6 +280,24 @@ class RecommendationService(
             "configuredTimeSlots" to config.codeTimeSlots,
             "recommendationSettings" to getRecommendationSettings()
         )
+    }
+    
+    /**
+     * 랜덤 추천 (파도타기) - 기존 MemberService와의 호환성 유지
+     * 
+     * @param user 추천을 받을 사용자  
+     * @param page 페이지 번호
+     * @param size 페이지 크기
+     * @return 랜덤 추천 결과 (페이징)
+     */
+    @Transactional(readOnly = false)
+    fun getRandomMembers(user: Member, page: Int, size: Int): Page<Member> {
+        log.info { 
+            "랜덤 추천 (파도타기) 요청 - userId: ${user.getIdOrThrow()}, " +
+            "page: $page, size: $size" 
+        }
+        
+        return memberService.getRandomMembers(user, page, size)
     }
 }
 

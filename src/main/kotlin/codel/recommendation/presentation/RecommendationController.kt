@@ -7,6 +7,9 @@ import codel.recommendation.business.RecommendationService
 import codel.recommendation.domain.RecommendationType
 import codel.recommendation.presentation.response.*
 import codel.recommendation.presentation.swagger.RecommendationSwagger
+import codel.member.presentation.response.MemberRecommendResponse
+import codel.member.presentation.response.FullProfileResponse
+import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -189,5 +192,61 @@ class RecommendationController(
         log.info { "시스템 헬스체크 API 응답 - status: ${healthCheck["systemStatus"]}" }
         
         return ResponseEntity.ok(healthCheck)
+    }
+    
+    // ===== 기존 MemberController API 호환성을 위한 Deprecated 엔드포인트들 =====
+    
+    @GetMapping("/legacy/recommend") 
+    @Deprecated("Use GET /api/v1/recommendations/daily-code-matching instead", ReplaceWith("getDailyCodeMatching"))
+    override fun legacyRecommendMembers(
+        @LoginMember member: Member
+    ): ResponseEntity<MemberRecommendResponse> {
+        log.warn { "Deprecated API 호출 - /api/v1/recommendations/legacy/recommend - userId: ${member.getIdOrThrow()}" }
+        
+        // Deprecated API이므로 빈 응답 반환하고 새로운 API 사용을 권장
+        return ResponseEntity.ok(MemberRecommendResponse(emptyList()))
+    }
+    
+    @GetMapping("/legacy/all")
+    @Deprecated("Use GET /api/v1/recommendations/random instead", ReplaceWith("getRandomMembers"))
+    override fun legacyGetRandomMembers(
+        @LoginMember member: Member,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "8") size: Int
+    ): ResponseEntity<Page<FullProfileResponse>> {
+        log.warn { 
+            "Deprecated API 호출 - /api/v1/recommendations/legacy/all - userId: ${member.getIdOrThrow()}, " +
+            "page: $page, size: $size" 
+        }
+        
+        // Deprecated API이므로 새로운 API로 리디렉션
+        return getRandomMembers(member, page, size)
+    }
+    
+    // ===== 새로운 통합 추천 API들 =====
+    
+    @GetMapping("/random")
+    override fun getRandomMembers(
+        @LoginMember member: Member,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "8") size: Int
+    ): ResponseEntity<Page<FullProfileResponse>> {
+        log.info { 
+            "랜덤 추천 (파도타기) API 호출 - userId: ${member.getIdOrThrow()}, " +
+            "page: $page, size: $size" 
+        }
+        
+        val memberPage = recommendationService.getRandomMembers(member, page, size)
+        
+        log.info { 
+            "랜덤 추천 (파도타기) API 응답 - userId: ${member.getIdOrThrow()}, " +
+            "totalElements: ${memberPage.totalElements}, currentPage: ${memberPage.number}" 
+        }
+        
+        return ResponseEntity.ok(
+            memberPage.map { memberEntity ->
+                FullProfileResponse.createOpen(memberEntity)
+            }
+        )
     }
 }
