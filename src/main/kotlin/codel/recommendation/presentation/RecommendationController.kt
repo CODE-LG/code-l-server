@@ -25,7 +25,7 @@ class RecommendationController(
     private val recommendationService: RecommendationService
 ) : RecommendationSwagger, Loggable {
     @GetMapping
-    override fun getRecommendation(
+    fun getRecommendation(
         @LoginMember member: Member,
         @RequestParam(defaultValue = "false") preferCodeTime: Boolean
     ): ResponseEntity<RecommendationResponse> {
@@ -85,7 +85,7 @@ class RecommendationController(
     }
 
     @GetMapping("/code-time")
-    override fun getCodeTime(
+    fun getCodeTime(
         @LoginMember member: Member
     ): ResponseEntity<CodeTimeResponse> {
         log.info { "코드타임 API 호출 - userId: ${member.getIdOrThrow()}" }
@@ -103,7 +103,7 @@ class RecommendationController(
     }
 
     @GetMapping("/code-time/{timeSlot}")
-    override fun getCodeTimeBySlot(
+    fun getCodeTimeBySlot(
         @LoginMember member: Member,
         @PathVariable timeSlot: String
     ): ResponseEntity<CodeTimeResponse> {
@@ -121,7 +121,7 @@ class RecommendationController(
     }
 
     @GetMapping("/overview")
-    override fun getRecommendationOverview(
+    fun getRecommendationOverview(
         @LoginMember member: Member
     ): ResponseEntity<RecommendationOverviewResponse> {
         log.info { "추천 현황 종합 조회 API 호출 - userId: ${member.getIdOrThrow()}" }
@@ -139,7 +139,7 @@ class RecommendationController(
     }
 
     @GetMapping("/settings")
-    override fun getRecommendationSettings(): ResponseEntity<Map<String, Any>> {
+    fun getRecommendationSettings(): ResponseEntity<Map<String, Any>> {
         log.info { "추천 시스템 설정 조회 API 호출" }
 
         val settings = recommendationService.getRecommendationSettings()
@@ -150,7 +150,7 @@ class RecommendationController(
     }
 
     @PostMapping("/refresh")
-    override fun forceRefreshRecommendation(
+    fun forceRefreshRecommendation(
         @LoginMember member: Member,
         @RequestParam type: String,
         @RequestParam(required = false) timeSlot: String?
@@ -209,7 +209,7 @@ class RecommendationController(
     }
 
     @GetMapping("/health")
-    override fun getSystemHealthCheck(): ResponseEntity<Map<String, Any>> {
+    fun getSystemHealthCheck(): ResponseEntity<Map<String, Any>> {
         log.info { "시스템 헬스체크 API 호출" }
 
         val healthCheck = recommendationService.getSystemHealthCheck()
