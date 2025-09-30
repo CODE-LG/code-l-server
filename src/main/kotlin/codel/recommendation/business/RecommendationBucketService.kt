@@ -5,6 +5,7 @@ import codel.member.infrastructure.MemberJpaRepository
 import codel.recommendation.domain.RecommendationConfig
 import org.springframework.stereotype.Service
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.transaction.annotation.Transactional
 
 /**
  * 추천 시스템의 4단계 버킷 정책을 구현하는 서비스
@@ -16,6 +17,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
  * - B4: 전국 범위 (최후 보충)
  */
 @Service
+@Transactional
 class RecommendationBucketService(
     private val memberJpaRepository: MemberJpaRepository,
     private val recommendationConfig: RecommendationConfig

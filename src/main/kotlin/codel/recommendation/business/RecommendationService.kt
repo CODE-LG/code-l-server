@@ -14,7 +14,7 @@ import java.time.LocalTime
 
 /**
  * 통합 추천 서비스
- * 
+ *
  * 주요 기능:
  * - 오늘의 코드매칭과 코드타임을 통합 관리
  * - 사용자 상황에 맞는 최적의 추천 제공
@@ -29,17 +29,18 @@ class RecommendationService(
     private val bucketService: RecommendationBucketService,
     private val historyService: RecommendationHistoryService,
     private val memberService: MemberService,
+    private val exclusionService: RecommendationExclusionService,
     private val config: RecommendationConfig
 ) : Loggable {
-    
+
     /**
      * 사용자의 현재 상황에 맞는 추천을 제공합니다.
-     * 
+     *
      * 우선순위:
      * 1. 현재 코드타임 활성화 시간대면 → 코드타임 추천
      * 2. 코드타임 비활성 시간대면 → 오늘의 코드매칭 추천
      * 3. 둘 다 있으면 사용자 선택에 따라 반환
-     * 
+     *
      * @param user 추천을 받을 사용자
      * @param preferCodeTime 코드타임을 우선적으로 원하는지 여부 (기본: false)
      * @return 통합 추천 결과
@@ -47,16 +48,16 @@ class RecommendationService(
     @Transactional(readOnly = false)
     fun getRecommendation(user: Member, preferCodeTime: Boolean = false): RecommendationResult {
         log.info { "통합 추천 요청 - userId: ${user.getIdOrThrow()}, preferCodeTime: $preferCodeTime" }
-        
+
         val currentTimeSlot = codeTimeService.getCurrentTimeSlot()
         val isCodeTimeActive = currentTimeSlot != null
-        
+
         return when {
             // 1. 코드타임 활성 시간대이고 사용자가 코드타임을 선호하는 경우
             isCodeTimeActive && preferCodeTime -> {
                 val codeTimeResult = codeTimeService.getCodeTimeRecommendation(user)
                 val dailyResult = dailyCodeMatchingService.getDailyCodeMatching(user)
-                
+
                 RecommendationResult(
                     primaryRecommendation = PrimaryRecommendation.CODE_TIME,
                     codeTimeResult = codeTimeResult,
@@ -64,12 +65,12 @@ class RecommendationService(
                     recommendationMessage = "현재 코드타임이 활성화되어 있습니다! (${currentTimeSlot})"
                 )
             }
-            
+
             // 2. 코드타임 활성 시간대이지만 오늘의 코드매칭을 선호하는 경우
             isCodeTimeActive && !preferCodeTime -> {
                 val dailyResult = dailyCodeMatchingService.getDailyCodeMatching(user)
                 val codeTimeResult = codeTimeService.getCodeTimeRecommendation(user)
-                
+
                 RecommendationResult(
                     primaryRecommendation = PrimaryRecommendation.DAILY_CODE_MATCHING,
                     codeTimeResult = codeTimeResult,
@@ -77,12 +78,12 @@ class RecommendationService(
                     recommendationMessage = "오늘의 코드매칭을 추천드립니다! (코드타임도 ${currentTimeSlot}에 이용 가능)"
                 )
             }
-            
+
             // 3. 코드타임 비활성 시간대 → 오늘의 코드매칭 위주
             !isCodeTimeActive -> {
                 val dailyResult = dailyCodeMatchingService.getDailyCodeMatching(user)
                 val nextTimeSlot = codeTimeService.getNextTimeSlot()
-                
+
                 RecommendationResult(
                     primaryRecommendation = PrimaryRecommendation.DAILY_CODE_MATCHING,
                     codeTimeResult = null,
@@ -94,11 +95,11 @@ class RecommendationService(
                     }
                 )
             }
-            
+
             else -> {
                 // 예외 상황: 기본적으로 오늘의 코드매칭 제공
                 val dailyResult = dailyCodeMatchingService.getDailyCodeMatching(user)
-                
+
                 RecommendationResult(
                     primaryRecommendation = PrimaryRecommendation.DAILY_CODE_MATCHING,
                     codeTimeResult = null,
@@ -108,23 +109,23 @@ class RecommendationService(
             }
         }
     }
-    
+
     /**
      * 오늘의 코드매칭만 조회합니다.
      * 기존 MemberService와의 호환성을 위한 메서드입니다.
-     * 
+     *
      * @param user 추천을 받을 사용자
      * @return 오늘의 코드매칭 결과
      */
-    @Transactional(readOnly = false)
+    @Transactional
     fun getDailyCodeMatching(user: Member): List<Member> {
         log.info { "오늘의 코드매칭 단독 요청 - userId: ${user.getIdOrThrow()}" }
         return dailyCodeMatchingService.getDailyCodeMatching(user)
     }
-    
+
     /**
      * 코드타임만 조회합니다.
-     * 
+     *
      * @param user 추천을 받을 사용자
      * @return 코드타임 결과
      */
@@ -133,43 +134,43 @@ class RecommendationService(
         log.info { "코드타임 단독 요청 - userId: ${user.getIdOrThrow()}" }
         return codeTimeService.getCodeTimeRecommendation(user)
     }
-    
+
     /**
      * 특정 시간대의 코드타임을 조회합니다.
-     * 
+     *
      * @param user 추천을 받을 사용자
      * @param timeSlot 조회할 시간대
      * @return 해당 시간대의 코드타임 결과
      */
     fun getCodeTimeBySlot(user: Member, timeSlot: String): CodeTimeRecommendationResult {
-        log.info { 
+        log.info {
             "특정 시간대 코드타임 요청 - userId: ${user.getIdOrThrow()}, " +
-            "timeSlot: $timeSlot" 
+            "timeSlot: $timeSlot"
         }
         return codeTimeService.getCodeTimeRecommendationBySlot(user, timeSlot)
     }
-    
+
     /**
      * 사용자의 추천 현황을 종합적으로 조회합니다.
-     * 
+     *
      * @param user 조회할 사용자
      * @return 종합 추천 현황
      */
     fun getRecommendationOverview(user: Member): RecommendationOverview {
         log.info { "추천 현황 종합 조회 - userId: ${user.getIdOrThrow()}" }
-        
+
         // 1. 오늘의 코드매칭 현황
         val hasDailyCodeMatching = dailyCodeMatchingService.hasTodayDailyCodeMatching(user)
         val dailyStats = dailyCodeMatchingService.getDailyCodeMatchingStats(user)
-        
+
         // 2. 코드타임 현황
         val codeTimeStats = codeTimeService.getCodeTimeStats(user)
         val allCodeTimeResults = codeTimeService.getAllTodayCodeTimeResults(user)
-        
+
         // 3. 현재 상태
         val currentTimeSlot = codeTimeService.getCurrentTimeSlot()
         val nextTimeSlot = codeTimeService.getNextTimeSlot()
-        
+
         // 4. 버킷 통계 (선택사항)
         val userProfile = user.profile
         val bucketStats = if (userProfile?.bigCity != null) {
@@ -181,7 +182,7 @@ class RecommendationService(
         } else {
             emptyMap()
         }
-        
+
         return RecommendationOverview(
             userId = user.getIdOrThrow(),
             hasDailyCodeMatching = hasDailyCodeMatching,
@@ -195,10 +196,10 @@ class RecommendationService(
             totalUniqueRecommendationCount = historyService.getTotalUniqueRecommendedCount(user)
         )
     }
-    
+
     /**
      * 추천 시스템 전체 설정을 조회합니다.
-     * 
+     *
      * @return 현재 추천 시스템 설정
      */
     fun getRecommendationSettings(): Map<String, Any> {
@@ -213,10 +214,10 @@ class RecommendationService(
             "currentDate" to LocalDate.now().toString()
         )
     }
-    
+
     /**
      * 추천 강제 새로고침 (관리자용)
-     * 
+     *
      * @param user 대상 사용자
      * @param type 새로고침할 추천 타입
      * @param timeSlot 코드타임인 경우 시간대
@@ -224,15 +225,15 @@ class RecommendationService(
      */
     @Transactional(readOnly = false)
     fun forceRefreshRecommendation(
-        user: Member, 
-        type: RecommendationType, 
+        user: Member,
+        type: RecommendationType,
         timeSlot: String? = null
     ): Any {
-        log.info { 
+        log.info {
             "추천 강제 새로고침 - userId: ${user.getIdOrThrow()}, " +
-            "type: $type, timeSlot: $timeSlot" 
+            "type: $type, timeSlot: $timeSlot"
         }
-        
+
         return when (type) {
             RecommendationType.DAILY_CODE_MATCHING -> {
                 dailyCodeMatchingService.forceRefreshDailyCodeMatching(user)
@@ -252,10 +253,10 @@ class RecommendationService(
             }
         }
     }
-    
+
     /**
      * 추천 이력 삭제 (회원 탈퇴 시 사용)
-     * 
+     *
      * @param user 삭제할 사용자
      * @return 삭제된 이력 수
      */
@@ -264,10 +265,10 @@ class RecommendationService(
         log.info { "추천 이력 전체 삭제 - userId: ${user.getIdOrThrow()}" }
         return historyService.deleteAllHistoryForUser(user)
     }
-    
+
     /**
      * 시스템 헬스체크용 메서드
-     * 
+     *
      * @return 추천 시스템 상태 정보
      */
     fun getSystemHealthCheck(): Map<String, Any> {
@@ -281,22 +282,37 @@ class RecommendationService(
             "recommendationSettings" to getRecommendationSettings()
         )
     }
-    
+
+    /**
+     * 제외 로직 통계 조회 (디버깅용)
+     *
+     * @param user 조회할 사용자
+     * @param type 추천 타입
+     * @return 제외 통계 정보
+     */
+    fun getExclusionStatistics(user: Member, type: RecommendationType): Map<String, Any> {
+        log.info {
+            "제외 통계 조회 - userId: ${user.getIdOrThrow()}, type: $type"
+        }
+
+        return exclusionService.getExclusionStatistics(user, type)
+    }
+
     /**
      * 랜덤 추천 (파도타기) - 기존 MemberService와의 호환성 유지
-     * 
-     * @param user 추천을 받을 사용자  
+     *
+     * @param user 추천을 받을 사용자
      * @param page 페이지 번호
      * @param size 페이지 크기
      * @return 랜덤 추천 결과 (페이징)
      */
     @Transactional(readOnly = false)
     fun getRandomMembers(user: Member, page: Int, size: Int): Page<Member> {
-        log.info { 
+        log.info {
             "랜덤 추천 (파도타기) 요청 - userId: ${user.getIdOrThrow()}, " +
-            "page: $page, size: $size" 
+            "page: $page, size: $size"
         }
-        
+
         return memberService.getRandomMembers(user, page, size)
     }
 }
