@@ -36,7 +36,7 @@ class ChatRoom(
     }
 
     fun reject(){
-        status = ChatRoomStatus.LOCKED
+        status = ChatRoomStatus.DISABLED
     }
 
     fun closeConversation() {
