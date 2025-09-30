@@ -41,7 +41,7 @@ class CodeTimeService(
         if (currentTimeSlot == null) {
             log.warn {
                 "코드타임 시간대가 아닙니다 - userId: ${user.getIdOrThrow()}, " +
-                "currentTime: ${LocalTime.now()}"
+                        "currentTime: ${LocalTime.now()}"
             }
             return CodeTimeRecommendationResult.createInactiveResult(getNextTimeSlot())
         }
@@ -51,17 +51,35 @@ class CodeTimeService(
 
         if (existingRecommendationIds.isNotEmpty()) {
             log.info {
-                "기존 코드타임 결과 재사용 - userId: ${user.getIdOrThrow()}, " +
-                "timeSlot: $currentTimeSlot, count: ${existingRecommendationIds.size}개"
+                "기존 코드타임 결과 존재 - userId: ${user.getIdOrThrow()}, " +
+                        "timeSlot: $currentTimeSlot, count: ${existingRecommendationIds.size}개"
             }
 
-            val members = bucketService.getMembersByIds(existingRecommendationIds)
-            return CodeTimeRecommendationResult(
-                timeSlot = currentTimeSlot,
-                members = members,
-                isActiveTime = true,
-                nextTimeSlot = getNextTimeSlot()
-            )
+            // 실시간 필터링: 차단/시그널 등으로 제외해야 할 사용자 제외
+            val filteredIds = filterExcludedMembers(user, existingRecommendationIds)
+
+            if (filteredIds.size != existingRecommendationIds.size) {
+                log.info {
+                    "실시간 필터링 적용 - userId: ${user.getIdOrThrow()}, " +
+                            "before: ${existingRecommendationIds.size}명, after: ${filteredIds.size}명, " +
+                            "filtered: ${existingRecommendationIds.size - filteredIds.size}명"
+                }
+            }
+
+            if (filteredIds.isNotEmpty()) {
+                val members = bucketService.getMembersByIds(filteredIds)
+                return CodeTimeRecommendationResult(
+                    timeSlot = currentTimeSlot,
+                    members = members,
+                    isActiveTime = true,
+                    nextTimeSlot = getNextTimeSlot()
+                )
+            }
+
+            // 모두 필터링되어 비어있으면 새로 생성
+            log.info {
+                "모든 추천이 필터링됨, 새로 생성 - userId: ${user.getIdOrThrow()}"
+            }
         }
 
         // 3. 새로운 추천 생성
@@ -80,7 +98,7 @@ class CodeTimeService(
 
         log.info {
             "새 코드타임 생성 완료 - userId: ${user.getIdOrThrow()}, " +
-            "timeSlot: $currentTimeSlot, count: ${newRecommendations.size}개"
+                    "timeSlot: $currentTimeSlot, count: ${newRecommendations.size}개"
         }
 
         return CodeTimeRecommendationResult(
@@ -89,6 +107,33 @@ class CodeTimeService(
             isActiveTime = true,
             nextTimeSlot = getNextTimeSlot()
         )
+    }
+
+    /**
+     * 기존 추천 목록에서 실시간으로 제외해야 할 사용자를 필터링합니다.
+     *
+     * @param user 기준 사용자
+     * @param memberIds 필터링할 사용자 ID 목록
+     * @return 필터링된 사용자 ID 목록
+     */
+    private fun filterExcludedMembers(user: Member, memberIds: List<Long>): List<Long> {
+        if (memberIds.isEmpty()) {
+            return emptyList()
+        }
+
+        val excludeIds = mutableSetOf<Long>()
+        excludeIds.addAll(exclusionService.getBlockedMemberIds(user))
+        excludeIds.addAll(exclusionService.getRecentSignalMemberIds(user))
+
+        val filteredIds = memberIds.filter { it !in excludeIds }
+
+        log.debug {
+            "실시간 필터링 - userId: ${user.getIdOrThrow()}, " +
+                    "original: ${memberIds.size}명, excluded: ${excludeIds.size}명, " +
+                    "result: ${filteredIds.size}명"
+        }
+
+        return filteredIds
     }
 
     /**

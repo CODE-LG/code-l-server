@@ -32,7 +32,7 @@ class DailyCodeMatchingService(
      *
      * 동작 원리:
      * 1. 기존 오늘 추천 이력 확인 (24시간 유지)
-     * 2. 기존 이력이 있으면 재사용 (성능 최적화)
+     * 2. 기존 이력이 있으면 실시간 필터링 후 반환 (차단/시그널 체크)
      * 3. 없으면 새로 생성 (버킷 정책 + 중복 방지)
      * 4. 생성된 추천 결과를 이력에 저장
      *
@@ -47,18 +47,36 @@ class DailyCodeMatchingService(
 
         if (existingRecommendationIds.isNotEmpty()) {
             log.info {
-                "기존 오늘의 코드매칭 결과 재사용 - userId: ${user.getIdOrThrow()}, " +
+                "기존 오늘의 코드매칭 결과 존재 - userId: ${user.getIdOrThrow()}, " +
                         "count: ${existingRecommendationIds.size}개"
             }
 
-            // 기존 추천 결과를 Member 객체로 변환하여 반환
-            return bucketService.getMembersByIds(existingRecommendationIds)
+            // 2. 실시간 필터링: 차단/시그널 등으로 제외해야 할 사용자 제외
+            val filteredIds = filterExcludedMembers(user, existingRecommendationIds)
+
+            if (filteredIds.size != existingRecommendationIds.size) {
+                log.info {
+                    "실시간 필터링 적용 - userId: ${user.getIdOrThrow()}, " +
+                            "before: ${existingRecommendationIds.size}명, after: ${filteredIds.size}명, " +
+                            "filtered: ${existingRecommendationIds.size - filteredIds.size}명"
+                }
+            }
+
+            // 3. 필터링된 결과 반환
+            if (filteredIds.isNotEmpty()) {
+                return bucketService.getMembersByIds(filteredIds)
+            }
+
+            // 4. 모두 필터링되어 비어있으면 새로 생성
+            log.info {
+                "모든 추천이 필터링됨, 새로 생성 - userId: ${user.getIdOrThrow()}"
+            }
         }
 
-        // 2. 새로운 추천 생성
+        // 5. 새로운 추천 생성
         val newRecommendations = generateNewDailyCodeMatching(user)
 
-        // 3. 추천 이력 저장
+        // 6. 추천 이력 저장
         if (newRecommendations.isNotEmpty()) {
             historyService.saveRecommendationHistory(
                 user = user,
@@ -75,6 +93,42 @@ class DailyCodeMatchingService(
         }
 
         return newRecommendations
+    }
+
+    /**
+     * 기존 추천 목록에서 실시간으로 제외해야 할 사용자를 필터링합니다.
+     *
+     * 제외 대상:
+     * - 차단한 사용자
+     * - 나를 차단한 사용자
+     * - 최근 시그널 보낸 사용자
+     *
+     * @param user 기준 사용자
+     * @param memberIds 필터링할 사용자 ID 목록
+     * @return 필터링된 사용자 ID 목록
+     */
+    private fun filterExcludedMembers(user: Member, memberIds: List<Long>): List<Long> {
+        if (memberIds.isEmpty()) {
+            return emptyList()
+        }
+
+        // 실시간 제외 대상 조회 (차단 + 시그널만)
+        val excludeIds = mutableSetOf<Long>()
+
+        // 1. 차단 관계
+        excludeIds.addAll(exclusionService.getBlockedMemberIds(user))
+
+
+        // 2. 필터링
+        val filteredIds = memberIds.filter { it !in excludeIds }
+
+        log.debug {
+            "실시간 필터링 - userId: ${user.getIdOrThrow()}, " +
+                    "original: ${memberIds.size}명, excluded: ${excludeIds.size}명, " +
+                    "result: ${filteredIds.size}명"
+        }
+
+        return filteredIds
     }
 
     /**
