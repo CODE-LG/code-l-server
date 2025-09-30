@@ -197,9 +197,10 @@ class RecommendationBucketService(
         }
         
         // ID 목록으로 Member들 조회
-        val membersMap = memberJpaRepository.findAllById(memberIds)
-            .associateBy { it.getIdOrThrow() }
-        
+        val members = memberJpaRepository.findAllByIdsWithProfileAndQuestion(memberIds)
+
+        val membersMap = members.associateBy { it.getIdOrThrow() }
+
         // 원본 순서 유지하면서 존재하는 Member만 반환
         val result = memberIds.mapNotNull { id ->
             membersMap[id]

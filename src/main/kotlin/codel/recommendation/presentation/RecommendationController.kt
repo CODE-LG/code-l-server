@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*
  * 기존 랜덤 추천을 대체하는 고도화된 추천 서비스
  */
 @RestController
-@RequestMapping("/api/v1/recommendations")
+@RequestMapping("/v1/recommendations")
 class RecommendationController(
     private val recommendationService: RecommendationService
 ) : RecommendationSwagger, Loggable {
@@ -48,15 +48,16 @@ class RecommendationController(
     @GetMapping("/daily-code-matching")
     override fun getDailyCodeMatching(
         @LoginMember member: Member
-    ): ResponseEntity<DailyCodeMatchingResponse> {
+    ): ResponseEntity<MemberRecommendResponse> {
         log.info { "오늘의 코드매칭 API 호출 - userId: ${member.getIdOrThrow()}" }
         
         val members = recommendationService.getDailyCodeMatching(member)
+
         val response = DailyCodeMatchingResponse.from(members)
         
         log.info { "오늘의 코드매칭 API 응답 - userId: ${member.getIdOrThrow()}, count: ${members.size}" }
         
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(MemberRecommendResponse.from(members))
     }
     
     @GetMapping("/code-time")

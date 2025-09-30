@@ -1,23 +1,29 @@
--- 추천 이력 관리 테이블
-CREATE TABLE IF NOT EXISTS recommendation_histories (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    recommended_user_id BIGINT NOT NULL,
-    recommended_date DATE NOT NULL,
-    recommendation_type VARCHAR(50) NOT NULL,
-    recommendation_time_slot VARCHAR(10),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+-- ===========================================================
+-- recommendation_history 테이블 생성
+-- ===========================================================
+CREATE TABLE IF NOT EXISTS `recommendation_history` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `user_id` BIGINT NOT NULL,
+    `recommended_user_id` BIGINT NOT NULL,
+    `recommended_at` DATETIME(6) NOT NULL,
+    `recommendation_type` ENUM('DAILY_CODE_MATCHING', 'CODE_TIME') NOT NULL,
+    `recommendation_time_slot` VARCHAR(50) NULL,
+    `created_at` DATETIME(6) DEFAULT NULL,
+    `updated_at` DATETIME(6) DEFAULT NULL,
+    PRIMARY KEY (`id`),
 
-    -- 인덱스 생성
-    INDEX idx_user_recommended_date (user_id, recommended_user_id, recommended_date),
-    INDEX idx_user_date (user_id, recommended_date),
-    INDEX idx_recommended_date (recommended_date),
+    CONSTRAINT `fk_recommendation_history_user`
+        FOREIGN KEY (`user_id`) REFERENCES `member`(`id`),
+    CONSTRAINT `fk_recommendation_history_recommended_user`
+        FOREIGN KEY (`recommended_user_id`) REFERENCES `member`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-    -- 외래키 제약조건 (MySQL에서는 members 테이블로)
-    FOREIGN KEY (user_id) REFERENCES members(id) ON DELETE CASCADE,
-    FOREIGN KEY (recommended_user_id) REFERENCES members(id) ON DELETE CASCADE
-);
+-- 인덱스 추가
+CREATE INDEX `idx_user_recommended_at`
+    ON `recommendation_history` (`user_id`, `recommended_user_id`, `recommended_at`);
 
--- 테이블 코멘트
-ALTER TABLE recommendation_histories COMMENT = '추천 이력 관리 테이블 - 중복 방지 및 추천 결과 추적';
+CREATE INDEX `idx_user_recommended_at_only`
+    ON `recommendation_history` (`user_id`, `recommended_at`);
+
+CREATE INDEX `idx_recommended_at`
+    ON `recommendation_history` (`recommended_at`);

@@ -38,7 +38,7 @@ interface RecommendationSwagger {
     @Operation(summary = "오늘의 코드매칭 조회", description = "24시간 유지되는 오늘의 코드매칭을 조회합니다.")
     fun getDailyCodeMatching(
         @LoginMember member: Member
-    ): ResponseEntity<DailyCodeMatchingResponse>
+    ): ResponseEntity<MemberRecommendResponse>
     
     @Operation(summary = "코드타임 조회", description = "현재 활성 시간대의 코드타임을 조회합니다.")
     fun getCodeTime(
