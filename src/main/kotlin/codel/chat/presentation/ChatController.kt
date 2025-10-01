@@ -145,7 +145,22 @@ class ChatController(
         @LoginMember requester : Member,
         @PathVariable chatRoomId: Long,
     ) : ResponseEntity<Unit> {
-        chatService.closeConversation(chatRoomId, requester)
+        val responseDto = chatService.closeConversation(chatRoomId, requester)
+
+        // 상대방에게는 읽지 않은 수가 증가된 채팅방 정보 전송
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${responseDto.partner.id}",
+            responseDto.partnerChatRoomResponse,
+        )
+
+        // 발송자에게는 본인 기준 채팅방 정보 전송
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${requester.id}",
+            responseDto.requesterChatRoomResponse,
+        )
+
+        // 채팅방 구독자들에게 실시간 메시지 전송
+        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", responseDto.chatResponse)
         return ResponseEntity.ok().build()
     }
 }
