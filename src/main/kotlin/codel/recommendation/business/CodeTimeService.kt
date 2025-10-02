@@ -5,6 +5,9 @@ import codel.member.domain.Member
 import codel.recommendation.domain.CodeTimeRecommendationResult
 import codel.recommendation.domain.RecommendationConfig
 import codel.recommendation.domain.RecommendationType
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -32,22 +35,40 @@ class CodeTimeService(
 
     /**
      * 코드타임 추천을 수행합니다.
+     * 
+     * 동작:
+     * - 현재 시간대(10:00 또는 22:00) 확인
+     * - 해당 시간대의 유효 기간 내 추천 이력 확인
+     * - 이력이 있으면 실시간 필터링 후 반환
+     * - 없으면 새로 생성
      */
-    fun getCodeTimeRecommendation(user: Member): CodeTimeRecommendationResult {
+    fun getCodeTimeRecommendation(user: Member,
+                                  page : Int,
+                                  size : Int
+    ): Page<Member> {
         log.info { "코드타임 추천 요청 - userId: ${user.getIdOrThrow()}" }
 
-        // 1. 현재 시간대 확인
+        // 1. 현재 시간대 확인 (항상 "10:00" 또는 "22:00" 반환)
         val currentTimeSlot = getCurrentTimeSlot()
-        if (currentTimeSlot == null) {
-            log.warn {
-                "코드타임 시간대가 아닙니다 - userId: ${user.getIdOrThrow()}, " +
-                        "currentTime: ${LocalTime.now()}"
-            }
-            return CodeTimeRecommendationResult.createInactiveResult(getNextTimeSlot())
+        
+        log.debug {
+            "현재 시간대: $currentTimeSlot - currentTime: ${LocalTime.now()}"
         }
 
-        // 2. 기존 해당 시간대 추천 결과 확인
-        val existingRecommendationIds = historyService.getTodayCodeTimeIds(user, currentTimeSlot)
+        // 2. 현재 시간대의 유효 기간 계산
+        val (startDateTime, endDateTime) = getValidTimeRange(currentTimeSlot)
+        
+        log.debug {
+            "유효 기간: $startDateTime ~ $endDateTime"
+        }
+
+        // 3. 유효 기간 내 추천 이력 확인
+        val existingRecommendationIds = historyService.getCodeTimeIdsByTimeRange(
+            user = user,
+            timeSlot = currentTimeSlot,
+            startDateTime = startDateTime,
+            endDateTime = endDateTime
+        )
 
         if (existingRecommendationIds.isNotEmpty()) {
             log.info {
@@ -55,7 +76,7 @@ class CodeTimeService(
                         "timeSlot: $currentTimeSlot, count: ${existingRecommendationIds.size}개"
             }
 
-            // 실시간 필터링: 차단/시그널 등으로 제외해야 할 사용자 제외
+            // 4. 실시간 필터링: 차단/시그널 등으로 제외해야 할 사용자 제외
             val filteredIds = filterExcludedMembers(user, existingRecommendationIds)
 
             if (filteredIds.size != existingRecommendationIds.size) {
@@ -68,12 +89,9 @@ class CodeTimeService(
 
             if (filteredIds.isNotEmpty()) {
                 val members = bucketService.getMembersByIds(filteredIds)
-                return CodeTimeRecommendationResult(
-                    timeSlot = currentTimeSlot,
-                    members = members,
-                    isActiveTime = true,
-                    nextTimeSlot = getNextTimeSlot()
-                )
+                val pageable = PageRequest.of(page, size)
+
+                return PageImpl(members, pageable, members.size.toLong())
             }
 
             // 모두 필터링되어 비어있으면 새로 생성
@@ -82,10 +100,10 @@ class CodeTimeService(
             }
         }
 
-        // 3. 새로운 추천 생성
+        // 5. 새로운 추천 생성
         val newRecommendations = generateNewCodeTimeRecommendation(user, currentTimeSlot)
 
-        // 4. 추천 이력 저장
+        // 6. 추천 이력 저장
         if (newRecommendations.isNotEmpty()) {
             historyService.saveRecommendationHistory(
                 user = user,
@@ -101,12 +119,50 @@ class CodeTimeService(
                     "timeSlot: $currentTimeSlot, count: ${newRecommendations.size}개"
         }
 
-        return CodeTimeRecommendationResult(
-            timeSlot = currentTimeSlot,
-            members = newRecommendations,
-            isActiveTime = true,
-            nextTimeSlot = getNextTimeSlot()
-        )
+//        return CodeTimeRecommendationResult(
+//            timeSlot = currentTimeSlot,
+//            members = newRecommendations,
+//            isActiveTime = true,
+//            nextTimeSlot = getNextTimeSlot()
+//        )
+        val pageable = PageRequest.of(page, size)
+
+        return PageImpl(newRecommendations, pageable, newRecommendations.size.toLong())
+
+    }
+    
+    /**
+     * 현재 시간대의 유효 기간을 계산합니다.
+     * 
+     * @param timeSlot 시간대 ("10:00" 또는 "22:00")
+     * @return Pair<시작시간, 종료시간>
+     */
+    private fun getValidTimeRange(timeSlot: String): Pair<LocalDateTime, LocalDateTime> {
+        val now = LocalDateTime.now()
+        val currentHour = now.hour
+        
+        return when (timeSlot) {
+            "10:00" -> {
+                // 10시 추천: 오늘 10시 ~ 오늘 22시 전
+                val start = now.toLocalDate().atTime(10, 0)
+                val end = now.toLocalDate().atTime(22, 0)
+                Pair(start, end)
+            }
+            "22:00" -> {
+                if (currentHour >= 22) {
+                    // 현재 22시 이후 → 오늘 22시 ~ 내일 10시 전
+                    val start = now.toLocalDate().atTime(22, 0)
+                    val end = now.toLocalDate().plusDays(1).atTime(10, 0)
+                    Pair(start, end)
+                } else {
+                    // 현재 22시 이전 (0~9시) → 어제 22시 ~ 오늘 10시 전
+                    val start = now.toLocalDate().minusDays(1).atTime(22, 0)
+                    val end = now.toLocalDate().atTime(10, 0)
+                    Pair(start, end)
+                }
+            }
+            else -> throw IllegalArgumentException("Invalid timeSlot: $timeSlot")
+        }
     }
 
     /**
@@ -228,13 +284,23 @@ class CodeTimeService(
         return exclusionService.getAllExcludedIds(user, RecommendationType.CODE_TIME)
     }
 
-    fun getCurrentTimeSlot(): String? {
+    /**
+     * 현재 활성 시간대를 반환합니다.
+     * 
+     * 로직:
+     * - 10:00 이후 ~ 22:00 전 → "10:00" (오전 추천)
+     * - 22:00 이후 ~ 다음날 10:00 전 → "22:00" (저녁 추천)
+     * 
+     * @return 현재 활성 시간대 ("10:00" 또는 "22:00")
+     */
+    fun getCurrentTimeSlot(): String {
         val currentTime = LocalTime.now()
         val currentHour = currentTime.hour
-        val currentMinute = currentTime.minute
-
-        return config.codeTimeSlots.find { timeSlot ->
-            RecommendationConfig.isWithinTimeSlot(currentHour, currentMinute, timeSlot)
+        
+        return if (currentHour >= 10 && currentHour < 22) {
+            "10:00"  // 10시 ~ 21시 59분 → 10시 추천
+        } else {
+            "22:00"  // 22시 ~ 다음날 9시 59분 → 22시 추천
         }
     }
 

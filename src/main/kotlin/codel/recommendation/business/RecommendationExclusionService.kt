@@ -45,7 +45,9 @@ class RecommendationExclusionService(
         val excludeIds = mutableSetOf<Long>()
 
         // 1. 본인 제외
-        excludeIds.add(user.getIdOrThrow())
+        val userId = user.getIdOrThrow()
+        excludeIds.add(userId)
+        logger.debug { "제외 - 본인: [$userId]" }
 
         // 2. 추천 이력 기반 중복 방지
         val historyExcludeIds = if (config.allowDuplicate) {
@@ -54,19 +56,30 @@ class RecommendationExclusionService(
             historyService.getExcludedUserIdsByType(user, type)
         }
         excludeIds.addAll(historyExcludeIds)
+        logger.debug {
+            "제외 - ${config.repeatAvoidDays}일 내 추천 이력: $historyExcludeIds (${historyExcludeIds.size}명)"
+        }
 
         // 3. 차단 관계
         val blockedIds = getBlockedMemberIds(user)
         excludeIds.addAll(blockedIds)
+        logger.debug {
+            "제외 - 차단 관계: $blockedIds (${blockedIds.size}명)"
+        }
 
         // 4. 최근 시그널 관계
         val signalIds = getRecentSignalMemberIds(user)
         excludeIds.addAll(signalIds)
-
         logger.debug {
+            "제외 - 7일 내 시그널: $signalIds (${signalIds.size}명)"
+        }
+
+        logger.info {
             "제외 대상 조회 완료 - userId: ${user.getIdOrThrow()}, " +
-                    "type: $type, total: ${excludeIds.size}개 " +
-                    "(history: ${historyExcludeIds.size}, blocked: ${blockedIds.size}, signal: ${signalIds.size})"
+                    "type: $type, 전체 제외: ${excludeIds.size}개 " +
+                    "(본인:1, history:${historyExcludeIds.size}, " +
+                    "blocked:${blockedIds.size}, signal:${signalIds.size}), " +
+                    "제외 ID 목록: $excludeIds"
         }
 
         return excludeIds

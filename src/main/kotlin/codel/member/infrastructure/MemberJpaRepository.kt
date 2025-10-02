@@ -227,8 +227,12 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
         @Param("excludeIds") excludeIds: Set<Long>
     ): List<Member>
 
-    // MemberJpaRepository.kt
-    @EntityGraph(attributePaths = ["profile", "profile.representativeQuestion"])
-    @Query("SELECT m FROM Member m WHERE m.id IN :ids")
+
+    @Query("""
+        SELECT m FROM Member m
+        JOIN FETCH m.profile p
+        JOIN FETCH p.representativeQuestion
+        WHERE m.id IN :ids
+    """)
     fun findAllByIdsWithProfileAndQuestion(@Param("ids") ids: List<Long>): List<Member>
 }

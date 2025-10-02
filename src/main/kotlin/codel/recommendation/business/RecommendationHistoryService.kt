@@ -173,6 +173,38 @@ class RecommendationHistoryService(
     }
     
     /**
+     * 시간 범위 내 코드타임 추천 사용자 ID를 조회합니다.
+     * 날짜가 바뀌는 경우(22시 추천이 다음날까지 유지)를 처리합니다.
+     * 
+     * @param user 추천을 받은 사용자
+     * @param timeSlot 시간대 (예: "10:00", "22:00")
+     * @param startDateTime 시작 시간 (포함)
+     * @param endDateTime 종료 시간 (미포함)
+     * @return 해당 시간 범위 내 추천받은 사용자 ID 목록
+     */
+    fun getCodeTimeIdsByTimeRange(
+        user: Member,
+        timeSlot: String,
+        startDateTime: LocalDateTime,
+        endDateTime: LocalDateTime
+    ): List<Long> {
+        val recommendedIds = recommendationHistoryJpaRepository.findCodeTimeIdsByTimeRange(
+            user = user,
+            timeSlot = timeSlot,
+            startDateTime = startDateTime,
+            endDateTime = endDateTime
+        )
+        
+        log.debug {
+            "코드타임 범위 조회 - userId: ${user.getIdOrThrow()}, " +
+            "timeSlot: $timeSlot, range: $startDateTime ~ $endDateTime, " +
+            "count: ${recommendedIds.size}개"
+        }
+        
+        return recommendedIds
+    }
+    
+    /**
      * 추천 이력이 존재하는지 확인합니다.
      * 추천 생성 여부를 판단할 때 사용합니다.
      * 

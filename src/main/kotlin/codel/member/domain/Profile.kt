@@ -47,7 +47,7 @@ class Profile(
     var personalities: String? = null,
     
     // 대표 질문 (Question 엔티티와 1:1 관계)
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "representative_question_id")
     var representativeQuestion: Question? = null,
 

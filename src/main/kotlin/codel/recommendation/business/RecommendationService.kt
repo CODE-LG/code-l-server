@@ -34,83 +34,6 @@ class RecommendationService(
 ) : Loggable {
 
     /**
-     * 사용자의 현재 상황에 맞는 추천을 제공합니다.
-     *
-     * 우선순위:
-     * 1. 현재 코드타임 활성화 시간대면 → 코드타임 추천
-     * 2. 코드타임 비활성 시간대면 → 오늘의 코드매칭 추천
-     * 3. 둘 다 있으면 사용자 선택에 따라 반환
-     *
-     * @param user 추천을 받을 사용자
-     * @param preferCodeTime 코드타임을 우선적으로 원하는지 여부 (기본: false)
-     * @return 통합 추천 결과
-     */
-    @Transactional(readOnly = false)
-    fun getRecommendation(user: Member, preferCodeTime: Boolean = false): RecommendationResult {
-        log.info { "통합 추천 요청 - userId: ${user.getIdOrThrow()}, preferCodeTime: $preferCodeTime" }
-
-        val currentTimeSlot = codeTimeService.getCurrentTimeSlot()
-        val isCodeTimeActive = currentTimeSlot != null
-
-        return when {
-            // 1. 코드타임 활성 시간대이고 사용자가 코드타임을 선호하는 경우
-            isCodeTimeActive && preferCodeTime -> {
-                val codeTimeResult = codeTimeService.getCodeTimeRecommendation(user)
-                val dailyResult = dailyCodeMatchingService.getDailyCodeMatching(user)
-
-                RecommendationResult(
-                    primaryRecommendation = PrimaryRecommendation.CODE_TIME,
-                    codeTimeResult = codeTimeResult,
-                    dailyCodeMatching = dailyResult,
-                    recommendationMessage = "현재 코드타임이 활성화되어 있습니다! (${currentTimeSlot})"
-                )
-            }
-
-            // 2. 코드타임 활성 시간대이지만 오늘의 코드매칭을 선호하는 경우
-            isCodeTimeActive && !preferCodeTime -> {
-                val dailyResult = dailyCodeMatchingService.getDailyCodeMatching(user)
-                val codeTimeResult = codeTimeService.getCodeTimeRecommendation(user)
-
-                RecommendationResult(
-                    primaryRecommendation = PrimaryRecommendation.DAILY_CODE_MATCHING,
-                    codeTimeResult = codeTimeResult,
-                    dailyCodeMatching = dailyResult,
-                    recommendationMessage = "오늘의 코드매칭을 추천드립니다! (코드타임도 ${currentTimeSlot}에 이용 가능)"
-                )
-            }
-
-            // 3. 코드타임 비활성 시간대 → 오늘의 코드매칭 위주
-            !isCodeTimeActive -> {
-                val dailyResult = dailyCodeMatchingService.getDailyCodeMatching(user)
-                val nextTimeSlot = codeTimeService.getNextTimeSlot()
-
-                RecommendationResult(
-                    primaryRecommendation = PrimaryRecommendation.DAILY_CODE_MATCHING,
-                    codeTimeResult = null,
-                    dailyCodeMatching = dailyResult,
-                    recommendationMessage = if (nextTimeSlot != null) {
-                        "오늘의 코드매칭을 추천드립니다! 다음 코드타임은 ${nextTimeSlot}입니다."
-                    } else {
-                        "오늘의 코드매칭을 추천드립니다!"
-                    }
-                )
-            }
-
-            else -> {
-                // 예외 상황: 기본적으로 오늘의 코드매칭 제공
-                val dailyResult = dailyCodeMatchingService.getDailyCodeMatching(user)
-
-                RecommendationResult(
-                    primaryRecommendation = PrimaryRecommendation.DAILY_CODE_MATCHING,
-                    codeTimeResult = null,
-                    dailyCodeMatching = dailyResult,
-                    recommendationMessage = "오늘의 코드매칭을 추천드립니다!"
-                )
-            }
-        }
-    }
-
-    /**
      * 오늘의 코드매칭만 조회합니다.
      * 기존 MemberService와의 호환성을 위한 메서드입니다.
      *
@@ -130,9 +53,11 @@ class RecommendationService(
      * @return 코드타임 결과
      */
     @Transactional(readOnly = false)
-    fun getCodeTime(user: Member): CodeTimeRecommendationResult {
+    fun getCodeTime(user: Member,
+                    page : Int,
+                    size : Int): Page<Member> {
         log.info { "코드타임 단독 요청 - userId: ${user.getIdOrThrow()}" }
-        return codeTimeService.getCodeTimeRecommendation(user)
+        return codeTimeService.getCodeTimeRecommendation(user, page, size)
     }
 
     /**
