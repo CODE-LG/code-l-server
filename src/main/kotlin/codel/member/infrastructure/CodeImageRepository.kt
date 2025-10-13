@@ -4,7 +4,7 @@ import codel.member.domain.CodeImage
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface CodeImageRepository : JpaRepository<CodeImage, Long> {
-    fun findByProfileIdOrderByOrder(profileId: Long): List<CodeImage>
+    fun findByProfileIdOrderByOrdersAsc(profileId: Long): List<CodeImage>
     fun findByProfileIdAndIsApprovedFalse(profileId: Long): List<CodeImage>
     fun deleteByProfileId(profileId: Long)
 }

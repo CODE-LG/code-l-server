@@ -18,7 +18,7 @@ class CodeImage(
     val url: String,
 
     @Column(nullable = false)
-    var order: Int,
+    var orders: Int,
 
     @Column(nullable = false)
     var isApproved: Boolean = true,
@@ -37,6 +37,6 @@ class CodeImage(
     override fun hashCode(): Int = id.hashCode()
 
     override fun toString(): String {
-        return "CodeImage(id=$id, url='$url', order=$order, isApproved=$isApproved)"
+        return "CodeImage(id=$id, url='$url', order=$orders, isApproved=$isApproved)"
     }
 }

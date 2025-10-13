@@ -49,8 +49,8 @@ class Profile(
     var smoke: String? = null,
     var personalities: String? = null,
     
-    // 대표 질문 (Question 엔티티와 1:1 관계)
-    @OneToOne(fetch = FetchType.LAZY)
+    // 대표 질문 (Question 엔티티와 다대1 관계)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "representative_question_id")
     var representativeQuestion: Question? = null,
 
@@ -140,7 +140,7 @@ class Profile(
                 CodeImage(
                     profile = this,
                     url = url,
-                    order = index,
+                    orders = index,
                     isApproved = true
                 )
             )
@@ -179,7 +179,7 @@ class Profile(
                 CodeImage(
                     profile = this,
                     url = url,
-                    order = index,
+                    orders = index,
                     isApproved = true
                 )
             )
@@ -251,7 +251,7 @@ class Profile(
                 FaceImage(
                     profile = this,
                     url = url,
-                    order = index,
+                    orders = index,
                     isApproved = true
                 )
             )
@@ -297,7 +297,7 @@ class Profile(
                 FaceImage(
                     profile = this,
                     url = url,
-                    order = index,
+                    orders = index,
                     isApproved = true
                 )
             )
@@ -329,7 +329,7 @@ class Profile(
     fun getCodeImageList(): List<String> {
         // Entity가 있으면 Entity에서, 없으면 String 필드에서 (하위 호환성)
         return if (codeImages.isNotEmpty()) {
-            codeImages.sortedBy { it.order }.map { it.url }
+            codeImages.sortedBy { it.orders }.map { it.url }
         } else {
             deserializeString(codeImage)
         }
@@ -338,7 +338,7 @@ class Profile(
     fun getFaceImageList(): List<String> {
         // Entity가 있으면 Entity에서, 없으면 String 필드에서 (하위 호환성)
         return if (faceImages.isNotEmpty()) {
-            faceImages.sortedBy { it.order }.map { it.url }
+            faceImages.sortedBy { it.orders }.map { it.url }
         } else {
             deserializeString(faceImage)
         }
@@ -461,7 +461,7 @@ class Profile(
                 CodeImage(
                     profile = this,
                     url = url,
-                    order = index,
+                    orders = index,
                     isApproved = true
                 )
             )
@@ -487,7 +487,7 @@ class Profile(
                 FaceImage(
                     profile = this,
                     url = url,
-                    order = index,
+                    orders = index,
                     isApproved = true
                 )
             )

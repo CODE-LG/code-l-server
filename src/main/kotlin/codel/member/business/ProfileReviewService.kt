@@ -43,7 +43,7 @@ class ProfileReviewService(
                 RejectedImageDto(
                     imageId = image.id,
                     url = image.url,
-                    order = image.order,
+                    order = image.orders,
                     rejectionReason = image.rejectionReason ?: "사유 없음"
                 )
             }
@@ -55,7 +55,7 @@ class ProfileReviewService(
                 RejectedImageDto(
                     imageId = image.id,
                     url = image.url,
-                    order = image.order,
+                    order = image.orders,
                     rejectionReason = image.rejectionReason ?: "사유 없음"
                 )
             }
@@ -78,7 +78,7 @@ class ProfileReviewService(
         val profile = member.getProfileOrThrow()
         
         // 얼굴 이미지 조회
-        val allFaceImages = faceImageRepository.findByProfileIdOrderByOrder(profile.id!!)
+        val allFaceImages = faceImageRepository.findByProfileIdOrderByOrdersAsc(profile.id!!)
         val faceImages = if (allFaceImages.any { !it.isApproved }) {
             // 거절된 이미지가 하나라도 있으면 빈 리스트 반환
             emptyList()
@@ -88,7 +88,7 @@ class ProfileReviewService(
                 ProfileImageDto(
                     imageId = image.id,
                     url = image.url,
-                    order = image.order,
+                    order = image.orders,
                     isApproved = image.isApproved,
                     rejectionReason = image.rejectionReason
                 )
@@ -96,7 +96,7 @@ class ProfileReviewService(
         }
         
         // 코드 이미지 조회
-        val allCodeImages = codeImageRepository.findByProfileIdOrderByOrder(profile.id!!)
+        val allCodeImages = codeImageRepository.findByProfileIdOrderByOrdersAsc(profile.id!!)
         val codeImages = if (allCodeImages.any { !it.isApproved }) {
             // 거절된 이미지가 하나라도 있으면 빈 리스트 반환
             emptyList()
@@ -106,7 +106,7 @@ class ProfileReviewService(
                 ProfileImageDto(
                     imageId = image.id,
                     url = image.url,
-                    order = image.order,
+                    order = image.orders,
                     isApproved = image.isApproved,
                     rejectionReason = image.rejectionReason
                 )
@@ -163,7 +163,7 @@ class ProfileReviewService(
             }
             
             // 기존 얼굴 이미지 삭제
-            val existingFaceImages = faceImageRepository.findByProfileIdOrderByOrder(profile.id!!)
+            val existingFaceImages = faceImageRepository.findByProfileIdOrderByOrdersAsc(profile.id!!)
             // TODO: S3에서 파일 삭제 구현 필요
             faceImageRepository.deleteAll(existingFaceImages)
             
@@ -190,7 +190,7 @@ class ProfileReviewService(
             }
             
             // 기존 코드 이미지 삭제
-            val existingCodeImages = codeImageRepository.findByProfileIdOrderByOrder(profile.id!!)
+            val existingCodeImages = codeImageRepository.findByProfileIdOrderByOrdersAsc(profile.id!!)
             // TODO: S3에서 파일 삭제 구현 필요
             codeImageRepository.deleteAll(existingCodeImages)
             
