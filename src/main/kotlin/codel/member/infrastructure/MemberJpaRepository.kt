@@ -229,9 +229,9 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
 
 
     @Query("""
-        SELECT m FROM Member m
+        SELECT DISTINCT m FROM Member m
         JOIN FETCH m.profile p
-        JOIN FETCH p.representativeQuestion
+        LEFT JOIN FETCH p.representativeQuestion
         WHERE m.id IN :ids
     """)
     fun findAllByIdsWithProfileAndQuestion(@Param("ids") ids: List<Long>): List<Member>

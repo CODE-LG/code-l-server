@@ -6,6 +6,7 @@ import codel.recommendation.domain.RecommendationConfig
 import org.springframework.stereotype.Service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.transaction.annotation.Transactional
+import org.hibernate.Hibernate
 
 /**
  * 추천 시스템의 4단계 버킷 정책을 구현하는 서비스
@@ -200,6 +201,14 @@ class RecommendationBucketService(
         
         // ID 목록으로 Member들 조회
         val members = memberJpaRepository.findAllByIdsWithProfileAndQuestion(memberIds)
+        
+        // Lazy Loading 강제 초기화 (Hibernate.initialize 사용)
+        members.forEach { member ->
+            Hibernate.initialize(member.profile)
+            member.profile?.let { profile ->
+                Hibernate.initialize(profile.representativeQuestion)
+            }
+        }
 
         val membersMap = members.associateBy { it.getIdOrThrow() }
 
