@@ -1,16 +1,42 @@
 package codel.member.domain
 
-import codel.member.exception.MemberException
-import org.springframework.http.HttpStatus
+import codel.common.domain.BaseTimeEntity
+import jakarta.persistence.*
 
+@Entity
+@Table(name = "face_images")
 class FaceImage(
-    val urls: List<String>,
-) {
-    init {
-        if (urls.size != 2) {
-            throw MemberException(HttpStatus.BAD_REQUEST, "얼굴 이미지 URL은 정확히 2개여야 합니다.")
-        }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
+
+    @Column(nullable = false, length = 500)
+    val url: String,
+
+    @Column(nullable = false)
+    var order: Int,
+
+    @Column(nullable = false)
+    var isApproved: Boolean = true,
+
+    @Column(length = 1000)
+    var rejectionReason: String? = null
+) : BaseTimeEntity() {
+    
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is FaceImage) return false
+        if (id == 0L) return false
+        return id == other.id
     }
 
-    fun serializeAttribute(): String = urls.joinToString(separator = ",")
+    override fun hashCode(): Int = id.hashCode()
+
+    override fun toString(): String {
+        return "FaceImage(id=$id, url='$url', order=$order, isApproved=$isApproved)"
+    }
 }

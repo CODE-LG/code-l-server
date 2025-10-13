@@ -5,7 +5,6 @@ import codel.chat.domain.ChatRoomStatus
 import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
-import codel.config.Loggable
 import codel.member.domain.*
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
@@ -72,7 +71,7 @@ class MemberService(
     @Transactional(readOnly = true)
     fun findMember(memberId: Long): Member = memberRepository.findMember(memberId)
 
-    private fun uploadCodeImage(files: List<MultipartFile>): CodeImage = CodeImage(files.map { file -> imageUploader.uploadFile(file) })
+    private fun uploadCodeImage(files: List<MultipartFile>): CodeImageVO = CodeImageVO(files.map { file -> imageUploader.uploadFile(file) })
 
     private fun sendNotification(member: Member) {
         notificationService.send(
@@ -85,7 +84,7 @@ class MemberService(
         )
     }
 
-    private fun uploadFaceImage(files: List<MultipartFile>): FaceImage = FaceImage(files.map { file -> imageUploader.uploadFile(file) })
+    private fun uploadFaceImage(files: List<MultipartFile>): FaceImageVO = FaceImageVO(files.map { file -> imageUploader.uploadFile(file) })
 
     fun saveFcmToken(
         member: Member,

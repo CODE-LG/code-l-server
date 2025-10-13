@@ -7,7 +7,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
 
-class FaceImageTest {
+class FaceImageVOTest {
 
     @DisplayName("정확히 2개의 이미지 URL로 FaceImage를 생성할 수 있다")
     @Test
@@ -16,7 +16,7 @@ class FaceImageTest {
         val urls = listOf("url1", "url2")
 
         // when
-        val faceImage = FaceImage(urls)
+        val faceImage = FaceImageVO(urls)
 
         // then
         assertThat(faceImage.urls).containsExactly("url1", "url2")
@@ -30,7 +30,7 @@ class FaceImageTest {
 
         // when & then
         val exception = assertThrows(MemberException::class.java) {
-            FaceImage(urls)
+            FaceImageVO(urls)
         }
         assertThat(exception.status).isEqualTo(HttpStatus.BAD_REQUEST)
         assertThat(exception.message).contains("얼굴 이미지 URL은 정확히 2개여야 합니다.")
@@ -44,7 +44,7 @@ class FaceImageTest {
 
         // when & then
         val exception = assertThrows(MemberException::class.java) {
-            FaceImage(urls)
+            FaceImageVO(urls)
         }
         assertThat(exception.status).isEqualTo(HttpStatus.BAD_REQUEST)
         assertThat(exception.message).contains("얼굴 이미지 URL은 정확히 2개여야 합니다.")
@@ -55,7 +55,7 @@ class FaceImageTest {
     fun serializeAttribute() {
         // given
         val urls = listOf("a", "b")
-        val faceImage = FaceImage(urls)
+        val faceImage = FaceImageVO(urls)
 
         // when
         val serialized = faceImage.serializeAttribute()

@@ -1,11 +1,10 @@
 package codel.member.business
 
-import codel.member.domain.CodeImage
-import codel.member.domain.FaceImage
+import codel.member.domain.CodeImageVO
+import codel.member.domain.FaceImageVO
 import codel.member.domain.ImageUploader
 import codel.member.domain.Member
 import codel.member.domain.MemberStatus
-import codel.member.domain.Profile
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
 import codel.member.presentation.request.EssentialProfileRequest
@@ -89,15 +88,15 @@ class SignupService(
     /**
      * 코드 이미지 업로드 (기존 MemberService 로직 재활용)
      */
-    private fun uploadCodeImage(files: List<MultipartFile>): CodeImage {
-        return CodeImage(files.map { file -> imageUploader.uploadFile(file) })
+    private fun uploadCodeImage(files: List<MultipartFile>): CodeImageVO {
+        return CodeImageVO(files.map { file -> imageUploader.uploadFile(file) })
     }
 
     /**
      * 얼굴 이미지 업로드 (추후 Hidden Profile에서 사용)
      */
-    private fun uploadFaceImage(files: List<MultipartFile>): FaceImage {
-        return FaceImage(files.map { file -> imageUploader.uploadFile(file) })
+    private fun uploadFaceImage(files: List<MultipartFile>): FaceImageVO {
+        return FaceImageVO(files.map { file -> imageUploader.uploadFile(file) })
     }
 
     /**
