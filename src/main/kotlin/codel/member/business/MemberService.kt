@@ -75,6 +75,25 @@ class MemberService(
 
     @Transactional(readOnly = true)
     fun findMember(memberId: Long): Member = memberRepository.findMember(memberId)
+    
+    /**
+     * 관리자용: 이미지 포함해서 회원 조회 (Fetch Join)
+     * MultipleBagFetchException 방지를 위해 2단계로 조회
+     */
+    @Transactional(readOnly = true)
+    fun findMemberWithImages(memberId: Long): Member {
+        // 1단계: Member + Profile만 조회
+        val member = memberJpaRepository.findMemberWithProfile(memberId)
+            ?: throw MemberException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다: $memberId")
+        
+        // 2단계: 이미지들을 강제로 초기화 (트랜잭션 범위 내에서)
+        member.profile?.let { profile ->
+            profile.codeImages.size  // Lazy Loading 초기화
+            profile.faceImages.size  // Lazy Loading 초기화
+        }
+        
+        return member
+    }
 
     private fun uploadCodeImage(files: List<MultipartFile>): CodeImageVO = CodeImageVO(files.map { file -> imageUploader.uploadFile(file) })
 

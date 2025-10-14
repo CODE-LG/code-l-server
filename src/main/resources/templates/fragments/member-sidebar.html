@@ -79,11 +79,6 @@
                    class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-search me-2"></i>이미지 심사하기
                 </a>
-                <th:block th:if="${member.memberStatus.name()} == 'PENDING'">
-                    <button class="btn btn-outline-danger btn-sm" onclick="rejectMemberWithImageSelection()">
-                        <i class="bi bi-x-circle me-2"></i>이미지별 거절
-                    </button>
-                </th:block>
             </div>
         </div>
 

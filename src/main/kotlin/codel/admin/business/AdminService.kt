@@ -46,6 +46,11 @@ class AdminService(
     fun findPendingMembers(): List<Member> = memberService.findPendingMembers()
 
     fun findMember(memberId: Long): Member = memberService.findMember(memberId)
+    
+    /**
+     * 관리자용: 이미지 포함해서 회원 조회
+     */
+    fun findMemberWithImages(memberId: Long): Member = memberService.findMemberWithImages(memberId)
 
     @Transactional
     fun approveMemberProfile(memberId: Long) {

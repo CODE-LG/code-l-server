@@ -94,9 +94,9 @@ class AdminController(
         println("🔍 AdminController.findMemberDetail 호출됨 - memberId: $memberId")
 
         try {
-            // 기본 회원 정보 조회
+            // 기본 회원 정보 조회 (이미지 포함)
             println("📄 회원 정보 조회 시작")
-            val member = adminService.findMember(memberId)
+            val member = adminService.findMemberWithImages(memberId)
             println("✅ 회원 정보 조회 성공: ${member.email}")
 
             // 프로필 정보 안전하게 가져오기
@@ -206,8 +206,9 @@ class AdminController(
             println("Error in findMemberDetail for memberId $memberId: ${e.message}")
             e.printStackTrace()
 
-            // 오류 발생 시 회원 목록으로 리다이렉트하고 오류 메시지 표시
-            return "redirect:/v1/admin/members?error=회원 정보를 불러올 수 없습니다 (ID: $memberId)"
+            // 오류 발생 시 회원 목록으로 리다이렉트
+            model.addAttribute("error", "회원 정보를 불러올 수 없습니다 (ID: $memberId)")
+            return "redirect:/v1/admin/members"
         }
     }
 
@@ -220,7 +221,7 @@ class AdminController(
         @PathVariable memberId: Long
     ): String {
         try {
-            val member = adminService.findMember(memberId)
+            val member = adminService.findMemberWithImages(memberId)
             val profile = member.profile
             
             // 이미지 리스트 가져오기
@@ -238,7 +239,9 @@ class AdminController(
             
             return "memberImageReview"
         } catch (e: Exception) {
-            return "redirect:/v1/admin/member/$memberId?error=이미지를 불러올 수 없습니다"
+            e.printStackTrace()
+            model.addAttribute("error", "이미지를 불러올 수 없습니다")
+            return "redirect:/v1/admin/member/$memberId"
         }
     }
 

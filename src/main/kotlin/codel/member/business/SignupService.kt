@@ -5,12 +5,14 @@ import codel.member.domain.FaceImageVO
 import codel.member.domain.ImageUploader
 import codel.member.domain.Member
 import codel.member.domain.MemberStatus
+import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
 import codel.member.presentation.request.EssentialProfileRequest
 import codel.member.presentation.request.HiddenProfileRequest
 import codel.member.presentation.request.PersonalityProfileRequest
 import codel.question.business.QuestionService
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -63,7 +65,10 @@ class SignupService(
      */
     fun registerEssentialImages(member: Member, images: List<MultipartFile>) {
         // 기본 정보가 먼저 등록되어 있는지 검증
-        val profile = member.getProfileOrThrow()
+        val findMember = memberJpaRepository.findByMemberId(member.getIdOrThrow())
+            ?: throw MemberException(HttpStatus.BAD_REQUEST, "회원을 찾을 수 없습니다.")
+
+        val profile = findMember.getProfileOrThrow()
         require(profile.codeName != null) {
             "Essential Profile 정보를 먼저 등록해주세요"
         }
@@ -78,11 +83,11 @@ class SignupService(
 //        member.completeEssentialProfile()
 
         // 거절당했을 때,
-        if(member.memberStatus == MemberStatus.REJECT){
-            member.memberStatus = MemberStatus.PENDING
+        if(findMember.memberStatus == MemberStatus.REJECT){
+            findMember.memberStatus = MemberStatus.PENDING
         }
 
-        memberJpaRepository.save(member)
+        memberJpaRepository.save(findMember)
     }
 
     /**
@@ -145,10 +150,14 @@ class SignupService(
      */
     fun registerHiddenProfile(member: Member, request: HiddenProfileRequest) {
         // 단계별 검증
+
+        val findMember = memberJpaRepository.findByMemberId(member.getIdOrThrow())
+            ?: throw MemberException(HttpStatus.BAD_REQUEST, "회원을 찾을 수 없습니다.")
+
 //        member.validateCanProceedToHidden()
         
         // Profile 정보 업데이트 (이미지 제외)
-        val profile = member.getProfileOrThrow()
+        val profile = findMember.getProfileOrThrow()
         profile.updateHiddenProfileInfo(
             loveLanguage = request.loveLanguage,
             affectionStyle = request.affectionStyle,
@@ -157,7 +166,7 @@ class SignupService(
             conflictResolutionStyle = request.conflictResolutionStyle,
             relationshipValues = request.relationshipValues
         )
-        memberJpaRepository.save(member)
+        memberJpaRepository.save(findMember)
     }
 
     /**
@@ -165,7 +174,10 @@ class SignupService(
      */
     fun registerHiddenImages(member: Member, images: List<MultipartFile>) {
         // Hidden Profile 정보가 먼저 등록되어 있는지 검증
-        val profile = member.getProfileOrThrow()
+        val findMember = memberJpaRepository.findByMemberId(member.getIdOrThrow())
+            ?: throw MemberException(HttpStatus.BAD_REQUEST, "회원을 찾을 수 없습니다.")
+
+        val profile = findMember.getProfileOrThrow()
         require(profile.loveLanguage != null) {
             "Hidden Profile 정보를 먼저 등록해주세요"
         }
@@ -177,8 +189,8 @@ class SignupService(
         profile.updateHiddenProfileImages(faceImage.urls)
         
         // Hidden Profile 완료 상태로 변경 (PENDING 상태로)
-        member.completeHiddenProfile()
+        findMember.completeHiddenProfile()
 
-        memberJpaRepository.save(member)
+        memberJpaRepository.save(findMember)
     }
 }
