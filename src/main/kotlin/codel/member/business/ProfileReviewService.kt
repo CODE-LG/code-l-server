@@ -134,16 +134,16 @@ class ProfileReviewService(
         if (member.memberStatus != MemberStatus.REJECT) {
             throw MemberException(HttpStatus.BAD_REQUEST, "거절 상태가 아닌 프로필은 수정할 수 없습니다")
         }
-        
+
         // 거절된 이미지 확인
         val hasRejectedFaceImages = faceImageRepository
             .findByProfileIdAndIsApprovedFalse(profile.id!!)
             .isNotEmpty()
-        
+
         val hasRejectedCodeImages = codeImageRepository
             .findByProfileIdAndIsApprovedFalse(profile.id!!)
             .isNotEmpty()
-        
+
         // 거절된 이미지가 없으면 에러
         if (!hasRejectedFaceImages && !hasRejectedCodeImages) {
             throw MemberException(HttpStatus.BAD_REQUEST, "거절된 이미지가 없습니다")
@@ -154,10 +154,7 @@ class ProfileReviewService(
         
         // 얼굴 이미지 교체
         if (faceImages != null && faceImages.isNotEmpty()) {
-            if (!hasRejectedFaceImages) {
-                throw MemberException(HttpStatus.BAD_REQUEST, "거절된 얼굴 이미지가 없습니다")
-            }
-            
+
             // 얼굴 이미지 개수 검증 (정확히 2개)
             if (faceImages.size != 2) {
                 throw MemberException(HttpStatus.BAD_REQUEST, "얼굴 이미지는 정확히 2개여야 합니다")
@@ -181,9 +178,6 @@ class ProfileReviewService(
         
         // 코드 이미지 교체
         if (codeImages != null && codeImages.isNotEmpty()) {
-            if (!hasRejectedCodeImages) {
-                throw MemberException(HttpStatus.BAD_REQUEST, "거절된 코드 이미지가 없습니다")
-            }
             
             // 코드 이미지 개수 검증 (1~3개)
             if (codeImages.size !in 1..3) {
@@ -205,32 +199,10 @@ class ProfileReviewService(
             uploadedCount += newCodeImageUrls.size
             messages.add("코드 이미지 ${newCodeImageUrls.size}개 업로드 완료")
         }
-        
-        // 모든 거절된 이미지가 교체되었는지 확인
-        val stillHasRejectedFaceImages = if (faceImages == null || faceImages.isEmpty()) {
-            hasRejectedFaceImages
-        } else {
-            false
-        }
-        
-        val stillHasRejectedCodeImages = if (codeImages == null || codeImages.isEmpty()) {
-            hasRejectedCodeImages
-        } else {
-            false
-        }
-        
-        // 모든 거절된 이미지가 교체되었으면 PENDING 상태로 변경
-        if (!stillHasRejectedFaceImages && !stillHasRejectedCodeImages) {
-            member.memberStatus = MemberStatus.PENDING
-            messages.add("심사가 다시 진행됩니다")
-        } else {
-            if (stillHasRejectedFaceImages) {
-                messages.add("얼굴 이미지도 교체해주세요")
-            }
-            if (stillHasRejectedCodeImages) {
-                messages.add("코드 이미지도 교체해주세요")
-            }
-        }
+
+
+        member.memberStatus = MemberStatus.PENDING
+        messages.add("심사가 다시 진행됩니다")
         
         memberJpaRepository.save(member)
         
