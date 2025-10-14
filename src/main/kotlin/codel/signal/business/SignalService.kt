@@ -65,11 +65,20 @@ class SignalService(
                 body = "${sender.getProfileOrThrow().getCodeNameOrThrow()}님이 시그널을 보냈습니다."
             )
             
+            val startTime = System.currentTimeMillis()
             try {
                 notificationService.send(notification)
-                log.info { "✅ 시그널 알림 전송 성공 - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
+                val duration = System.currentTimeMillis() - startTime
+                
+                // 성능 모니터링
+                when {
+                    duration > 1000 -> log.warn { "🐌 알림 전송 매우 느림 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
+                    duration > 500 -> log.warn { "⚠️ 알림 전송 느림 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
+                    else -> log.info { "✅ 시그널 알림 전송 성공 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
+                }
             } catch (e: Exception) {
-                log.warn(e) { "⚠️ 시그널 알림 전송 실패 - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
+                val duration = System.currentTimeMillis() - startTime
+                log.warn(e) { "❌ 시그널 알림 전송 실패 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
             }
         } ?: run {
             log.info { "ℹ️ FCM 토큰이 없어 알림을 전송하지 않음 - 수신자: ${receiver.getIdOrThrow()}" }
