@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Profile Images Section -->
+<div th:fragment="profile-images-section" class="info-card mb-4">
+    <div class="card-header-custom">
+        <h5 class="mb-0 d-flex align-items-center">
+            <i class="bi bi-images me-2 text-primary"></i>
+            프로필 이미지
+        </h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="row">
+            <!-- 코드 이미지 -->
+            <div class="col-lg-6">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0 fw-bold text-primary">
+                        <i class="bi bi-code-slash me-2"></i>코드 이미지
+                    </h6>
+                    <span class="completion-badge" th:classappend="${member.profile.codeImage != null} ? 'completion-complete' : 'completion-incomplete'">
+                        <i class="bi" th:classappend="${member.profile.codeImage != null} ? 'bi-check-circle' : 'bi-x-circle'"></i>
+                        <span th:text="${member.profile.codeImage != null} ? '완료' : '미완료'">완료</span>
+                    </span>
+                </div>
+
+                <!-- 리스트 기반으로 여러 장 표시 -->
+                <div class="image-gallery" th:if="${not #lists.isEmpty(codeImages)}">
+                    <div class="image-item"
+                         th:each="img, iterStat : ${codeImages}"
+                         th:attr="data-image-id=${img.id},data-src=${img.url},data-title=${'코드 이미지 ' + iterStat.count}"
+                         onclick="showImageModal(this.dataset.src, this.dataset.title)">
+                        <img th:src="${img.url}" alt="코드 이미지">
+                        <div class="image-overlay">
+                            <i class="bi bi-zoom-in text-white fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+                <div th:unless="${not #lists.isEmpty(codeImages)}" class="text-center py-4">
+                    <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">코드 이미지가 없습니다.</p>
+                </div>
+            </div>
+
+            <!-- 페이스 이미지 -->
+            <div class="col-lg-6">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0 fw-bold text-primary">
+                        <i class="bi bi-person-square me-2"></i>페이스 이미지
+                    </h6>
+                    <span class="completion-badge" th:classappend="${member.profile.faceImage != null} ? 'completion-complete' : 'completion-incomplete'">
+                        <i class="bi" th:classappend="${member.profile.faceImage != null} ? 'bi-check-circle' : 'bi-x-circle'"></i>
+                        <span th:text="${member.profile.faceImage != null} ? '완료' : '미완료'">미완료</span>
+                    </span>
+                </div>
+
+                <!-- 리스트 기반으로 여러 장 표시 -->
+                <div class="image-gallery" th:if="${not #lists.isEmpty(faceImages)}">
+                    <div class="image-item"
+                         th:each="img, iterStat : ${faceImages}"
+                         th:attr="data-image-id=${img.id},data-src=${img.url},data-title=${'페이스 이미지 ' + iterStat.count}"
+                         onclick="showImageModal(this.dataset.src, this.dataset.title)">
+                        <img th:src="${img.url}" alt="페이스 이미지">
+                        <div class="image-overlay">
+                            <i class="bi bi-zoom-in text-white fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+                <div th:unless="${not #lists.isEmpty(faceImages)}" class="text-center py-4">
+                    <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">페이스 이미지가 없습니다.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
