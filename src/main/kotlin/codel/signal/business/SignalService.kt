@@ -129,8 +129,50 @@ class SignalService(
         val approvedSignal = signalJpaRepository.save(findSignal)
 
         val partner = findSignal.fromMember
+        
+        val chatRoomResponse = chatService.createInitialChatRoom(me, partner, approvedSignal.message)
+        
+        // 매칭 성공 알림 전송 (양쪽 모두에게)
+        sendMatchingSuccessNotification(me, partner)
 
-        return chatService.createInitialChatRoom(me, partner, approvedSignal.message)
+        return chatRoomResponse
+    }
+    
+    private fun sendMatchingSuccessNotification(accepter: Member, sender: Member) {
+        // 승인자(수신자)에게 알림
+        sendMatchingNotification(accepter, sender)
+        
+        // 발신자에게 알림
+        sendMatchingNotification(sender, accepter)
+    }
+    
+    private fun sendMatchingNotification(receiver: Member, partner: Member) {
+        receiver.fcmToken?.let { token ->
+            val notification = Notification(
+                type = NotificationType.MOBILE,
+                targetId = token,
+                title = "코드매칭 성공! 채팅방이 열렸어요! 🎉",
+                body = "${partner.getProfileOrThrow().getCodeNameOrThrow()}님과 대화를 시작해보세요!"
+            )
+            
+            val startTime = System.currentTimeMillis()
+            try {
+                notificationService.send(notification)
+                val duration = System.currentTimeMillis() - startTime
+                
+                // 성능 모니터링
+                when {
+                    duration > 1000 -> log.warn { "🐌 매칭 알림 전송 매우 느림 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
+                    duration > 500 -> log.warn { "⚠️ 매칭 알림 전송 느림 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
+                    else -> log.info { "✅ 매칭 알림 전송 성공 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
+                }
+            } catch (e: Exception) {
+                val duration = System.currentTimeMillis() - startTime
+                log.warn(e) { "❌ 매칭 알림 전송 실패 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
+            }
+        } ?: run {
+            log.info { "ℹ️ FCM 토큰이 없어 매칭 알림을 전송하지 않음 - 수신자: ${receiver.getIdOrThrow()}" }
+        }
     }
 
     private fun validateMySignal(findSignal: Signal, me: Member) {
