@@ -12,9 +12,13 @@ import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.repository.ChatRepository
+import codel.config.Loggable
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
 import codel.member.presentation.response.UnlockedMemberProfileResponse
+import codel.notification.business.NotificationService
+import codel.notification.domain.Notification
+import codel.notification.domain.NotificationType
 import codel.signal.domain.Signal
 import codel.signal.domain.SignalStatus
 import codel.signal.exception.SignalException
@@ -33,8 +37,9 @@ class SignalService(
     private val memberRepository: MemberRepository,
     private val signalJpaRepository: SignalJpaRepository,
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
-    private val chatService: ChatService
-) {
+    private val chatService: ChatService,
+    private val notificationService: NotificationService
+) : Loggable {
     @Transactional
     fun sendSignal(fromMember: Member, toMemberId: Long, message: String): Signal {
         validateNotSelf(fromMember.getIdOrThrow(), toMemberId)
@@ -43,7 +48,32 @@ class SignalService(
         lastSignal?.validateSendable()
 
         val signal = Signal(fromMember = fromMember, toMember = toMember, message = message)
-        return signalJpaRepository.save(signal)
+        val savedSignal = signalJpaRepository.save(signal)
+        
+        // 알림 전송
+        sendSignalNotification(toMember, fromMember)
+        
+        return savedSignal
+    }
+    
+    private fun sendSignalNotification(receiver: Member, sender: Member) {
+        receiver.fcmToken?.let { token ->
+            val notification = Notification(
+                type = NotificationType.MOBILE,
+                targetId = token,
+                title = "새로운 시그널이 도착했어요 🔔",
+                body = "${sender.getProfileOrThrow().getCodeNameOrThrow()}님이 시그널을 보냈습니다."
+            )
+            
+            try {
+                notificationService.send(notification)
+                log.info { "✅ 시그널 알림 전송 성공 - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
+            } catch (e: Exception) {
+                log.warn(e) { "⚠️ 시그널 알림 전송 실패 - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
+            }
+        } ?: run {
+            log.info { "ℹ️ FCM 토큰이 없어 알림을 전송하지 않음 - 수신자: ${receiver.getIdOrThrow()}" }
+        }
     }
 
     private fun validateNotSelf(fromMemberId: Long, toMemberId: Long) {
