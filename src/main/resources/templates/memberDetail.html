@@ -102,6 +102,60 @@
             object-fit: cover;
         }
 
+        /* 이미지 선택 체크박스 */
+        .image-checkbox {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            z-index: 10;
+            accent-color: var(--danger-color);
+        }
+
+        .image-item.selected {
+            border: 3px solid var(--danger-color);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+
+        /* 거절 사유 입력 필드 */
+        .rejection-reason-input {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px;
+            z-index: 10;
+        }
+
+        .rejection-reason-input input {
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        /* 거절 버튼 스타일 */
+        .btn-reject-selected {
+            background: linear-gradient(135deg, var(--danger-color), #dc2626);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-reject-selected:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-reject-selected:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .image-overlay {
             position: absolute;
             top: 0;
@@ -381,10 +435,10 @@
                             <!-- 리스트 기반으로 여러 장 표시 -->
                             <div class="image-gallery" th:if="${not #lists.isEmpty(codeImages)}">
                                 <div class="image-item"
-                                     th:each="url, iterStat : ${codeImages}"
-                                     th:attr="data-src=${url},data-title=${'코드 이미지 ' + iterStat.count}"
+                                     th:each="img, iterStat : ${codeImages}"
+                                     th:attr="data-image-id=${img.id},data-src=${img.url},data-title=${'코드 이미지 ' + iterStat.count}"
                                      onclick="showImageModal(this.dataset.src, this.dataset.title)">
-                                    <img th:src="${url}" alt="코드 이미지">
+                                    <img th:src="${img.url}" alt="코드 이미지">
                                     <div class="image-overlay">
                                         <i class="bi bi-zoom-in text-white fs-3"></i>
                                     </div>
@@ -411,10 +465,10 @@
                             <!-- 리스트 기반으로 여러 장 표시 -->
                             <div class="image-gallery" th:if="${not #lists.isEmpty(faceImages)}">
                                 <div class="image-item"
-                                     th:each="url, iterStat : ${faceImages}"
-                                     th:attr="data-src=${url},data-title=${'페이스 이미지 ' + iterStat.count}"
+                                     th:each="img, iterStat : ${faceImages}"
+                                     th:attr="data-image-id=${img.id},data-src=${img.url},data-title=${'페이스 이미지 ' + iterStat.count}"
                                      onclick="showImageModal(this.dataset.src, this.dataset.title)">
-                                    <img th:src="${url}" alt="페이스 이미지">
+                                    <img th:src="${img.url}" alt="페이스 이미지">
                                     <div class="image-overlay">
                                         <i class="bi bi-zoom-in text-white fs-3"></i>
                                     </div>
@@ -744,12 +798,16 @@
                 </div>
                 <div class="card-body p-4">
                     <div class="d-grid gap-3">
+                        <a th:href="@{/v1/admin/member/{memberId}/image-review(memberId=${member.id})}"
+                           class="btn btn-primary">
+                            <i class="bi bi-images me-2"></i>이미지 심사
+                        </a>
                         <th:block th:if="${member.memberStatus.name()} == 'PENDING'">
                             <button class="action-btn btn btn-success" onclick="approveMember()">
                                 <i class="bi bi-check-circle me-2"></i>승인
                             </button>
-                            <button class="action-btn btn btn-danger" onclick="rejectMember()">
-                                <i class="bi bi-x-circle me-2"></i>거절
+                            <button class="action-btn btn btn-danger" onclick="rejectMemberWithImageSelection()">
+                                <i class="bi bi-x-circle me-2"></i>이미지별 거절
                             </button>
                         </th:block>
 

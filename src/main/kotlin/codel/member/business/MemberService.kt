@@ -1,5 +1,6 @@
 package codel.member.business
 
+import codel.admin.presentation.request.ImageRejection
 import codel.block.infrastructure.BlockMemberRelationJpaRepository
 import codel.chat.domain.ChatRoomStatus
 import codel.chat.exception.ChatException
@@ -9,6 +10,8 @@ import codel.member.domain.*
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
+import codel.member.infrastructure.FaceImageRepository
+import codel.member.infrastructure.CodeImageRepository
 import codel.member.presentation.response.FullProfileResponse
 import codel.member.presentation.response.MemberProfileDetailResponse
 import codel.notification.business.NotificationService
@@ -42,6 +45,8 @@ class MemberService(
     private val chatRoomJpaRepository: ChatRoomJpaRepository,
     private val notificationService: NotificationService,
     private val blockMemberRelationJpaRepository: BlockMemberRelationJpaRepository,
+    private val faceImageRepository: FaceImageRepository,
+    private val codeImageRepository: CodeImageRepository,
 ){
     fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
@@ -639,5 +644,58 @@ class MemberService(
         } catch (e: IllegalArgumentException) {
             0L
         }
+    }
+    
+    /**
+     * 이미지별 거절 처리 (신규)
+     */
+    fun rejectMemberWithImages(
+        memberId: Long,
+        faceImageRejections: List<ImageRejection>?,
+        codeImageRejections: List<ImageRejection>?
+    ) {
+        val member = findMember(memberId)
+        val profile = member.getProfileOrThrow()
+        
+        // 얼굴 이미지 거절 처리
+        faceImageRejections?.forEach { rejection ->
+            val image = faceImageRepository.findById(rejection.imageId)
+                .orElseThrow { MemberException(HttpStatus.NOT_FOUND, "이미지를 찾을 수 없습니다: ${rejection.imageId}") }
+            
+            if (image.profile.id != profile.id) {
+                throw MemberException(HttpStatus.BAD_REQUEST, "해당 프로필의 이미지가 아닙니다")
+            }
+            
+            image.isApproved = false
+            image.rejectionReason = rejection.reason
+        }
+        
+        // 코드 이미지 거절 처리
+        codeImageRejections?.forEach { rejection ->
+            val image = codeImageRepository.findById(rejection.imageId)
+                .orElseThrow { MemberException(HttpStatus.NOT_FOUND, "이미지를 찾을 수 없습니다: ${rejection.imageId}") }
+            
+            if (image.profile.id != profile.id) {
+                throw MemberException(HttpStatus.BAD_REQUEST, "해당 프로필의 이미지가 아닙니다")
+            }
+            
+            image.isApproved = false
+            image.rejectionReason = rejection.reason
+        }
+        
+        // 회원 상태를 REJECT로 변경
+        member.memberStatus = MemberStatus.REJECT
+        
+        // Member의 rejectReason도 업데이트 (기존 호환성)
+        val reasons = mutableListOf<String>()
+        if (!faceImageRejections.isNullOrEmpty()) {
+            reasons.add("얼굴 이미지 거절")
+        }
+        if (!codeImageRejections.isNullOrEmpty()) {
+            reasons.add("코드 이미지 거절")
+        }
+        member.rejectReason = reasons.joinToString(", ")
+        
+        memberJpaRepository.save(member)
     }
 }

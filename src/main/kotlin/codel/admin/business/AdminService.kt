@@ -1,6 +1,7 @@
 package codel.admin.business
 
 import codel.admin.domain.Admin
+import codel.admin.presentation.request.ImageRejection
 import codel.auth.business.AuthService
 import codel.member.business.MemberService
 import codel.member.domain.Member
@@ -58,6 +59,19 @@ class AdminService(
         reason: String,
     ) {
         val rejectedMember = memberService.rejectMember(memberId, reason)
+//        sendNotification(rejectedMember)
+    }
+    
+    /**
+     * 이미지별 거절 처리 (신규)
+     */
+    @Transactional
+    fun rejectMemberProfileWithImages(
+        memberId: Long,
+        faceImageRejections: List<ImageRejection>?,
+        codeImageRejections: List<ImageRejection>?
+    ) {
+        memberService.rejectMemberWithImages(memberId, faceImageRejections, codeImageRejections)
 //        sendNotification(rejectedMember)
     }
 

@@ -79,6 +79,7 @@ class ProfileReviewService(
         
         // 얼굴 이미지 조회
         val allFaceImages = faceImageRepository.findByProfileIdOrderByOrdersAsc(profile.id!!)
+
         val faceImages = if (allFaceImages.any { !it.isApproved }) {
             // 거절된 이미지가 하나라도 있으면 빈 리스트 반환
             emptyList()
