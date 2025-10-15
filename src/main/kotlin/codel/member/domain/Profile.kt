@@ -328,20 +328,20 @@ class Profile(
     
     fun getCodeImageList(): List<String> {
         // Entity가 있으면 Entity에서, 없으면 String 필드에서 (하위 호환성)
-        return if (codeImages.isNotEmpty()) {
-            codeImages.sortedBy { it.orders }.map { it.url }
-        } else {
-            deserializeString(codeImage)
-        }
+//        return if (codeImages.isNotEmpty()) {
+//            codeImages.sortedBy { it.orders }.map { it.url }
+//        } else {
+            return deserializeString(codeImage)
+//        }
     }
     
     fun getFaceImageList(): List<String> {
         // Entity가 있으면 Entity에서, 없으면 String 필드에서 (하위 호환성)
-        return if (faceImages.isNotEmpty()) {
-            faceImages.sortedBy { it.orders }.map { it.url }
-        } else {
-            deserializeString(faceImage)
-        }
+//        return if (faceImages.isNotEmpty()) {
+//            faceImages.sortedBy { it.orders }.map { it.url }
+//        } else {
+            return deserializeString(faceImage)
+//        }
     }
     
     // 기존 호환성 메서드 유지
@@ -451,7 +451,7 @@ class Profile(
      */
     fun replaceAllCodeImages(newCodeImages: List<String>) {
         require(newCodeImages.isNotEmpty()) { "코드 이미지가 필요합니다" }
-        
+
         // 1. 기존 Entity 전체 삭제
         this.codeImages.clear()
         
