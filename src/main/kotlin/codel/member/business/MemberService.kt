@@ -14,6 +14,8 @@ import codel.member.infrastructure.FaceImageRepository
 import codel.member.infrastructure.CodeImageRepository
 import codel.member.presentation.response.FullProfileResponse
 import codel.member.presentation.response.MemberProfileDetailResponse
+import codel.member.presentation.response.UpdateCodeImagesResponse
+import codel.member.presentation.response.UpdateRepresentativeQuestionResponse
 import codel.notification.business.NotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
@@ -47,7 +49,8 @@ class MemberService(
     private val blockMemberRelationJpaRepository: BlockMemberRelationJpaRepository,
     private val faceImageRepository: FaceImageRepository,
     private val codeImageRepository: CodeImageRepository,
-){
+    private val questionJpaRepository: codel.question.infrastructure.QuestionJpaRepository,
+) {
     fun loginMember(member: Member): Member {
         val loginMember = memberRepository.loginMember(member)
 
@@ -75,7 +78,7 @@ class MemberService(
 
     @Transactional(readOnly = true)
     fun findMember(memberId: Long): Member = memberRepository.findMember(memberId)
-    
+
     /**
      * 관리자용: 이미지 포함해서 회원 조회 (Fetch Join)
      * MultipleBagFetchException 방지를 위해 2단계로 조회
@@ -85,17 +88,18 @@ class MemberService(
         // 1단계: Member + Profile만 조회
         val member = memberJpaRepository.findMemberWithProfile(memberId)
             ?: throw MemberException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다: $memberId")
-        
+
         // 2단계: 이미지들을 강제로 초기화 (트랜잭션 범위 내에서)
         member.profile?.let { profile ->
             profile.codeImages.size  // Lazy Loading 초기화
             profile.faceImages.size  // Lazy Loading 초기화
         }
-        
+
         return member
     }
 
-    private fun uploadCodeImage(files: List<MultipartFile>): CodeImageVO = CodeImageVO(files.map { file -> imageUploader.uploadFile(file) })
+    private fun uploadCodeImage(files: List<MultipartFile>): CodeImageVO =
+        CodeImageVO(files.map { file -> imageUploader.uploadFile(file) })
 
     private fun sendNotification(member: Member) {
         notificationService.send(
@@ -108,7 +112,8 @@ class MemberService(
         )
     }
 
-    private fun uploadFaceImage(files: List<MultipartFile>): FaceImageVO = FaceImageVO(files.map { file -> imageUploader.uploadFile(file) })
+    private fun uploadFaceImage(files: List<MultipartFile>): FaceImageVO =
+        FaceImageVO(files.map { file -> imageUploader.uploadFile(file) })
 
     fun saveFcmToken(
         member: Member,
@@ -217,8 +222,10 @@ class MemberService(
                 ).toMutableList()
 
         // targetTime 기준으로 차단된 사용자들만 포함 (실시간 차단은 별도 처리)
-        val blockedMemberIdsByMe = blockMemberRelationJpaRepository.findBlockedMemberIdByMeBeforeTime(member.getIdOrThrow(), targetTime)
-        val blockerMemberIdsToMe = blockMemberRelationJpaRepository.findBlockMembersByOtherBeforeTime(member.getIdOrThrow(), targetTime)
+        val blockedMemberIdsByMe =
+            blockMemberRelationJpaRepository.findBlockedMemberIdByMeBeforeTime(member.getIdOrThrow(), targetTime)
+        val blockerMemberIdsToMe =
+            blockMemberRelationJpaRepository.findBlockMembersByOtherBeforeTime(member.getIdOrThrow(), targetTime)
 
         val allExcludeIds = excludeFromMemberIdsAtMidnight
         allExcludeIds += excludeToMemberIdsAtMidnight
@@ -240,7 +247,7 @@ class MemberService(
         val sevenDaysAgo = now.minusDays(7)
 
         val seed = DailySeedProvider.generateMemberSeedEveryTenHours(member.getIdOrThrow())
-        val candidates = memberJpaRepository.findRandomMembersStatusDone(member.getIdOrThrow(),seed)
+        val candidates = memberJpaRepository.findRandomMembersStatusDone(member.getIdOrThrow(), seed)
 
         val allExcludeIds = makeExcludesMemberIds(member, candidates, sevenDaysAgo, todayMidnight)
 
@@ -277,10 +284,10 @@ class MemberService(
         partnerId: Long,
     ): MemberProfileDetailResponse {
 
-        if(me.getIdOrThrow() == partnerId){
+        if (me.getIdOrThrow() == partnerId) {
             return MemberProfileDetailResponse.createMyProfileResponse(memberRepository.findMember(me.getIdOrThrow()))
         }
-        val partner = memberJpaRepository.findByMemberId(partnerId) 
+        val partner = memberJpaRepository.findByMemberId(partnerId)
             ?: throw MemberException(HttpStatus.BAD_REQUEST, "해당 id에 일치하는 멤버가 없습니다.")
 
         // 1. 차단 상태 확인 (시그널 상태보다 우선)
@@ -298,22 +305,22 @@ class MemberService(
             myLatestSignal == null && partnerLatestSignal == null -> {
                 MemberProfileDetailResponse.create(partner, SignalStatus.NONE)
             }
-            
+
             // 양쪽 모두 시그널이 있는 경우 - 더 최근 것을 기준으로 판단
             myLatestSignal != null && partnerLatestSignal != null -> {
                 handleBothSignalsExist(me, partner, myLatestSignal, partnerLatestSignal)
             }
-            
+
             // 내가 보낸 시그널만 있는 경우
             myLatestSignal != null && partnerLatestSignal == null -> {
                 handleOnlyMySignalExists(me, partner, myLatestSignal)
             }
-            
+
             // 상대가 보낸 시그널만 있는 경우  
             myLatestSignal == null && partnerLatestSignal != null -> {
                 handleOnlyPartnerSignalExists(me, partner, partnerLatestSignal)
             }
-            
+
             else -> {
                 MemberProfileDetailResponse.create(partner, SignalStatus.NONE)
             }
@@ -328,9 +335,9 @@ class MemberService(
             .mapNotNull { it.blockedMember.id }
         val partnerBlockedMemberIds = blockMemberRelationJpaRepository.findBlockMembersBy(partner.getIdOrThrow())
             .mapNotNull { it.blockedMember.id }
-        
-        return partner.getIdOrThrow() in myBlockedMemberIds || 
-               me.getIdOrThrow() in partnerBlockedMemberIds
+
+        return partner.getIdOrThrow() in myBlockedMemberIds ||
+                me.getIdOrThrow() in partnerBlockedMemberIds
     }
 
     /**
@@ -342,7 +349,7 @@ class MemberService(
                 // 내 시그널이 대기 중
                 MemberProfileDetailResponse.create(partner, mySignal.senderStatus)
             }
-            
+
             REJECTED -> {
                 // 내가 거절당한 경우 - 7일 쿨다운 확인
                 if (isRejectionCooldownExpired(mySignal)) {
@@ -351,7 +358,7 @@ class MemberService(
                     MemberProfileDetailResponse.create(partner, REJECTED)
                 }
             }
-            
+
             APPROVED -> {
                 // 내 시그널이 승인된 경우 - 채팅방 상태 확인
                 handleApprovedSignal(me, partner, mySignal.senderStatus)
@@ -366,13 +373,17 @@ class MemberService(
     /**
      * 상대가 보낸 시그널만 있는 경우
      */
-    private fun handleOnlyPartnerSignalExists(me: Member, partner: Member, partnerSignal: Signal): MemberProfileDetailResponse {
+    private fun handleOnlyPartnerSignalExists(
+        me: Member,
+        partner: Member,
+        partnerSignal: Signal
+    ): MemberProfileDetailResponse {
         return when (partnerSignal.senderStatus) {
             PENDING, PENDING_HIDDEN -> {
                 // 상대의 시그널이 대기 중 - 내가 응답해야 함
                 MemberProfileDetailResponse.create(partner, PENDING)
             }
-            
+
             REJECTED -> {
                 // 상대가 나를 거절한 경우 - 7일 쿨다운 확인  
                 if (isRejectionCooldownExpired(partnerSignal)) {
@@ -381,7 +392,7 @@ class MemberService(
                     MemberProfileDetailResponse.create(partner, REJECTED)
                 }
             }
-            
+
             APPROVED -> {
                 // 상대가 나를 승인한 경우 - 채팅방 상태 확인
                 handleApprovedSignal(me, partner, partnerSignal.senderStatus)
@@ -398,27 +409,27 @@ class MemberService(
      */
     private fun handleBothSignalsExist(
         me: Member,
-        partner: Member, 
-        mySignal: Signal, 
+        partner: Member,
+        mySignal: Signal,
         partnerSignal: Signal
     ): MemberProfileDetailResponse {
-        
+
         // 더 최근 시그널을 기준으로 상태 결정
         val latestSignal = if (mySignal.updatedAt.isAfter(partnerSignal.updatedAt)) {
             mySignal
         } else {
             partnerSignal
         }
-        
+
         val isMySignalLatest = (latestSignal == mySignal)
-        
+
         return when {
             // 둘 다 승인 상태인 경우
             mySignal.senderStatus in listOf(APPROVED) &&
-            partnerSignal.senderStatus in listOf(APPROVED) -> {
+                    partnerSignal.senderStatus in listOf(APPROVED) -> {
                 handleApprovedSignal(me, partner, APPROVED)
             }
-            
+
             // 최신 시그널이 거절인 경우
             latestSignal.senderStatus == REJECTED -> {
                 if (isRejectionCooldownExpired(latestSignal)) {
@@ -427,19 +438,19 @@ class MemberService(
                     MemberProfileDetailResponse.create(partner, REJECTED)
                 }
             }
-            
+
             // 최신 시그널이 대기 중인 경우
             latestSignal.senderStatus in listOf(PENDING, PENDING_HIDDEN) -> {
                 MemberProfileDetailResponse.create(partner, PENDING)
             }
-            
+
             // 한쪽은 승인, 한쪽은 대기/거절인 경우
             else -> {
                 // 승인된 시그널이 있다면 채팅방 상태 확인
-                val approvedSignal = listOf(mySignal, partnerSignal).find { 
+                val approvedSignal = listOf(mySignal, partnerSignal).find {
                     it.senderStatus in listOf(APPROVED)
                 }
-                
+
                 if (approvedSignal != null) {
                     handleApprovedSignal(me, partner, approvedSignal.senderStatus)
                 } else {
@@ -453,12 +464,16 @@ class MemberService(
     /**
      * 승인된 시그널 처리 - 채팅방 상태 확인
      */
-    private fun handleApprovedSignal(me: Member, partner: Member, signalStatus: SignalStatus): MemberProfileDetailResponse {
+    private fun handleApprovedSignal(
+        me: Member,
+        partner: Member,
+        signalStatus: SignalStatus
+    ): MemberProfileDetailResponse {
         val chatRoom = chatRoomJpaRepository.findChatRoomByMembers(
-            me.getIdOrThrow(), 
+            me.getIdOrThrow(),
             partner.getIdOrThrow()
         ) ?: throw ChatException(HttpStatus.BAD_REQUEST, "승인된 관계이지만 채팅방을 찾을 수 없습니다.")
-        
+
         val isUnlocked = (chatRoom.status == ChatRoomStatus.UNLOCKED)
         return MemberProfileDetailResponse.create(partner, signalStatus, isUnlocked)
     }
@@ -481,17 +496,17 @@ class MemberService(
     fun canSendSignalTo(me: Member, partnerId: Long): Boolean {
         return try {
             val partner = memberJpaRepository.findByMemberId(partnerId) ?: return false
-            
+
             // 차단된 관계면 불가능
             if (isBlockedRelationship(me, partner)) return false
-            
+
             val myLatestSignal = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(me, partner)
             val partnerLatestSignal = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(partner, me)
-            
+
             when {
                 // 시그널이 아예 없으면 가능
                 myLatestSignal == null && partnerLatestSignal == null -> true
-                
+
                 // 내 시그널만 있는 경우
                 myLatestSignal != null && partnerLatestSignal == null -> {
                     when (myLatestSignal.senderStatus) {
@@ -500,7 +515,7 @@ class MemberService(
                         else -> false // 대기 중이면 불가능
                     }
                 }
-                
+
                 // 상대 시그널만 있는 경우 - 응답할 수 있음
                 myLatestSignal == null && partnerLatestSignal != null -> {
                     when (partnerLatestSignal.senderStatus) {
@@ -509,7 +524,7 @@ class MemberService(
                         else -> false
                     }
                 }
-                
+
                 // 둘 다 있는 경우 - 복잡한 로직이므로 안전하게 false
                 else -> false
             }
@@ -528,47 +543,47 @@ class MemberService(
     fun withdrawMember(member: Member) {
         member.withdraw()
         memberRepository.updateMember(member)
-        
+
         // TODO: JWT 토큰 블랙리스트 처리 고려
         // TODO: 필요시 추가 처리 (알림, 로깅 등)
     }
 
     // ========== 통계 관련 메서드 ==========
-    
+
     /**
      * 일별 가입자 통계 (최근 30일)
      */
     fun getDailySignupStats(): List<Pair<String, Long>> {
         val startDate = LocalDateTime.now().minusDays(30)
         val rawData = memberJpaRepository.getDailySignupStats(startDate)
-        
+
         return rawData.map { row ->
             val date = row[0].toString()
             val count = (row[1] as Number).toLong()
             date to count
         }
     }
-    
+
     /**
      * 회원 상태별 통계
      */
     fun getMemberStatusStats(): Map<String, Long> {
         val rawData = memberJpaRepository.getMemberStatusStats()
-        
+
         return rawData.associate { row ->
             val status = row[0].toString()
             val count = (row[1] as Number).toLong()
             status to count
         }
     }
-    
+
     /**
      * 월별 가입자 통계 (최근 12개월)
      */
     fun getMonthlySignupStats(): List<Triple<Int, Int, Long>> {
         val startDate = LocalDateTime.now().minusMonths(12)
         val rawData = memberJpaRepository.getMonthlySignupStats(startDate)
-        
+
         return rawData.map { row ->
             val year = (row[0] as Number).toInt()
             val month = (row[1] as Number).toInt()
@@ -576,12 +591,12 @@ class MemberService(
             Triple(year, month, count)
         }
     }
-    
+
     /**
      * 오늘 가입자 수
      */
     fun getTodaySignupCount(): Long = memberJpaRepository.getTodaySignupCount()
-    
+
     /**
      * 최근 7일 가입자 수
      */
@@ -589,7 +604,7 @@ class MemberService(
         val startDate = LocalDateTime.now().minusDays(7)
         return memberJpaRepository.getRecentSignupCount(startDate)
     }
-    
+
     /**
      * 최근 30일 가입자 수
      */
@@ -597,7 +612,7 @@ class MemberService(
         val startDate = LocalDateTime.now().minusDays(30)
         return memberJpaRepository.getRecentSignupCount(startDate)
     }
-    
+
     /**
      * 고급 필터링을 지원하는 회원 목록 조회
      */
@@ -619,14 +634,14 @@ class MemberService(
         } else {
             null
         }
-        
+
         // 정렬 처리를 위한 새로운 Pageable 생성
         val sortedPageable = createSortedPageable(pageable, sort, direction)
-        
+
         // 새로운 메서드 사용
         return memberJpaRepository.findMembersWithFilterAdvanced(keyword, statusEnum, sortedPageable)
     }
-    
+
     /**
      * 정렬 옵션에 따른 Pageable 생성
      */
@@ -636,7 +651,7 @@ class MemberService(
         } else {
             org.springframework.data.domain.Sort.Direction.DESC
         }
-        
+
         val sortBy = when (sort) {
             "id" -> "id"
             "email" -> "email"
@@ -645,14 +660,14 @@ class MemberService(
             "createdAt" -> "createdAt"
             else -> "createdAt"
         }
-        
+
         return PageRequest.of(
             pageable.pageNumber,
             pageable.pageSize,
             org.springframework.data.domain.Sort.by(sortDirection, sortBy)
         )
     }
-    
+
     /**
      * 상태별 회원 수 조회
      */
@@ -664,7 +679,7 @@ class MemberService(
             0L
         }
     }
-    
+
     /**
      * 이미지별 거절 처리 (신규)
      */
@@ -675,36 +690,36 @@ class MemberService(
     ) {
         val member = findMember(memberId)
         val profile = member.getProfileOrThrow()
-        
+
         // 얼굴 이미지 거절 처리
         faceImageRejections?.forEach { rejection ->
             val image = faceImageRepository.findById(rejection.imageId)
                 .orElseThrow { MemberException(HttpStatus.NOT_FOUND, "이미지를 찾을 수 없습니다: ${rejection.imageId}") }
-            
+
             if (image.profile.id != profile.id) {
                 throw MemberException(HttpStatus.BAD_REQUEST, "해당 프로필의 이미지가 아닙니다")
             }
-            
+
             image.isApproved = false
             image.rejectionReason = rejection.reason
         }
-        
+
         // 코드 이미지 거절 처리
         codeImageRejections?.forEach { rejection ->
             val image = codeImageRepository.findById(rejection.imageId)
                 .orElseThrow { MemberException(HttpStatus.NOT_FOUND, "이미지를 찾을 수 없습니다: ${rejection.imageId}") }
-            
+
             if (image.profile.id != profile.id) {
                 throw MemberException(HttpStatus.BAD_REQUEST, "해당 프로필의 이미지가 아닙니다")
             }
-            
+
             image.isApproved = false
             image.rejectionReason = rejection.reason
         }
-        
+
         // 회원 상태를 REJECT로 변경
         member.memberStatus = MemberStatus.REJECT
-        
+
         // Member의 rejectReason도 업데이트 (기존 호환성)
         val reasons = mutableListOf<String>()
         if (!faceImageRejections.isNullOrEmpty()) {
@@ -714,7 +729,82 @@ class MemberService(
             reasons.add("코드 이미지 거절")
         }
         member.rejectReason = reasons.joinToString(", ")
-        
+
         memberJpaRepository.save(member)
+    }
+
+    /**
+     * 코드 이미지만 수정 (사용자용)
+     * - ProfileReviewService의 replaceImages와 유사하지만 코드 이미지만 처리
+     */
+    fun updateCodeImages(
+        member: Member,
+        codeImages: List<MultipartFile>
+    ): UpdateCodeImagesResponse {
+        val findMember = memberJpaRepository.findByMemberIdWithProfileAndCodeImages(member.getIdOrThrow())
+            ?: throw MemberException(HttpStatus.BAD_REQUEST, "회원을 찾을 수 없습니다.")
+        val profile = findMember.getProfileOrThrow()
+
+        // 코드 이미지 개수 검증 (1~3개)
+        if (codeImages.size !in 1..3) {
+            throw MemberException(HttpStatus.BAD_REQUEST, "코드 이미지는 1개 이상 3개 이하여야 합니다")
+        }
+
+        // 기존 코드 이미지 삭제
+        val existingCodeImages = codeImageRepository.findByProfileIdOrderByOrdersAsc(profile.id!!)
+        // TODO: S3에서 파일 삭제 구현 필요
+        codeImageRepository.deleteAll(existingCodeImages)
+
+        // 새 이미지 업로드
+        val newCodeImageUrls = codeImages.map { file ->
+            imageUploader.uploadFile(file)
+        }
+
+        // Profile 업데이트 (Dual Write)
+        profile.replaceAllCodeImages(newCodeImageUrls)
+
+        memberJpaRepository.save(findMember)
+
+        return UpdateCodeImagesResponse(
+            uploadedCount = newCodeImageUrls.size,
+            profileStatus = findMember.memberStatus,
+            message = "코드 이미지 ${newCodeImageUrls.size}개가 업로드되었습니다. 심사가 다시 진행됩니다."
+        )
+    }
+
+    /**
+     * 대표 질문 및 답변 수정 (사용자용)
+     */
+    fun updateRepresentativeQuestion(
+        member: Member,
+        questionId: Long,
+        answer: String
+    ): UpdateRepresentativeQuestionResponse {
+        val profile = member.getProfileOrThrow()
+
+        // Question 조회
+        val question = questionJpaRepository.findById(questionId)
+            .orElseThrow { MemberException(HttpStatus.NOT_FOUND, "질문을 찾을 수 없습니다: $questionId") }
+
+        // 질문이 활성화되어 있는지 확인
+        if (!question.isActive) {
+            throw MemberException(HttpStatus.BAD_REQUEST, "비활성화된 질문은 선택할 수 없습니다")
+        }
+
+        // Question과 Answer 업데이트
+        profile.representativeQuestion = question
+        profile.representativeAnswer = answer
+
+        profileJpaRepository.save(profile)
+
+        return UpdateRepresentativeQuestionResponse(
+            representativeQuestion = UpdateRepresentativeQuestionResponse.QuestionInfo(
+                id = question.getIdOrThrow(),
+                content = question.content,
+                category = question.category.name
+            ),
+            representativeAnswer = answer,
+            message = "대표 질문 및 답변이 수정되었습니다."
+        )
     }
 }
