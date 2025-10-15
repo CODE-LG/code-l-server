@@ -4,6 +4,7 @@ import codel.admin.business.AdminService
 import codel.admin.domain.Admin
 import codel.admin.exception.AdminException
 import codel.admin.presentation.request.AdminLoginRequest
+import codel.admin.presentation.request.RejectProfileRequest
 import codel.member.domain.Member
 import codel.question.domain.QuestionCategory
 import jakarta.servlet.http.Cookie
@@ -11,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
+import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
@@ -61,16 +63,16 @@ class AdminController(
         val weeklySignups = adminService.getWeeklySignupCount()
         val monthlySignups = adminService.getMonthlySignupCount()
         val approvalRate = adminService.getApprovalRate()
-        
+
         // 상태별 통계
         val statusStats = adminService.getMemberStatusStats()
-        
+
         // 일별 가입자 통계 (차트용)
         val dailyStats = adminService.getDailySignupStats()
-        
+
         // 월별 가입자 통계
         val monthlyStats = adminService.getMonthlySignupStats()
-        
+
         model.addAttribute("totalMembers", totalMembers)
         model.addAttribute("pendingMembers", pendingMembers)
         model.addAttribute("todaySignups", todaySignups)
@@ -80,7 +82,7 @@ class AdminController(
         model.addAttribute("statusStats", statusStats)
         model.addAttribute("dailyStats", dailyStats)
         model.addAttribute("monthlyStats", monthlyStats)
-        
+
         return "home"
     }
 
@@ -90,32 +92,36 @@ class AdminController(
         @PathVariable memberId: Long,
     ): String {
         println("🔍 AdminController.findMemberDetail 호출됨 - memberId: $memberId")
-        
+
         try {
-            // 기본 회원 정보 조회
+            // 기본 회원 정보 조회 (이미지 포함)
             println("📄 회원 정보 조회 시작")
-            val member = adminService.findMember(memberId)
+            val member = adminService.findMemberWithImages(memberId)
             println("✅ 회원 정보 조회 성공: ${member.email}")
-            
+
             // 프로필 정보 안전하게 가져오기
             val profile = member.profile
             println("📋 프로필 정보: ${if (profile != null) "존재함" else "없음"}")
-            
-            // 이미지 리스트 안전하게 가져오기
+
+            // 이미지 리스트 안전하게 가져오기 (ID와 URL 포함)
             val codeImages = try {
-                profile?.getCodeImageList() ?: emptyList()
+                profile?.codeImages?.sortedBy { it.orders }?.map {
+                    mapOf("id" to it.id, "url" to it.url, "isApproved" to it.isApproved, "rejectionReason" to it.rejectionReason)
+                } ?: emptyList()
             } catch (e: Exception) {
                 println("⚠️ Error getting code images: ${e.message}")
-                emptyList<String>()
+                emptyList<Map<String, Any?>>()
             }
-            
+
             val faceImages = try {
-                profile?.getFaceImageList() ?: emptyList()
+                profile?.faceImages?.sortedBy { it.orders }?.map {
+                    mapOf("id" to it.id, "url" to it.url, "isApproved" to it.isApproved, "rejectionReason" to it.rejectionReason)
+                } ?: emptyList()
             } catch (e: Exception) {
                 println("⚠️ Error getting face images: ${e.message}")
-                emptyList<String>()
+                emptyList<Map<String, Any?>>()
             }
-            
+
             println("🖼️ 이미지 정보 - 코드: ${codeImages.size}개, 페이스: ${faceImages.size}개")
 
         // 추가 정보들 조회 (옵셔널)
@@ -125,42 +131,42 @@ class AdminController(
         } catch (e: Exception) {
             emptyList<Any>()
         }
-        
+
         val statusHistory = try {
             // adminService.getMemberStatusHistory(memberId)
             emptyList<Any>() // 명시적 타입 지정
         } catch (e: Exception) {
             emptyList<Any>()
         }
-        
+
         val loginHistory = try {
             // adminService.getMemberLoginHistory(memberId, 10)
             emptyList<Any>() // 명시적 타입 지정
         } catch (e: Exception) {
             emptyList<Any>()
         }
-        
+
         val reportHistory = try {
             // adminService.getMemberReportHistory(memberId)
             emptyList<Any>() // 명시적 타입 지정
         } catch (e: Exception) {
             emptyList<Any>()
         }
-        
+
         val adminNotes = try {
             // adminService.getAdminNotes(memberId)
             emptyList<Any>() // 명시적 타입 지정
         } catch (e: Exception) {
             emptyList<Any>()
         }
-        
+
         val recentActivity = try {
             // adminService.getRecentMemberActivity(memberId, 5)
             emptyList<Any>() // 명시적 타입 지정
         } catch (e: Exception) {
             emptyList<Any>()
         }
-        
+
         // 회원 통계 정보 (옵셔널)
         val memberStats = try {
             // adminService.getMemberStatistics(memberId)
@@ -195,13 +201,47 @@ class AdminController(
         model.addAttribute("memberStats", memberStats)
 
         return "memberDetail"
-        
+
         } catch (e: Exception) {
             println("Error in findMemberDetail for memberId $memberId: ${e.message}")
             e.printStackTrace()
+
+            // 오류 발생 시 회원 목록으로 리다이렉트
+            model.addAttribute("error", "회원 정보를 불러올 수 없습니다 (ID: $memberId)")
+            return "redirect:/v1/admin/members"
+        }
+    }
+
+    /**
+     * 이미지 심사 전용 페이지
+     */
+    @GetMapping("/v1/admin/member/{memberId}/image-review")
+    fun memberImageReview(
+        model: Model,
+        @PathVariable memberId: Long
+    ): String {
+        try {
+            val member = adminService.findMemberWithImages(memberId)
+            val profile = member.profile
             
-            // 오류 발생 시 회원 목록으로 리다이렉트하고 오류 메시지 표시
-            return "redirect:/v1/admin/members?error=회원 정보를 불러올 수 없습니다 (ID: $memberId)"
+            // 이미지 리스트 가져오기
+            val codeImages = profile?.codeImages?.sortedBy { it.orders }?.map {
+                mapOf("id" to it.id, "url" to it.url)
+            } ?: emptyList()
+            
+            val faceImages = profile?.faceImages?.sortedBy { it.orders }?.map {
+                mapOf("id" to it.id, "url" to it.url)
+            } ?: emptyList()
+            
+            model.addAttribute("member", member)
+            model.addAttribute("codeImages", codeImages)
+            model.addAttribute("faceImages", faceImages)
+            
+            return "memberImageReview"
+        } catch (e: Exception) {
+            e.printStackTrace()
+            model.addAttribute("error", "이미지를 불러올 수 없습니다")
+            return "redirect:/v1/admin/member/$memberId"
         }
     }
 
@@ -224,6 +264,24 @@ class AdminController(
         return "redirect:/v1/admin/home"
     }
 
+    /**
+     * 이미지별 거절 처리 API (신규)
+     */
+    @PostMapping("/v1/admin/reject-images/{memberId}")
+    @ResponseBody
+    fun rejectMemberWithImages(
+        @PathVariable memberId: Long,
+        @RequestBody request: RejectProfileRequest
+    ): ResponseEntity<Map<String, String>> {
+        adminService.rejectMemberProfileWithImages(
+            memberId,
+            request.faceImageRejections,
+            request.codeImageRejections
+        )
+
+        return ResponseEntity.ok(mapOf("message" to "프로필 거절 처리가 완료되었습니다"))
+    }
+
     @GetMapping("/v1/admin/members")
     fun memberList(
         model: Model,
@@ -236,7 +294,7 @@ class AdminController(
         @PageableDefault(size = 20) pageable: Pageable
     ): String {
         val members: Page<Member> = adminService.findMembersWithFilter(keyword, status, startDate, endDate, sort, direction, pageable)
-        
+
         // 각 상태별 회원 수 조회
         val statusCounts = mapOf(
             "total" to adminService.countAllMembers(),
@@ -245,11 +303,11 @@ class AdminController(
             "REJECT" to adminService.countMembersByStatus("REJECT"),
             "SIGNUP" to adminService.countMembersByStatus("SIGNUP")
         )
-        
+
         model.addAttribute("members", members)
         model.addAttribute("statusCounts", statusCounts)
         model.addAttribute("param", mapOf(
-            "keyword" to (keyword ?: ""), 
+            "keyword" to (keyword ?: ""),
             "status" to (status ?: ""),
             "startDate" to (startDate ?: ""),
             "endDate" to (endDate ?: ""),
@@ -276,7 +334,7 @@ class AdminController(
     }
 
     // ========== 질문 관리 ==========
-    
+
     @GetMapping("/v1/admin/questions")
     fun questionList(
         model: Model,

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Member Header Section -->
+<div th:fragment="member-header" class="header-section p-4">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center">
+                <div class="profile-avatar me-4">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <div>
+                    <h1 class="mb-2 fw-bold" th:text="${member.profile.codeName ?: '미설정'}">코드네임</h1>
+                    <p class="mb-2 opacity-90" th:text="${member.email}">이메일</p>
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <span class="status-badge" th:classappend="'status-' + ${#strings.toLowerCase(member.memberStatus.name())}"
+                              th:text="${member.memberStatus}">상태</span>
+
+                        <!-- 프로필 완성도 표시 -->
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress-circle"
+                                 th:classappend="${member.profile.isFullProfileComplete()} ? 'progress-100' : (${member.profile.isPublicProfileComplete()} ? 'progress-67' : 'progress-33')"
+                                 th:text="${member.profile.isFullProfileComplete()} ? '100%' : (${member.profile.isPublicProfileComplete()} ? '67%' : '33%')">
+                                67%
+                            </div>
+                            <div>
+                                <div class="fw-bold">프로필 완성도</div>
+                                <small class="opacity-75" th:text="${member.profile.getNextRequiredStep() != null ? '다음: ' + member.profile.getNextRequiredStep() : '완료'}">
+                                    다음: HIDDEN
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="row g-2">
+                <div class="col-6">
+                    <div class="quick-stat">
+                        <div class="fw-bold">ID</div>
+                        <div class="h5 mb-0" th:text="${member.id}">123</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="quick-stat">
+                        <div class="fw-bold">나이</div>
+                        <div class="h5 mb-0" th:text="${member.profile.birthDate != null ? member.profile.getAge() + '세' : '미설정'}">25세</div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="quick-stat">
+                        <div class="fw-bold">가입일</div>
+                        <div th:text="${#temporals.format(member.createdAt, 'yyyy년 MM월 dd일')}">2024년 01월 15일</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Sidebar -->
+<div th:fragment="quick-actions-sidebar" class="info-card mb-4">
+    <div class="card-header-custom">
+        <h5 class="mb-0 d-flex align-items-center">
+            <i class="bi bi-lightning me-2 text-primary"></i>
+            빠른 작업
+        </h5>
+    </div>
+    <div class="card-body p-4">
+        <!-- 이미지 관리 섹션 -->
+        <div class="action-group mb-4">
+            <h6 class="action-group-title">
+                <i class="bi bi-images me-2 text-primary"></i>이미지 관리
+            </h6>
+            <div class="d-grid gap-2">
+                <a th:href="@{/v1/admin/member/{memberId}/image-review(memberId=${member.id})}"
+                   class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-search me-2"></i>이미지 심사하기
+                </a>
+            </div>
+        </div>
+
+        <!-- 회원 상태 관리 섹션 -->
+        <div class="action-group mb-4">
+            <h6 class="action-group-title">
+                <i class="bi bi-person-gear me-2 text-success"></i>상태 관리
+            </h6>
+            <div class="d-grid gap-2">
+                <th:block th:if="${member.memberStatus.name()} == 'PENDING'">
+                    <button class="btn btn-success btn-sm" onclick="approveMember()">
+                        <i class="bi bi-check-circle me-2"></i>회원 승인
+                    </button>
+                </th:block>
+
+                <th:block th:if="${member.memberStatus.name()} != 'BANNED'">
+                    <button class="btn btn-warning btn-sm" onclick="banMember()">
+                        <i class="bi bi-ban me-2"></i>회원 정지
+                    </button>
+                </th:block>
+
+                <th:block th:if="${member.memberStatus.name()} == 'BANNED'">
+                    <button class="btn btn-info btn-sm" onclick="unbanMember()">
+                        <i class="bi bi-check-circle me-2"></i>정지 해제
+                    </button>
+                </th:block>
+            </div>
+        </div>
+
+        <!-- 기타 작업 섹션 -->
+        <div class="action-group">
+            <h6 class="action-group-title">
+                <i class="bi bi-tools me-2 text-secondary"></i>기타 작업
+            </h6>
+            <div class="d-grid gap-2">
+                <button class="btn btn-outline-primary btn-sm" onclick="sendMessage()">
+                    <i class="bi bi-envelope me-2"></i>메시지 발송
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="exportMemberData()">
+                    <i class="bi bi-download me-2"></i>데이터 내보내기
+                </button>
+                <button class="btn btn-outline-danger btn-sm" onclick="deleteMember()">
+                    <i class="bi bi-trash me-2"></i>회원 삭제
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Statistics Sidebar -->
+<div th:fragment="profile-statistics-sidebar" class="info-card mb-4">
+    <div class="card-header-custom">
+        <h5 class="mb-0 d-flex align-items-center">
+            <i class="bi bi-graph-up me-2 text-primary"></i>
+            프로필 통계
+        </h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-6">
+                <div class="text-center">
+                    <div class="h4 mb-1 text-success" th:text="${member.profile.isFullProfileComplete() ? '100' : (member.profile.isPublicProfileComplete() ? '67' : '33')}">67</div>
+                    <small class="text-muted">완성도 (%)</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="text-center">
+                    <div class="h4 mb-1 text-info" th:text="${#lists.size(codeImages) + #lists.size(faceImages)}">5</div>
+                    <small class="text-muted">총 이미지</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="text-center">
+                    <div class="h4 mb-1 text-warning" th:text="${member.profile.birthDate != null ? member.profile.getAge() : 0}">25</div>
+                    <small class="text-muted">나이</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="text-center">
+                    <div class="h4 mb-1 text-primary" th:text="${T(java.time.temporal.ChronoUnit).DAYS.between(member.createdAt.toLocalDate(), T(java.time.LocalDate).now())}">45</div>
+                    <small class="text-muted">가입 일수</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation Sidebar -->
+<div th:fragment="navigation-sidebar" class="info-card">
+    <div class="card-body p-4 text-center">
+        <a class="btn btn-outline-secondary action-btn w-100" href="/v1/admin/members">
+            <i class="bi bi-arrow-left me-2"></i>목록으로 돌아가기
+        </a>
+    </div>
+</div>
+
+<!-- Floating Action Buttons -->
+<div th:fragment="floating-actions" class="floating-actions">
+    <div class="btn-group-vertical" role="group">
+        <button type="button" class="btn btn-primary rounded-circle p-3 mb-2" onclick="scrollToTop()" title="맨 위로">
+            <i class="bi bi-arrow-up"></i>
+        </button>
+        <button type="button" class="btn btn-secondary rounded-circle p-3" onclick="goBack()" title="뒤로가기">
+            <i class="bi bi-arrow-left"></i>
+        </button>
+    </div>
+</div>
+
+</body>
+</html>

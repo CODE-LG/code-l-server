@@ -150,4 +150,15 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
         WHERE m.createdAt >= :startDate
     """)
     fun getRecentSignupCount(@Param("startDate") startDate: LocalDateTime): Long
+    
+    /**
+     * 관리자용: 프로필만 Fetch Join으로 조회
+     */
+    @Query("""
+        SELECT m
+        FROM Member m
+        LEFT JOIN FETCH m.profile p
+        WHERE m.id = :memberId
+    """)
+    fun findMemberWithProfile(@Param("memberId") memberId: Long): Member?
 }
