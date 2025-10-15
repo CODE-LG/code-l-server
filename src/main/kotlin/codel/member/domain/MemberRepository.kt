@@ -116,4 +116,8 @@ class MemberRepository(
     fun findMemberWithProfileAndQuestion(id: Long) : Member? {
         return memberJpaRepository.findMemberWithProfileAndQuestion(id)
     }
+
+    fun findByMemberStatus(memberStatus: MemberStatus): List<Member> {
+        return memberJpaRepository.findByMemberStatus(memberStatus)
+    }
 }
