@@ -16,8 +16,9 @@ DROP TABLE IF EXISTS `profiles`;
 DROP TABLE IF EXISTS `question`;
 DROP TABLE IF EXISTS `reject_reason`;
 DROP TABLE IF EXISTS `report`;
+DROP TABLE IF EXISTS `face_images`;
+DROP TABLE IF EXISTS `code_images`;
 
--- Create tables
 CREATE TABLE `block_member_relation` (
   `blocked_member_id` bigint DEFAULT NULL,
   `blocker_member_id` bigint DEFAULT NULL,
@@ -30,7 +31,12 @@ CREATE TABLE `block_member_relation` (
   KEY `FKry2oe0ajf7pyv7k8495u6tcs6` (`blocker_member_id`),
   CONSTRAINT `FKdsr0m0wy7ihip22ij1ckivgpn` FOREIGN KEY (`blocked_member_id`) REFERENCES `member` (`id`),
   CONSTRAINT `FKry2oe0ajf7pyv7k8495u6tcs6` FOREIGN KEY (`blocker_member_id`) REFERENCES `member` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `chat`
+--
 
 CREATE TABLE `chat` (
   `chat_room_id` bigint NOT NULL,
@@ -45,7 +51,12 @@ CREATE TABLE `chat` (
   KEY `FK9mryo76qkolxuojwwbtj9c1fx` (`from_chat_room_member_id`),
   CONSTRAINT `FK44b6elhh512d2722l09i6qdku` FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room` (`id`),
   CONSTRAINT `FK9mryo76qkolxuojwwbtj9c1fx` FOREIGN KEY (`from_chat_room_member_id`) REFERENCES `chat_room_member` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=578 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `chat_room`
+--
 
 CREATE TABLE `chat_room` (
   `is_unlocked` bit(1) NOT NULL,
@@ -58,7 +69,12 @@ CREATE TABLE `chat_room` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `UK1b9vcrrg9sp0nkfygcgebv44e` (`recent_chat_id`),
   CONSTRAINT `FK44nqbivue0gtsjdpgt7y0imcj` FOREIGN KEY (`recent_chat_id`) REFERENCES `chat` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `chat_room_member`
+--
 
 CREATE TABLE `chat_room_member` (
   `chat_id` bigint DEFAULT NULL,
@@ -74,7 +90,12 @@ CREATE TABLE `chat_room_member` (
   CONSTRAINT `FKb9o8lisg7q5wiv978eing6088` FOREIGN KEY (`chat_id`) REFERENCES `chat` (`id`),
   CONSTRAINT `FKo6a9v51aal2574fjb1ldlw4di` FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room` (`id`),
   CONSTRAINT `FKq64atn9y4cyjpp4qcrllxi3o5` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `chat_room_question`
+--
 
 CREATE TABLE `chat_room_question` (
   `is_used` bit(1) NOT NULL,
@@ -92,7 +113,31 @@ CREATE TABLE `chat_room_question` (
   CONSTRAINT `FK6uvsi17h1sv35piwgc72nq4sx` FOREIGN KEY (`question_id`) REFERENCES `question` (`id`),
   CONSTRAINT `FKermg781g6u4fk2q3p6bhiq86b` FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room` (`id`),
   CONSTRAINT `FKrxxhqhqldakqf0kljq79f0mc3` FOREIGN KEY (`requested_by_member_id`) REFERENCES `member` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `code_images`
+--
+
+CREATE TABLE `code_images` (
+  `is_approved` bit(1) NOT NULL,
+  `orders` int NOT NULL,
+  `created_at` datetime(6) DEFAULT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `profile_id` bigint NOT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `url` varchar(500) NOT NULL,
+  `rejection_reason` varchar(1000) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FKs569e60o4xe25dpxb1hmf584d` (`profile_id`),
+  CONSTRAINT `FKs569e60o4xe25dpxb1hmf584d` FOREIGN KEY (`profile_id`) REFERENCES `profiles` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `code_unlock_request`
+--
 
 CREATE TABLE `code_unlock_request` (
   `chat_room_id` bigint NOT NULL,
@@ -111,7 +156,31 @@ CREATE TABLE `code_unlock_request` (
   CONSTRAINT `FKasx5j9682qplkvfynoiol0uwm` FOREIGN KEY (`processed_by_id`) REFERENCES `member` (`id`),
   CONSTRAINT `FKew1slajceqoc7uljtbd7spir9` FOREIGN KEY (`requester_id`) REFERENCES `member` (`id`),
   CONSTRAINT `FKmidqbqlkm89oeydsids7g8xvx` FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `face_images`
+--
+
+CREATE TABLE `face_images` (
+  `is_approved` bit(1) NOT NULL,
+  `orders` int NOT NULL,
+  `created_at` datetime(6) DEFAULT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `profile_id` bigint NOT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `url` varchar(500) NOT NULL,
+  `rejection_reason` varchar(1000) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FKcyqplxa5oyjgvk0tghd0ilme2` (`profile_id`),
+  CONSTRAINT `FKcyqplxa5oyjgvk0tghd0ilme2` FOREIGN KEY (`profile_id`) REFERENCES `profiles` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `member`
+--
 
 CREATE TABLE `member` (
   `created_at` datetime(6) DEFAULT NULL,
@@ -121,11 +190,17 @@ CREATE TABLE `member` (
   `fcm_token` varchar(255) DEFAULT NULL,
   `oauth_id` varchar(255) DEFAULT NULL,
   `reject_reason` varchar(255) DEFAULT NULL,
-  `member_status` enum('DONE','ESSENTIAL_COMPLETED','HIDDEN_COMPLETED','PENDING','PERSONALITY_COMPLETED','PHONE_VERIFIED','REJECT','SIGNUP','WITHDRAWN') DEFAULT NULL,
+  `member_status` enum('ADMIN','DONE','ESSENTIAL_COMPLETED','HIDDEN_COMPLETED','PENDING','PERSONALITY_COMPLETED','PHONE_VERIFIED','REJECT','SIGNUP','WITHDRAWN') DEFAULT NULL,
   `oauth_type` enum('ADMIN','APPLE','GOOGLE','KAKAO') DEFAULT NULL,
+  `withdrawn_reason` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UKpogkt256oewuximsknodfn6da` (`oauth_type`,`oauth_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `member_signal`
+--
 
 CREATE TABLE `member_signal` (
   `created_at` datetime(6) DEFAULT NULL,
@@ -141,7 +216,12 @@ CREATE TABLE `member_signal` (
   KEY `FKif6qksw91ei4qedxui44mm9yd` (`to_member_id`),
   CONSTRAINT `FKif6qksw91ei4qedxui44mm9yd` FOREIGN KEY (`to_member_id`) REFERENCES `member` (`id`),
   CONSTRAINT `FKlobswiesdohss9tutwg3pqb7v` FOREIGN KEY (`from_member_id`) REFERENCES `member` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `profiles`
+--
 
 CREATE TABLE `profiles` (
   `birth_date` date DEFAULT NULL,
@@ -181,10 +261,15 @@ CREATE TABLE `profiles` (
   `style` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UKa26u3c3eoglisoov0p1k1841f` (`member_id`),
-  UNIQUE KEY `UK9amiri54mo9sfa9jpq7inru5m` (`representative_question_id`),
+  KEY `FK5o19tomscbkmbixg93uj3ieih` (`representative_question_id`),
   CONSTRAINT `FK3je4xlea0lern2dsaq2ofgyfd` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`),
   CONSTRAINT `FK5o19tomscbkmbixg93uj3ieih` FOREIGN KEY (`representative_question_id`) REFERENCES `question` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `question`
+--
 
 CREATE TABLE `question` (
   `is_active` bit(1) NOT NULL,
@@ -195,7 +280,12 @@ CREATE TABLE `question` (
   `description` varchar(1000) DEFAULT NULL,
   `category` enum('BALANCE_ONE','CURRENT_ME','DATE','FAVORITE','MEMORY','VALUES','WANT_TALK') NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=97 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `reject_reason`
+--
 
 CREATE TABLE `reject_reason` (
   `id` bigint NOT NULL AUTO_INCREMENT,
@@ -204,7 +294,12 @@ CREATE TABLE `reject_reason` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `UKkbr846purkbbx7lmb3f7djq8u` (`member_id`),
   CONSTRAINT `FKdv8bjogqlopjgj78fo2wa1ed9` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `report`
+--
 
 CREATE TABLE `report` (
   `created_at` datetime(6) DEFAULT NULL,
@@ -218,7 +313,7 @@ CREATE TABLE `report` (
   KEY `FK1uivt2jamt7slp3banldgnsef` (`reporter_id`),
   CONSTRAINT `FK1uivt2jamt7slp3banldgnsef` FOREIGN KEY (`reporter_id`) REFERENCES `member` (`id`),
   CONSTRAINT `FK6ovdlwgf174uw16m9cynvbgal` FOREIGN KEY (`reported_id`) REFERENCES `member` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Re-enable FK checks
 SET FOREIGN_KEY_CHECKS = 1;
