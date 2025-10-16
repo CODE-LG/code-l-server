@@ -90,11 +90,12 @@ class CodeUnlockController(
         // 거절된 채팅방 정보 조회
         val chatRoomId = rejectedRequest.chatRoom.getIdOrThrow()
         val requester = memberService.findMember(rejectedRequest.requester.getIdOrThrow())
+        
 
         // 실시간 알림 전송 (거절 메시지)
         sendUnlockProcessNotification(chatRoomId, processor, requester, "rejected")
         
-        return ResponseEntity.ok(UnlockRequestResponse.from(rejectedRequest))
+        return ResponseEntity.ok(UnlockRequestResponse.from(rejectedRequest, requester))
     }
 
     /**
