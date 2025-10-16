@@ -389,7 +389,7 @@ class ChatService(
         question: Question,
         requester: Member
     ): Chat {
-        val message = "💭 ${question.content}\n\n_${requester.getProfileOrThrow().codeName}님이 질문을 추천했습니다._"
+        val message = "${requester.getProfileOrThrow().codeName}님의 코드질문\n💭 ${question.content}"
 
         // 요청자의 ChatRoomMember 찾기
         val requesterChatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoom.getIdOrThrow(), requester)
