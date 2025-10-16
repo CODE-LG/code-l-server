@@ -128,10 +128,13 @@ class ProfileReviewService(
         faceImages: List<MultipartFile>?,
         codeImages: List<MultipartFile>?
     ): ReplaceImagesResponse {
-        val profile = member.getProfileOrThrow()
+        val findMember = memberJpaRepository.findMemberWithProfile(member.getIdOrThrow())
+            ?: throw MemberException(HttpStatus.BAD_REQUEST, "회원을 조회할 수 없습니다.")
+
+        val profile = findMember.getProfileOrThrow()
         
         // 상태 검증
-        if (member.memberStatus != MemberStatus.REJECT) {
+        if (findMember.memberStatus != MemberStatus.REJECT) {
             throw MemberException(HttpStatus.BAD_REQUEST, "거절 상태가 아닌 프로필은 수정할 수 없습니다")
         }
 
@@ -201,14 +204,14 @@ class ProfileReviewService(
         }
 
 
-        member.memberStatus = MemberStatus.PENDING
+        findMember.memberStatus = MemberStatus.PENDING
         messages.add("심사가 다시 진행됩니다")
         
-        memberJpaRepository.save(member)
+        memberJpaRepository.save(findMember)
         
         return ReplaceImagesResponse(
             uploadedCount = uploadedCount,
-            profileStatus = member.memberStatus,
+            profileStatus = findMember.memberStatus,
             message = messages.joinToString(". ")
         )
     }

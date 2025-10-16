@@ -27,6 +27,7 @@ class AdminService(
     @Value("\${security.admin.password}")
     private val answerPassword: String,
 ) {
+    @Transactional
     fun loginAdmin(admin: Admin): String {
         admin.validatePassword(answerPassword)
 
