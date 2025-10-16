@@ -1,16 +1,42 @@
 package codel.member.domain
 
-import codel.member.exception.MemberException
-import org.springframework.http.HttpStatus
+import codel.common.domain.BaseTimeEntity
+import jakarta.persistence.*
 
+@Entity
+@Table(name = "code_images")
 class CodeImage(
-    val urls: List<String>,
-) {
-    init {
-        require(urls.size in 1..3) {
-            throw MemberException(HttpStatus.BAD_REQUEST, "코드 이미지 URL은 1개 이상 3개 이하이어야 합니다.")
-        }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
+
+    @Column(nullable = false, length = 500)
+    val url: String,
+
+    @Column(nullable = false)
+    var orders: Int,
+
+    @Column(nullable = false)
+    var isApproved: Boolean = true,
+
+    @Column(length = 1000)
+    var rejectionReason: String? = null
+) : BaseTimeEntity() {
+    
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is CodeImage) return false
+        if (id == 0L) return false
+        return id == other.id
     }
 
-    fun serializeAttribute(): String = urls.joinToString(separator = ",")
+    override fun hashCode(): Int = id.hashCode()
+
+    override fun toString(): String {
+        return "CodeImage(id=$id, url='$url', order=$orders, isApproved=$isApproved)"
+    }
 }

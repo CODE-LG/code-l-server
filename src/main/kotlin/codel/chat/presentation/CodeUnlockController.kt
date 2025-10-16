@@ -5,6 +5,7 @@ import codel.chat.business.CodeUnlockService
 import codel.chat.presentation.response.UnlockRequestResponse
 import codel.chat.presentation.swagger.CodeUnlockControllerSwagger
 import codel.config.argumentresolver.LoginMember
+import codel.member.business.MemberService
 import codel.member.domain.Member
 import org.springframework.http.ResponseEntity
 import org.springframework.messaging.simp.SimpMessagingTemplate
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*
 class CodeUnlockController(
     private val codeUnlockService: CodeUnlockService,
     private val chatService: ChatService,
+    private val memberService : MemberService,
     private val messagingTemplate: SimpMessagingTemplate
 ) : CodeUnlockControllerSwagger{
 
@@ -65,8 +67,8 @@ class CodeUnlockController(
         
         // 승인된 채팅방 정보 조회
         val chatRoomId = approvedRequest.chatRoom.getIdOrThrow()
-        val requester = approvedRequest.requester
-        
+        val requester = memberService.findMember(approvedRequest.requester.getIdOrThrow())
+
         // 실시간 알림 전송 (승인 메시지)
         sendUnlockProcessNotification(chatRoomId, processor, requester, "approved")
         
@@ -87,12 +89,13 @@ class CodeUnlockController(
         
         // 거절된 채팅방 정보 조회
         val chatRoomId = rejectedRequest.chatRoom.getIdOrThrow()
-        val requester = rejectedRequest.requester
+        val requester = memberService.findMember(rejectedRequest.requester.getIdOrThrow())
         
+
         // 실시간 알림 전송 (거절 메시지)
         sendUnlockProcessNotification(chatRoomId, processor, requester, "rejected")
         
-        return ResponseEntity.ok(UnlockRequestResponse.from(rejectedRequest))
+        return ResponseEntity.ok(UnlockRequestResponse.from(rejectedRequest, requester))
     }
 
     /**

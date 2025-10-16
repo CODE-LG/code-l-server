@@ -27,6 +27,8 @@ class Member(
     @Enumerated(EnumType.STRING)
     var memberStatus: MemberStatus,
 
+    var withdrawnReason : String? = null,
+
     var rejectReason: String? = null,
 ) : BaseTimeEntity() {
     fun getIdOrThrow(): Long = id ?: throw MemberException(HttpStatus.BAD_REQUEST, "id가 없는 멤버 입니다.")
@@ -163,6 +165,8 @@ class Member(
             MemberStatus.ESSENTIAL_COMPLETED -> MemberStatus.HIDDEN_COMPLETED
             MemberStatus.PERSONALITY_COMPLETED -> MemberStatus.HIDDEN_COMPLETED
             MemberStatus.HIDDEN_COMPLETED -> MemberStatus.PENDING
+            MemberStatus.PENDING -> MemberStatus.PENDING
+            MemberStatus.REJECT -> MemberStatus.REJECT
             else -> null
         }
     }
@@ -177,7 +181,8 @@ class Member(
     /**
      * 회원 탈퇴 처리
      */
-    fun withdraw() {
+    fun withdraw(reason : String) {
+        this.withdrawnReason = reason
         this.memberStatus = MemberStatus.WITHDRAWN
     }
 
