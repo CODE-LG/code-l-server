@@ -46,13 +46,10 @@ class RecommendationController(
     ): ResponseEntity<Page<FullProfileResponse>> {
         log.info { "코드타임 API 호출 - userId: ${member.getIdOrThrow()}" }
 
-        val memberPage = recommendationService.getCodeTime(member, page, size)
+        // Service에서 DTO 변환까지 완료된 결과 받기
+        val responsePage = recommendationService.getCodeTime(member, page, size)
 
-        return ResponseEntity.ok(
-            memberPage.map { memberEntity ->
-                FullProfileResponse.createOpen(memberEntity)
-            }
-        )
+        return ResponseEntity.ok(responsePage)
     }
 
 //    @GetMapping("/random")

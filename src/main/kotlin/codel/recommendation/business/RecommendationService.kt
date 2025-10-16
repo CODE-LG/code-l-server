@@ -7,8 +7,10 @@ import codel.recommendation.domain.RecommendationConfig
 import codel.recommendation.domain.RecommendationType
 import codel.member.business.MemberService
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -20,9 +22,12 @@ import java.time.LocalTime
  * - 사용자 상황에 맞는 최적의 추천 제공
  * - 기존 MemberService와의 연동점 역할
  * - 추천 시스템 전체 상태 모니터링
+ * 
+ * 동시성 제어:
+ * - synchronized + TransactionTemplate 조합으로 중복 추천 완벽 차단
+ * - synchronized 블록 내에서 트랜잭션 커밋까지 완료 보장
  */
 @Service
-@Transactional(readOnly = true)
 class RecommendationService(
     private val dailyCodeMatchingService: DailyCodeMatchingService,
     private val codeTimeService: CodeTimeService,
@@ -30,7 +35,8 @@ class RecommendationService(
     private val historyService: RecommendationHistoryService,
     private val memberService: MemberService,
     private val exclusionService: RecommendationExclusionService,
-    private val config: RecommendationConfig
+    private val config: RecommendationConfig,
+    private val transactionTemplate: TransactionTemplate
 ) : Loggable {
 
     /**
@@ -51,13 +57,12 @@ class RecommendationService(
      * 오늘의 코드매칭만 조회합니다.
      * 
      * 동시성 제어:
-     * - 같은 사용자의 동시 요청은 순차 처리하여 중복 추천 방지
-     * - 다른 사용자는 병렬 처리하여 성능 유지
+     * - synchronized 블록 내에서 트랜잭션 실행 및 커밋
+     * - 락 해제 시점에 이미 DB 저장 완료 → 중복 추천 완벽 차단
      *
      * @param user 추천을 받을 사용자
      * @return 오늘의 코드매칭 결과
      */
-    @Transactional
     fun getDailyCodeMatching(user: Member): List<Member> {
         val userId = user.getIdOrThrow()
         log.info { "오늘의 코드매칭 요청 - userId: $userId" }
@@ -65,7 +70,17 @@ class RecommendationService(
         val lock = userLocks.computeIfAbsent(userId) { Any() }
         
         return synchronized(lock) {
-            dailyCodeMatchingService.getDailyCodeMatching(user)
+            log.info { "락 획득 성공, 트랜잭션 시작 - userId: $userId" }
+            
+            // synchronized 블록 안에서 트랜잭션 실행 및 커밋
+            val result = transactionTemplate.execute { 
+                dailyCodeMatchingService.getDailyCodeMatching(user)
+            } ?: emptyList()
+            
+            log.info { "트랜잭션 커밋 완료, 추천 ${result.size}명 - userId: $userId, members: ${result.map { it.getIdOrThrow() }}" }
+            result
+        }.also {
+            log.info { "락 해제 - userId: $userId" }
         }
     }
 
@@ -73,21 +88,35 @@ class RecommendationService(
      * 코드타임만 조회합니다.
      * 
      * 동시성 제어:
+     * - synchronized 블록 내에서 트랜잭션 실행 및 커밋
      * - getDailyCodeMatching과 동일한 락 사용 → 두 API 간 중복 방지
-     * - 다른 사용자는 병렬 처리하여 성능 유지
      *
      * @param user 추천을 받을 사용자
-     * @return 코드타임 결과
+     * @return 코드타임 결과 (DTO로 변환 완료)
      */
-    @Transactional(readOnly = false)
-    fun getCodeTime(user: Member, page: Int, size: Int): Page<Member> {
+    fun getCodeTime(user: Member, page: Int, size: Int): Page<codel.member.presentation.response.FullProfileResponse> {
         val userId = user.getIdOrThrow()
         log.info { "코드타임 요청 - userId: $userId" }
         
         val lock = userLocks.computeIfAbsent(userId) { Any() }
         
         return synchronized(lock) {
-            codeTimeService.getCodeTimeRecommendation(user, page, size)
+            log.info { "락 획득 성공, 트랜잭션 시작 - userId: $userId" }
+            
+            // synchronized 블록 안에서 트랜잭션 실행 및 DTO 변환까지 완료
+            val result = transactionTemplate.execute {
+                val memberPage = codeTimeService.getCodeTimeRecommendation(user, page, size)
+                
+                // 트랜잭션 내에서 DTO 변환 → Lazy Loading 문제 해결
+                memberPage.map { memberEntity ->
+                    codel.member.presentation.response.FullProfileResponse.createOpen(memberEntity)
+                }
+            } ?: PageImpl(emptyList())
+            
+            log.info { "트랜잭션 커밋 완료, 추천 ${result.content.size}명 - userId: $userId" }
+            result
+        }.also {
+            log.info { "락 해제 - userId: $userId" }
         }
     }
 
@@ -98,6 +127,7 @@ class RecommendationService(
      * @param timeSlot 조회할 시간대
      * @return 해당 시간대의 코드타임 결과
      */
+    @Transactional(readOnly = true)
     fun getCodeTimeBySlot(user: Member, timeSlot: String): CodeTimeRecommendationResult {
         log.info {
             "특정 시간대 코드타임 요청 - userId: ${user.getIdOrThrow()}, " +
@@ -112,6 +142,7 @@ class RecommendationService(
      * @param user 조회할 사용자
      * @return 종합 추천 현황
      */
+    @Transactional(readOnly = true)
     fun getRecommendationOverview(user: Member): RecommendationOverview {
         log.info { "추천 현황 종합 조회 - userId: ${user.getIdOrThrow()}" }
 
@@ -246,6 +277,7 @@ class RecommendationService(
      * @param type 추천 타입
      * @return 제외 통계 정보
      */
+    @Transactional(readOnly = true)
     fun getExclusionStatistics(user: Member, type: RecommendationType): Map<String, Any> {
         log.info {
             "제외 통계 조회 - userId: ${user.getIdOrThrow()}, type: $type"
