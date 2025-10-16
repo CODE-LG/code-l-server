@@ -6,11 +6,14 @@ import codel.member.business.MemberService
 import codel.member.domain.Member
 import codel.member.presentation.request.MemberLoginRequest
 import codel.member.presentation.request.WithdrawnRequest
+import codel.member.presentation.request.UpdateRepresentativeQuestionRequest
 import codel.member.presentation.response.*
 import codel.member.presentation.swagger.MemberControllerSwagger
 import org.springframework.data.domain.Page
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
 
 @RestController
 class MemberController(
@@ -86,5 +89,38 @@ class MemberController(
     ): ResponseEntity<Void> {
         memberService.withdrawMember(member, request.reason)
         return ResponseEntity.noContent().build()
+    }
+
+    // ========== 프로필 수정 ==========
+
+    /**
+     * 코드 이미지 수정
+     * - Multipart 파일로 1~3개의 이미지를 받아 전체 교체
+     * - 상태가 PENDING으로 변경되어 재심사 진행
+     */
+    @PutMapping("/v1/member/me/profile/code-images", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    override fun updateCodeImages(
+        @LoginMember member: Member,
+        @RequestPart("codeImages") codeImages: List<MultipartFile>,
+    ): ResponseEntity<UpdateCodeImagesResponse> {
+        val response = memberService.updateCodeImages(member, codeImages)
+        return ResponseEntity.ok(response)
+    }
+
+    /**
+     * 대표 질문 및 답변 수정
+     * - 기존 질문 ID와 새로운 답변으로 수정
+     */
+    @PutMapping("/v1/member/me/profile/representative-question")
+    override fun updateRepresentativeQuestion(
+        @LoginMember member: Member,
+        @RequestBody request: UpdateRepresentativeQuestionRequest
+    ): ResponseEntity<UpdateRepresentativeQuestionResponse> {
+        val response = memberService.updateRepresentativeQuestion(
+            member,
+            request.representativeQuestionId,
+            request.representativeAnswer
+        )
+        return ResponseEntity.ok(response)
     }
 }

@@ -102,6 +102,11 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
     @Query("SELECT m FROM Member m JOIN FETCH m.profile WHERE m.id = :memberId")
     fun findByMemberId(memberId: Long) : Member?
 
+
+    @EntityGraph(attributePaths = ["profile", "profile.codeImages"])
+    @Query("select m from Member m where m.id = :memberId")
+    fun findByMemberIdWithProfileAndCodeImages(memberId: Long) : Member?
+
     @EntityGraph(attributePaths = ["profile", "profile.representativeQuestion"])
     @Query("select m from Member m where m.id = :id")
     fun findMemberWithProfileAndQuestion(@Param("id") id: Long): Member?
@@ -150,4 +155,15 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
         WHERE m.createdAt >= :startDate
     """)
     fun getRecentSignupCount(@Param("startDate") startDate: LocalDateTime): Long
+    
+    /**
+     * 관리자용: 프로필만 Fetch Join으로 조회
+     */
+    @Query("""
+        SELECT m
+        FROM Member m
+        LEFT JOIN FETCH m.profile p
+        WHERE m.id = :memberId
+    """)
+    fun findMemberWithProfile(@Param("memberId") memberId: Long): Member?
 }

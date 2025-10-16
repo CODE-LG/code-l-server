@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<script th:fragment="member-detail-scripts" th:inline="javascript">
+    const memberId = /*[[${member.id}]]*/ 0;
+    let currentImageSrc = '';
+
+    // 이미지 모달 표시
+    function showImageModal(src, title) {
+        currentImageSrc = src;
+        document.getElementById('modalImage').src = src;
+        document.getElementById('imageModalTitle').textContent = title;
+        new bootstrap.Modal(document.getElementById('imageModal')).show();
+    }
+
+    // 이미지 다운로드
+    function downloadImage() {
+        const link = document.createElement('a');
+        link.href = currentImageSrc;
+        link.download = 'member_image_' + memberId + '_' + Date.now() + '.jpg';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // 승인 처리
+    function approveMember() {
+        new bootstrap.Modal(document.getElementById('approveModal')).show();
+    }
+
+    function confirmApprove() {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/v1/admin/approval/${memberId}`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // 거절 처리
+    function rejectMember() {
+        new bootstrap.Modal(document.getElementById('rejectModal')).show();
+    }
+
+    function confirmReject() {
+        const reason = document.getElementById('rejectReason').value.trim();
+        if (!reason) {
+            alert('거절 사유를 입력해주세요.');
+            return;
+        }
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/v1/admin/reject/${memberId}`;
+
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'rejectReason';
+        input.value = reason;
+        form.appendChild(input);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // 기타 기능들
+    function banMember() {
+        alert('정지 기능은 추후 구현 예정입니다.');
+    }
+
+    function unbanMember() {
+        alert('정지 해제 기능은 추후 구현 예정입니다.');
+    }
+
+    function sendMessage() {
+        alert('메시지 발송 기능은 추후 구현 예정입니다.');
+    }
+
+    function exportMemberData() {
+        alert('데이터 내보내기 기능은 추후 구현 예정입니다.');
+    }
+
+    function deleteMember() {
+        if (confirm('정말로 이 회원을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
+            alert('회원 삭제 기능은 추후 구현 예정입니다.');
+        }
+    }
+
+    function scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goBack() {
+        window.history.back();
+    }
+
+    // 탭 상태 저장/복원
+    document.addEventListener('DOMContentLoaded', function() {
+        const activeTab = localStorage.getItem('memberDetailActiveTab');
+        if (activeTab) {
+            const tabElement = document.querySelector(`#${activeTab}`);
+            if (tabElement) {
+                new bootstrap.Tab(tabElement).show();
+            }
+        }
+
+        // 탭 클릭 시 상태 저장
+        document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+            tab.addEventListener('click', function() {
+                localStorage.setItem('memberDetailActiveTab', this.id);
+            });
+        });
+    });
+
+    // 키보드 단축키
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + 숫자로 탭 전환
+        if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '4') {
+            e.preventDefault();
+            const tabIndex = parseInt(e.key) - 1;
+            const tabs = ['essential-tab', 'personality-tab', 'hidden-tab', 'activity-tab'];
+            const targetTab = document.getElementById(tabs[tabIndex]);
+            if (targetTab) {
+                new bootstrap.Tab(targetTab).show();
+            }
+        }
+
+        // ESC로 모달 닫기
+        if (e.key === 'Escape') {
+            const openModals = document.querySelectorAll('.modal.show');
+            openModals.forEach(modal => {
+                bootstrap.Modal.getInstance(modal)?.hide();
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

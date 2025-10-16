@@ -7,7 +7,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
 
-class CodeImageTest {
+class CodeImageVOTest {
 
     @DisplayName("1~3개의 이미지 URL로 CodeImage를 생성할 수 있다")
     @Test
@@ -16,7 +16,7 @@ class CodeImageTest {
         val urls = listOf("url1", "url2", "url3")
 
         // when
-        val codeImage = CodeImage(urls)
+        val codeImage = CodeImageVO(urls)
 
         // then
         assertThat(codeImage.urls).containsExactly("url1", "url2", "url3")
@@ -30,7 +30,7 @@ class CodeImageTest {
 
         // when & then
         val exception = assertThrows(MemberException::class.java) {
-            CodeImage(urls)
+            CodeImageVO(urls)
         }
         assertThat(exception.status).isEqualTo(HttpStatus.BAD_REQUEST)
         assertThat(exception.message).contains("코드 이미지 URL은 1개 이상 3개 이하이어야 합니다.")
@@ -44,7 +44,7 @@ class CodeImageTest {
 
         // when & then
         val exception = assertThrows(MemberException::class.java) {
-            CodeImage(urls)
+            CodeImageVO(urls)
         }
         assertThat(exception.status).isEqualTo(HttpStatus.BAD_REQUEST)
         assertThat(exception.message).contains("코드 이미지 URL은 1개 이상 3개 이하이어야 합니다.")
@@ -55,7 +55,7 @@ class CodeImageTest {
     fun serializeAttribute() {
         // given
         val urls = listOf("a", "b", "c")
-        val codeImage = CodeImage(urls)
+        val codeImage = CodeImageVO(urls)
 
         // when
         val serialized = codeImage.serializeAttribute()

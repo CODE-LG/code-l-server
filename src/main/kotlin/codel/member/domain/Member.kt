@@ -165,6 +165,8 @@ class Member(
             MemberStatus.ESSENTIAL_COMPLETED -> MemberStatus.HIDDEN_COMPLETED
             MemberStatus.PERSONALITY_COMPLETED -> MemberStatus.HIDDEN_COMPLETED
             MemberStatus.HIDDEN_COMPLETED -> MemberStatus.PENDING
+            MemberStatus.PENDING -> MemberStatus.PENDING
+            MemberStatus.REJECT -> MemberStatus.REJECT
             else -> null
         }
     }
