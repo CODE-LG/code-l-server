@@ -3,6 +3,7 @@ package codel.member.presentation.swagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import codel.member.presentation.request.MemberLoginRequest
+import codel.member.presentation.request.WithdrawnRequest
 import codel.member.presentation.response.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -121,6 +122,7 @@ interface MemberControllerSwagger {
     )
     fun withdrawMember(
         @Parameter(hidden = true) @LoginMember member: Member,
+        @RequestBody request: WithdrawnRequest,
     ): ResponseEntity<Void>
     
     @Operation(
