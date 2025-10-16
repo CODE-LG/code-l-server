@@ -768,7 +768,7 @@ class MemberService(
         return UpdateCodeImagesResponse(
             uploadedCount = newCodeImageUrls.size,
             profileStatus = findMember.memberStatus,
-            message = "코드 이미지 ${newCodeImageUrls.size}개가 업로드되었습니다. 심사가 다시 진행됩니다."
+            message = "오픈 코드프로필 이미지가 변경되었습니다."
         )
     }
 
