@@ -49,6 +49,7 @@ class Profile(
     var smoke: String? = null,
     var personalities: String? = null,
     
+
     // 대표 질문 (Question 엔티티와 다대1 관계)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "representative_question_id")

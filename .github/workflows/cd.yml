@@ -76,6 +76,17 @@ jobs:
             webhook:
               url: ${{ secrets.DEV_DISCORD_WEBHOOK_URL }}
           
+            # Flyway 설정 (MySQL 환경에서 활성화)
+          
+          flyway:
+            enabled: true
+            baseline-on-migrate: true
+            # baseline-version 제거: Flyway가 자동으로 현재 상태를 baseline으로 설정
+            validate-on-migrate: true  # 스키마 검증 활성화
+            locations: classpath:db/migration
+            table: flyway_schema_history
+            clean-disabled: true  # 프로덕션에서는 반드시 true
+          
           springdoc:
             override-with-generic-response: false
           EOF
