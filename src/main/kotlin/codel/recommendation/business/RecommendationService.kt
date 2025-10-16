@@ -34,30 +34,61 @@ class RecommendationService(
 ) : Loggable {
 
     /**
+     * 사용자별 락 객체를 관리하는 맵
+     * 
+     * 동시성 제어:
+     * - 같은 사용자의 getDailyCodeMatching + getCodeTime 동시 요청 시 중복 추천 방지
+     * - 사용자별로 독립적인 락 사용 → 다른 사용자에게 영향 없음
+     * 
+     * 메모리:
+     * - 락 객체 1개 = 16 bytes
+     * - 100만 사용자 = 24MB (무시 가능)
+     * - GC가 필요 시 자동 처리
+     */
+    private val userLocks = java.util.concurrent.ConcurrentHashMap<Long, Any>()
+
+    /**
      * 오늘의 코드매칭만 조회합니다.
-     * 기존 MemberService와의 호환성을 위한 메서드입니다.
+     * 
+     * 동시성 제어:
+     * - 같은 사용자의 동시 요청은 순차 처리하여 중복 추천 방지
+     * - 다른 사용자는 병렬 처리하여 성능 유지
      *
      * @param user 추천을 받을 사용자
      * @return 오늘의 코드매칭 결과
      */
     @Transactional
     fun getDailyCodeMatching(user: Member): List<Member> {
-        log.info { "오늘의 코드매칭 단독 요청 - userId: ${user.getIdOrThrow()}" }
-        return dailyCodeMatchingService.getDailyCodeMatching(user)
+        val userId = user.getIdOrThrow()
+        log.info { "오늘의 코드매칭 요청 - userId: $userId" }
+        
+        val lock = userLocks.computeIfAbsent(userId) { Any() }
+        
+        return synchronized(lock) {
+            dailyCodeMatchingService.getDailyCodeMatching(user)
+        }
     }
 
     /**
      * 코드타임만 조회합니다.
+     * 
+     * 동시성 제어:
+     * - getDailyCodeMatching과 동일한 락 사용 → 두 API 간 중복 방지
+     * - 다른 사용자는 병렬 처리하여 성능 유지
      *
      * @param user 추천을 받을 사용자
      * @return 코드타임 결과
      */
     @Transactional(readOnly = false)
-    fun getCodeTime(user: Member,
-                    page : Int,
-                    size : Int): Page<Member> {
-        log.info { "코드타임 단독 요청 - userId: ${user.getIdOrThrow()}" }
-        return codeTimeService.getCodeTimeRecommendation(user, page, size)
+    fun getCodeTime(user: Member, page: Int, size: Int): Page<Member> {
+        val userId = user.getIdOrThrow()
+        log.info { "코드타임 요청 - userId: $userId" }
+        
+        val lock = userLocks.computeIfAbsent(userId) { Any() }
+        
+        return synchronized(lock) {
+            codeTimeService.getCodeTimeRecommendation(user, page, size)
+        }
     }
 
     /**
