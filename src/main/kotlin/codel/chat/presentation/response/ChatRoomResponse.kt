@@ -33,7 +33,7 @@ data class ChatRoomResponse(
                 recentChat = chatRoom.recentChat?.let { ChatResponse.toResponse(requester, it) },
                 unReadMessageCount = unReadMessageCount,
                 chatRoomStatus = chatRoom.status,
-                unlockInfo = UnlockInfoResponse(false, null, false), // 임시 - ChatService에서 수정 예정
+                unlockInfo = UnlockInfoResponse(false, null, false),
                 createdAt = chatRoom.createdAt,
                 updatedAt = chatRoom.updatedAt,
             )

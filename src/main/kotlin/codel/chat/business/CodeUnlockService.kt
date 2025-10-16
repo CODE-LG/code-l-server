@@ -122,8 +122,8 @@ class CodeUnlockService(
         val systemMessage = chatJpaRepository.save(
             Chat.createSystemMessage(
                 chatRoom = unlockRequest.chatRoom,
-                message = "코드해제 요청이 거절되었습니다.",
-                chatContentType = ChatContentType.UNLOCKED_REJECTED
+                message = "사용할 수 없는 채팅방입니다",
+                chatContentType = ChatContentType.CLOSE_CONVERSATION
             )
         )
 

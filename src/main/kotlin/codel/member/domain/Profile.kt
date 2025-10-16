@@ -30,6 +30,9 @@ class Profile(
     @Column(length = 1000)
     var codeImage: String? = null,
 
+    @OneToMany(mappedBy = "profile", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val codeImages: MutableList<CodeImage> = mutableListOf(),
+
     @Column(nullable = false)
     var essentialCompleted: Boolean = false,
 
@@ -46,8 +49,8 @@ class Profile(
     var smoke: String? = null,
     var personalities: String? = null,
     
-    // 대표 질문 (Question 엔티티와 1:1 관계)
-    @OneToOne(fetch = FetchType.LAZY)
+    // 대표 질문 (Question 엔티티와 다대1 관계)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "representative_question_id")
     var representativeQuestion: Question? = null,
 
@@ -69,6 +72,9 @@ class Profile(
 
     @Column(length = 1000)
     var faceImage: String? = null,
+
+    @OneToMany(mappedBy = "profile", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val faceImages: MutableList<FaceImage> = mutableListOf(),
 
     @Column(nullable = false)
     var hiddenCompleted: Boolean = false,
@@ -122,10 +128,24 @@ class Profile(
     fun updateEssentialProfileImages(
         codeImages: List<String>
     ) {
-        require(codeImages.isNotEmpty()) { "코드 이미지가 필요합니다" }
         require(codeName != null) { "기본 정보를 먼저 입력해주세요" }
         
+        // 1. 기존 String 필드 업데이트 (하위 호환성)
         this.codeImage = serializeList(codeImages)
+        
+        // 2. 새로운 Entity 업데이트 (Dual Write)
+        this.codeImages.clear()
+        codeImages.forEachIndexed { index, url ->
+            this.codeImages.add(
+                CodeImage(
+                    profile = this,
+                    url = url,
+                    orders = index,
+                    isApproved = true
+                )
+            )
+        }
+        
         this.essentialCompleted = true
         this.essentialCompletedAt = LocalDateTime.now()
         this.updatedAt = LocalDateTime.now()
@@ -147,8 +167,23 @@ class Profile(
         this.bigCity = sido
         this.smallCity = sigugun
         this.job = jobCategory
-        this.codeImage = serializeList(codeImages)
         this.interests = serializeList(interests)
+        
+        // 1. String 필드 업데이트
+        this.codeImage = serializeList(codeImages)
+        
+        // 2. Entity 업데이트 (Dual Write)
+        this.codeImages.clear()
+        codeImages.forEachIndexed { index, url ->
+            this.codeImages.add(
+                CodeImage(
+                    profile = this,
+                    url = url,
+                    orders = index,
+                    isApproved = true
+                )
+            )
+        }
         
         this.essentialCompleted = true
         this.essentialCompletedAt = LocalDateTime.now()
@@ -205,7 +240,22 @@ class Profile(
         this.dateStyle = dateStyle
         this.conflictResolutionStyle = conflictResolutionStyle
         this.relationshipValues = relationshipValues
+        
+        // 1. String 필드 업데이트
         this.faceImage = serializeList(faceImages)
+        
+        // 2. Entity 업데이트 (Dual Write)
+        this.faceImages.clear()
+        faceImages.forEachIndexed { index, url ->
+            this.faceImages.add(
+                FaceImage(
+                    profile = this,
+                    url = url,
+                    orders = index,
+                    isApproved = true
+                )
+            )
+        }
         
         this.hiddenCompleted = true
         this.hiddenCompletedAt = LocalDateTime.now()
@@ -235,10 +285,24 @@ class Profile(
     fun updateHiddenProfileImages(
         faceImages: List<String>
     ) {
-        require(faceImages.isNotEmpty()) { "얼굴 이미지가 필요합니다" }
         require(loveLanguage != null) { "Hidden Profile 정보를 먼저 입력해주세요" }
         
+        // 1. 기존 String 필드 업데이트 (하위 호환성)
         this.faceImage = serializeList(faceImages)
+        
+        // 2. 새로운 Entity 업데이트 (Dual Write)
+        this.faceImages.clear()
+        faceImages.forEachIndexed { index, url ->
+            this.faceImages.add(
+                FaceImage(
+                    profile = this,
+                    url = url,
+                    orders = index,
+                    isApproved = true
+                )
+            )
+        }
+        
         this.hiddenCompleted = true
         this.hiddenCompletedAt = LocalDateTime.now()
         this.updatedAt = LocalDateTime.now()
@@ -261,8 +325,24 @@ class Profile(
     fun getInterestsList(): List<String> = deserializeString(interests)
     fun getPersonalitiesList(): List<String> = deserializeString(personalities)
     fun getStylesList(): List<String> = deserializeString(style)
-    fun getCodeImageList(): List<String> = deserializeString(codeImage)
-    fun getFaceImageList(): List<String> = deserializeString(faceImage)
+    
+    fun getCodeImageList(): List<String> {
+        // Entity가 있으면 Entity에서, 없으면 String 필드에서 (하위 호환성)
+//        return if (codeImages.isNotEmpty()) {
+//            codeImages.sortedBy { it.orders }.map { it.url }
+//        } else {
+            return deserializeString(codeImage)
+//        }
+    }
+    
+    fun getFaceImageList(): List<String> {
+        // Entity가 있으면 Entity에서, 없으면 String 필드에서 (하위 호환성)
+//        return if (faceImages.isNotEmpty()) {
+//            faceImages.sortedBy { it.orders }.map { it.url }
+//        } else {
+            return deserializeString(faceImage)
+//        }
+    }
     
     // 기존 호환성 메서드 유지
     fun getCodeImageOrThrow(): List<String> {
@@ -363,5 +443,59 @@ class Profile(
     // 기타
     fun getIntroduceOrThrow(): String = introduce ?: throw MemberException(HttpStatus.BAD_REQUEST, "자기소개가 설정되지 않았습니다.")
     fun getMemberOrThrow(): Member = member ?: throw MemberException(HttpStatus.BAD_REQUEST, "회원 정보가 설정되지 않았습니다.")
+
+    // ===== 거절된 이미지 교체 메서드 =====
+    
+    /**
+     * 거절된 코드 이미지를 새 이미지로 전체 교체
+     */
+    fun replaceAllCodeImages(newCodeImages: List<String>) {
+        require(newCodeImages.isNotEmpty()) { "코드 이미지가 필요합니다" }
+
+        // 1. 기존 Entity 전체 삭제
+        this.codeImages.clear()
+        
+        // 2. 새 이미지로 교체
+        newCodeImages.forEachIndexed { index, url ->
+            this.codeImages.add(
+                CodeImage(
+                    profile = this,
+                    url = url,
+                    orders = index,
+                    isApproved = true
+                )
+            )
+        }
+        
+        // 3. String 필드도 업데이트 (하위 호환성)
+        this.codeImage = serializeList(newCodeImages)
+        this.updatedAt = LocalDateTime.now()
+    }
+    
+    /**
+     * 거절된 얼굴 이미지를 새 이미지로 전체 교체
+     */
+    fun replaceAllFaceImages(newFaceImages: List<String>) {
+        require(newFaceImages.isNotEmpty()) { "얼굴 이미지가 필요합니다" }
+        
+        // 1. 기존 Entity 전체 삭제
+        this.faceImages.clear()
+        
+        // 2. 새 이미지로 교체
+        newFaceImages.forEachIndexed { index, url ->
+            this.faceImages.add(
+                FaceImage(
+                    profile = this,
+                    url = url,
+                    orders = index,
+                    isApproved = true
+                )
+            )
+        }
+        
+        // 3. String 필드도 업데이트 (하위 호환성)
+        this.faceImage = serializeList(newFaceImages)
+        this.updatedAt = LocalDateTime.now()
+    }
 
 }

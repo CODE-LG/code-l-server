@@ -67,8 +67,8 @@ class CodeUnlockController(
         
         // 승인된 채팅방 정보 조회
         val chatRoomId = approvedRequest.chatRoom.getIdOrThrow()
-        val requester = approvedRequest.requester
-        
+        val requester = memberService.findMember(approvedRequest.requester.getIdOrThrow())
+
         // 실시간 알림 전송 (승인 메시지)
         sendUnlockProcessNotification(chatRoomId, processor, requester, "approved")
         
@@ -91,6 +91,7 @@ class CodeUnlockController(
         val chatRoomId = rejectedRequest.chatRoom.getIdOrThrow()
         val requester = memberService.findMember(rejectedRequest.requester.getIdOrThrow())
         
+
         // 실시간 알림 전송 (거절 메시지)
         sendUnlockProcessNotification(chatRoomId, processor, requester, "rejected")
         
