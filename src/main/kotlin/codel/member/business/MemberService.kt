@@ -687,7 +687,7 @@ class MemberService(
         memberId: Long,
         faceImageRejections: List<ImageRejection>?,
         codeImageRejections: List<ImageRejection>?
-    ) {
+    ) : Member{
         val member = findMember(memberId)
         val profile = member.getProfileOrThrow()
 
@@ -731,6 +731,8 @@ class MemberService(
         member.rejectReason = reasons.joinToString(", ")
 
         memberJpaRepository.save(member)
+
+        return member
     }
 
     /**
