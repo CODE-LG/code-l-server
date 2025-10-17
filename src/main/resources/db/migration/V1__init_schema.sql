@@ -1,187 +1,30 @@
 -- V1__init_schema.sql
--- Flyway init schema migration
--- Foreign key checks off
+-- Flyway init schema migration (order fixed)
 SET FOREIGN_KEY_CHECKS = 0;
 
--- Drop tables if exist
-DROP TABLE IF EXISTS `block_member_relation`;
-DROP TABLE IF EXISTS `chat`;
-DROP TABLE IF EXISTS `chat_room`;
-DROP TABLE IF EXISTS `chat_room_member`;
+-- =========================
+-- DROP TABLES (children → parents)
+-- =========================
 DROP TABLE IF EXISTS `chat_room_question`;
 DROP TABLE IF EXISTS `code_unlock_request`;
-DROP TABLE IF EXISTS `member`;
+DROP TABLE IF EXISTS `chat_room_member`;
+DROP TABLE IF EXISTS `chat`;
+DROP TABLE IF EXISTS `block_member_relation`;
 DROP TABLE IF EXISTS `member_signal`;
-DROP TABLE IF EXISTS `profiles`;
-DROP TABLE IF EXISTS `question`;
-DROP TABLE IF EXISTS `reject_reason`;
 DROP TABLE IF EXISTS `report`;
 DROP TABLE IF EXISTS `face_images`;
 DROP TABLE IF EXISTS `code_images`;
+DROP TABLE IF EXISTS `profiles`;
+DROP TABLE IF EXISTS `reject_reason`;
+DROP TABLE IF EXISTS `question`;
+DROP TABLE IF EXISTS `chat_room`;
+DROP TABLE IF EXISTS `member`;
 
-CREATE TABLE `block_member_relation` (
-  `blocked_member_id` bigint DEFAULT NULL,
-  `blocker_member_id` bigint DEFAULT NULL,
-  `created_at` datetime(6) DEFAULT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `status` enum('BLOCKED','UNBLOCKED') DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FKdsr0m0wy7ihip22ij1ckivgpn` (`blocked_member_id`),
-  KEY `FKry2oe0ajf7pyv7k8495u6tcs6` (`blocker_member_id`),
-  CONSTRAINT `FKdsr0m0wy7ihip22ij1ckivgpn` FOREIGN KEY (`blocked_member_id`) REFERENCES `member` (`id`),
-  CONSTRAINT `FKry2oe0ajf7pyv7k8495u6tcs6` FOREIGN KEY (`blocker_member_id`) REFERENCES `member` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- =========================
+-- CREATE TABLES (parents → children)
+-- =========================
 
---
--- Table structure for table `chat`
---
-
-CREATE TABLE `chat` (
-  `chat_room_id` bigint NOT NULL,
-  `from_chat_room_member_id` bigint DEFAULT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `sent_at` datetime(6) DEFAULT NULL,
-  `message` varchar(255) DEFAULT NULL,
-  `chat_content_type` enum('CLOSE_CONVERSATION','MATCHED','ONBOARDING','QUESTION','TEXT','TIME','UNLOCKED','UNLOCKED_APPROVED','UNLOCKED_REJECTED','UNLOCKED_REQUEST') DEFAULT NULL,
-  `sender_type` enum('MY','PARTNER','SYSTEM','USER') DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK44b6elhh512d2722l09i6qdku` (`chat_room_id`),
-  KEY `FK9mryo76qkolxuojwwbtj9c1fx` (`from_chat_room_member_id`),
-  CONSTRAINT `FK44b6elhh512d2722l09i6qdku` FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room` (`id`),
-  CONSTRAINT `FK9mryo76qkolxuojwwbtj9c1fx` FOREIGN KEY (`from_chat_room_member_id`) REFERENCES `chat_room_member` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=578 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `chat_room`
---
-
-CREATE TABLE `chat_room` (
-  `is_unlocked` bit(1) NOT NULL,
-  `created_at` datetime(6) DEFAULT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `recent_chat_id` bigint DEFAULT NULL,
-  `unlocked_at` datetime(6) DEFAULT NULL,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `status` enum('DISABLED','LOCKED','UNLOCKED') DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UK1b9vcrrg9sp0nkfygcgebv44e` (`recent_chat_id`),
-  CONSTRAINT `FK44nqbivue0gtsjdpgt7y0imcj` FOREIGN KEY (`recent_chat_id`) REFERENCES `chat` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `chat_room_member`
---
-
-CREATE TABLE `chat_room_member` (
-  `chat_id` bigint DEFAULT NULL,
-  `chat_room_id` bigint NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `left_at` datetime(6) DEFAULT NULL,
-  `member_id` bigint NOT NULL,
-  `member_status` enum('ACTIVE','LEFT') DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UKsseano88a8cv0ne1qxsiv1g4v` (`chat_room_id`,`member_id`),
-  UNIQUE KEY `UKc3bwd8ohk6yni9mjeryembv4g` (`chat_id`),
-  KEY `FKq64atn9y4cyjpp4qcrllxi3o5` (`member_id`),
-  CONSTRAINT `FKb9o8lisg7q5wiv978eing6088` FOREIGN KEY (`chat_id`) REFERENCES `chat` (`id`),
-  CONSTRAINT `FKo6a9v51aal2574fjb1ldlw4di` FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room` (`id`),
-  CONSTRAINT `FKq64atn9y4cyjpp4qcrllxi3o5` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `chat_room_question`
---
-
-CREATE TABLE `chat_room_question` (
-  `is_used` bit(1) NOT NULL,
-  `chat_room_id` bigint NOT NULL,
-  `created_at` datetime(6) DEFAULT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `question_id` bigint NOT NULL,
-  `requested_by_member_id` bigint DEFAULT NULL,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `used_at` datetime(6) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UK1mdkxhjqch6uccxt1iegs4ej5` (`chat_room_id`,`question_id`),
-  KEY `FK6uvsi17h1sv35piwgc72nq4sx` (`question_id`),
-  KEY `FKrxxhqhqldakqf0kljq79f0mc3` (`requested_by_member_id`),
-  CONSTRAINT `FK6uvsi17h1sv35piwgc72nq4sx` FOREIGN KEY (`question_id`) REFERENCES `question` (`id`),
-  CONSTRAINT `FKermg781g6u4fk2q3p6bhiq86b` FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room` (`id`),
-  CONSTRAINT `FKrxxhqhqldakqf0kljq79f0mc3` FOREIGN KEY (`requested_by_member_id`) REFERENCES `member` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `code_images`
---
-
-CREATE TABLE `code_images` (
-  `is_approved` bit(1) NOT NULL,
-  `orders` int NOT NULL,
-  `created_at` datetime(6) DEFAULT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `profile_id` bigint NOT NULL,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `url` varchar(500) NOT NULL,
-  `rejection_reason` varchar(1000) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FKs569e60o4xe25dpxb1hmf584d` (`profile_id`),
-  CONSTRAINT `FKs569e60o4xe25dpxb1hmf584d` FOREIGN KEY (`profile_id`) REFERENCES `profiles` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `code_unlock_request`
---
-
-CREATE TABLE `code_unlock_request` (
-  `chat_room_id` bigint NOT NULL,
-  `created_at` datetime(6) DEFAULT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `processed_at` datetime(6) DEFAULT NULL,
-  `processed_by_id` bigint DEFAULT NULL,
-  `requested_at` datetime(6) DEFAULT NULL,
-  `requester_id` bigint NOT NULL,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `status` enum('APPROVED','PENDING','REJECTED') DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FKmidqbqlkm89oeydsids7g8xvx` (`chat_room_id`),
-  KEY `FKasx5j9682qplkvfynoiol0uwm` (`processed_by_id`),
-  KEY `FKew1slajceqoc7uljtbd7spir9` (`requester_id`),
-  CONSTRAINT `FKasx5j9682qplkvfynoiol0uwm` FOREIGN KEY (`processed_by_id`) REFERENCES `member` (`id`),
-  CONSTRAINT `FKew1slajceqoc7uljtbd7spir9` FOREIGN KEY (`requester_id`) REFERENCES `member` (`id`),
-  CONSTRAINT `FKmidqbqlkm89oeydsids7g8xvx` FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `face_images`
---
-
-CREATE TABLE `face_images` (
-  `is_approved` bit(1) NOT NULL,
-  `orders` int NOT NULL,
-  `created_at` datetime(6) DEFAULT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `profile_id` bigint NOT NULL,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `url` varchar(500) NOT NULL,
-  `rejection_reason` varchar(1000) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FKcyqplxa5oyjgvk0tghd0ilme2` (`profile_id`),
-  CONSTRAINT `FKcyqplxa5oyjgvk0tghd0ilme2` FOREIGN KEY (`profile_id`) REFERENCES `profiles` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `member`
---
-
+-- member (root)
 CREATE TABLE `member` (
   `created_at` datetime(6) DEFAULT NULL,
   `id` bigint NOT NULL AUTO_INCREMENT,
@@ -195,34 +38,21 @@ CREATE TABLE `member` (
   `withdrawn_reason` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UKpogkt256oewuximsknodfn6da` (`oauth_type`,`oauth_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
---
--- Table structure for table `member_signal`
---
-
-CREATE TABLE `member_signal` (
+-- question (root)
+CREATE TABLE `question` (
+  `is_active` bit(1) NOT NULL,
   `created_at` datetime(6) DEFAULT NULL,
-  `from_member_id` bigint DEFAULT NULL,
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `to_member_id` bigint DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
-  `message` varchar(255) DEFAULT NULL,
-  `receiver_status` enum('APPROVED','NONE','PENDING','PENDING_HIDDEN','REJECTED') DEFAULT NULL,
-  `sender_status` enum('APPROVED','NONE','PENDING','PENDING_HIDDEN','REJECTED') DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FKlobswiesdohss9tutwg3pqb7v` (`from_member_id`),
-  KEY `FKif6qksw91ei4qedxui44mm9yd` (`to_member_id`),
-  CONSTRAINT `FKif6qksw91ei4qedxui44mm9yd` FOREIGN KEY (`to_member_id`) REFERENCES `member` (`id`),
-  CONSTRAINT `FKlobswiesdohss9tutwg3pqb7v` FOREIGN KEY (`from_member_id`) REFERENCES `member` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+  `content` varchar(500) NOT NULL,
+  `description` varchar(1000) DEFAULT NULL,
+  `category` enum('BALANCE_ONE','CURRENT_ME','DATE','FAVORITE','MEMORY','VALUES','WANT_TALK') NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
---
--- Table structure for table `profiles`
---
-
+-- profiles (FK → member, question)
 CREATE TABLE `profiles` (
   `birth_date` date DEFAULT NULL,
   `essential_completed` bit(1) NOT NULL,
@@ -264,28 +94,112 @@ CREATE TABLE `profiles` (
   KEY `FK5o19tomscbkmbixg93uj3ieih` (`representative_question_id`),
   CONSTRAINT `FK3je4xlea0lern2dsaq2ofgyfd` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`),
   CONSTRAINT `FK5o19tomscbkmbixg93uj3ieih` FOREIGN KEY (`representative_question_id`) REFERENCES `question` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
---
--- Table structure for table `question`
---
+-- images (FK → profiles)
+CREATE TABLE `code_images` (
+  `is_approved` bit(1) NOT NULL,
+  `orders` int NOT NULL,
+  `created_at` datetime(6) DEFAULT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `profile_id` bigint NOT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `url` varchar(500) NOT NULL,
+  `rejection_reason` varchar(1000) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FKs569e60o4xe25dpxb1hmf584d` (`profile_id`),
+  CONSTRAINT `FKs569e60o4xe25dpxb1hmf584d` FOREIGN KEY (`profile_id`) REFERENCES `profiles` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE `question` (
-  `is_active` bit(1) NOT NULL,
+CREATE TABLE `face_images` (
+  `is_approved` bit(1) NOT NULL,
+  `orders` int NOT NULL,
+  `created_at` datetime(6) DEFAULT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `profile_id` bigint NOT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `url` varchar(500) NOT NULL,
+  `rejection_reason` varchar(1000) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FKcyqplxa5oyjgvk0tghd0ilme2` (`profile_id`),
+  CONSTRAINT `FKcyqplxa5oyjgvk0tghd0ilme2` FOREIGN KEY (`profile_id`) REFERENCES `profiles` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- chat_room (create WITHOUT recent_chat_id FK first to avoid cycle)
+CREATE TABLE `chat_room` (
+  `is_unlocked` bit(1) NOT NULL,
+  `created_at` datetime(6) DEFAULT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `recent_chat_id` bigint DEFAULT NULL,
+  `unlocked_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `status` enum('DISABLED','LOCKED','UNLOCKED') DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UK1b9vcrrg9sp0nkfygcgebv44e` (`recent_chat_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- chat_room_member (create WITHOUT chat_id FK first to avoid cycle)
+CREATE TABLE `chat_room_member` (
+  `chat_id` bigint DEFAULT NULL,
+  `chat_room_id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `left_at` datetime(6) DEFAULT NULL,
+  `member_id` bigint NOT NULL,
+  `member_status` enum('ACTIVE','LEFT') DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UKsseano88a8cv0ne1qxsiv1g4v` (`chat_room_id`,`member_id`),
+  UNIQUE KEY `UKc3bwd8ohk6yni9mjeryembv4g` (`chat_id`),
+  KEY `FKq64atn9y4cyjpp4qcrllxi3o5` (`member_id`),
+  KEY `FK_chat_room_member_room` (`chat_room_id`),
+  CONSTRAINT `FK_chat_room_member_room` FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room` (`id`),
+  CONSTRAINT `FKq64atn9y4cyjpp4qcrllxi3o5` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- chat (FK → chat_room OK; from_chat_room_member_id will be added later)
+CREATE TABLE `chat` (
+  `chat_room_id` bigint NOT NULL,
+  `from_chat_room_member_id` bigint DEFAULT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `sent_at` datetime(6) DEFAULT NULL,
+  `message` varchar(255) DEFAULT NULL,
+  `chat_content_type` enum('CLOSE_CONVERSATION','MATCHED','ONBOARDING','QUESTION','TEXT','TIME','UNLOCKED','UNLOCKED_APPROVED','UNLOCKED_REJECTED','UNLOCKED_REQUEST') DEFAULT NULL,
+  `sender_type` enum('MY','PARTNER','SYSTEM','USER') DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FK44b6elhh512d2722l09i6qdku` (`chat_room_id`),
+  KEY `FK9mryo76qkolxuojwwbtj9c1fx` (`from_chat_room_member_id`),
+  CONSTRAINT `FK44b6elhh512d2722l09i6qdku` FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- other dependents
+CREATE TABLE `block_member_relation` (
+  `blocked_member_id` bigint DEFAULT NULL,
+  `blocker_member_id` bigint DEFAULT NULL,
   `created_at` datetime(6) DEFAULT NULL,
   `id` bigint NOT NULL AUTO_INCREMENT,
   `updated_at` datetime(6) DEFAULT NULL,
-  `content` varchar(500) NOT NULL,
-  `description` varchar(1000) DEFAULT NULL,
-  `category` enum('BALANCE_ONE','CURRENT_ME','DATE','FAVORITE','MEMORY','VALUES','WANT_TALK') NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=97 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+  `status` enum('BLOCKED','UNBLOCKED') DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FKdsr0m0wy7ihip22ij1ckivgpn` (`blocked_member_id`),
+  KEY `FKry2oe0ajf7pyv7k8495u6tcs6` (`blocker_member_id`),
+  CONSTRAINT `FKdsr0m0wy7ihip22ij1ckivgpn` FOREIGN KEY (`blocked_member_id`) REFERENCES `member` (`id`),
+  CONSTRAINT `FKry2oe0ajf7pyv7k8495u6tcs6` FOREIGN KEY (`blocker_member_id`) REFERENCES `member` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
---
--- Table structure for table `reject_reason`
---
+CREATE TABLE `member_signal` (
+  `created_at` datetime(6) DEFAULT NULL,
+  `from_member_id` bigint DEFAULT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `to_member_id` bigint DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `message` varchar(255) DEFAULT NULL,
+  `receiver_status` enum('APPROVED','NONE','PENDING','PENDING_HIDDEN','REJECTED') DEFAULT NULL,
+  `sender_status` enum('APPROVED','NONE','PENDING','PENDING_HIDDEN','REJECTED') DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FKlobswiesdohss9tutwg3pqb7v` (`from_member_id`),
+  KEY `FKif6qksw91ei4qedxui44mm9yd` (`to_member_id`),
+  CONSTRAINT `FKif6qksw91ei4qedxui44mm9yd` FOREIGN KEY (`to_member_id`) REFERENCES `member` (`id`),
+  CONSTRAINT `FKlobswiesdohss9tutwg3pqb7v` FOREIGN KEY (`from_member_id`) REFERENCES `member` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `reject_reason` (
   `id` bigint NOT NULL AUTO_INCREMENT,
@@ -295,11 +209,6 @@ CREATE TABLE `reject_reason` (
   UNIQUE KEY `UKkbr846purkbbx7lmb3f7djq8u` (`member_id`),
   CONSTRAINT `FKdv8bjogqlopjgj78fo2wa1ed9` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `report`
---
 
 CREATE TABLE `report` (
   `created_at` datetime(6) DEFAULT NULL,
@@ -313,7 +222,62 @@ CREATE TABLE `report` (
   KEY `FK1uivt2jamt7slp3banldgnsef` (`reporter_id`),
   CONSTRAINT `FK1uivt2jamt7slp3banldgnsef` FOREIGN KEY (`reporter_id`) REFERENCES `member` (`id`),
   CONSTRAINT `FK6ovdlwgf174uw16m9cynvbgal` FOREIGN KEY (`reported_id`) REFERENCES `member` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Re-enable FK checks
+CREATE TABLE `code_unlock_request` (
+  `chat_room_id` bigint NOT NULL,
+  `created_at` datetime(6) DEFAULT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `processed_at` datetime(6) DEFAULT NULL,
+  `processed_by_id` bigint DEFAULT NULL,
+  `requested_at` datetime(6) DEFAULT NULL,
+  `requester_id` bigint NOT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `status` enum('APPROVED','PENDING','REJECTED') DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FKmidqbqlkm89oeydsids7g8xvx` (`chat_room_id`),
+  KEY `FKasx5j9682qplkvfynoiol0uwm` (`processed_by_id`),
+  KEY `FKew1slajceqoc7uljtbd7spir9` (`requester_id`),
+  CONSTRAINT `FKasx5j9682qplkvfynoiol0uwm` FOREIGN KEY (`processed_by_id`) REFERENCES `member` (`id`),
+  CONSTRAINT `FKew1slajceqoc7uljtbd7spir9` FOREIGN KEY (`requester_id`) REFERENCES `member` (`id`),
+  CONSTRAINT `FKmidqbqlkm89oeydsids7g8xvx` FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `chat_room_question` (
+  `is_used` bit(1) NOT NULL,
+  `chat_room_id` bigint NOT NULL,
+  `created_at` datetime(6) DEFAULT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `question_id` bigint NOT NULL,
+  `requested_by_member_id` bigint DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `used_at` datetime(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UK1mdkxhjqch6uccxt1iegs4ej5` (`chat_room_id`,`question_id`),
+  KEY `FK6uvsi17h1sv35piwgc72nq4sx` (`question_id`),
+  KEY `FKrxxhqhqldakqf0kljq79f0mc3` (`requested_by_member_id`),
+  CONSTRAINT `FK6uvsi17h1sv35piwgc72nq4sx` FOREIGN KEY (`question_id`) REFERENCES `question` (`id`),
+  CONSTRAINT `FKermg781g6u4fk2q3p6bhiq86b` FOREIGN KEY (`chat_room_id`) REFERENCES `chat_room` (`id`),
+  CONSTRAINT `FKrxxhqhqldakqf0kljq79f0mc3` FOREIGN KEY (`requested_by_member_id`) REFERENCES `member` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- =========================
+-- ADD CYCLIC FOREIGN KEYS AFTER ALL TABLES EXIST
+-- =========================
+
+-- chat.from_chat_room_member_id → chat_room_member.id
+ALTER TABLE `chat`
+  ADD CONSTRAINT `FK9mryo76qkolxuojwwbtj9c1fx`
+  FOREIGN KEY (`from_chat_room_member_id`) REFERENCES `chat_room_member` (`id`);
+
+-- chat_room_member.chat_id → chat.id
+ALTER TABLE `chat_room_member`
+  ADD CONSTRAINT `FKb9o8lisg7q5wiv978eing6088`
+  FOREIGN KEY (`chat_id`) REFERENCES `chat` (`id`);
+
+-- chat_room.recent_chat_id → chat.id
+ALTER TABLE `chat_room`
+  ADD CONSTRAINT `FK44nqbivue0gtsjdpgt7y0imcj`
+  FOREIGN KEY (`recent_chat_id`) REFERENCES `chat` (`id`);
+
 SET FOREIGN_KEY_CHECKS = 1;

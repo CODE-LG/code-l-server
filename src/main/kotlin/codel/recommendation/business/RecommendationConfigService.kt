@@ -6,6 +6,7 @@ import codel.recommendation.infrastructure.RecommendationConfigRepository
 import jakarta.annotation.PostConstruct
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -27,14 +28,18 @@ class RecommendationConfigService(
     @PostConstruct
     @Transactional
     fun initializeDefaultConfig() {
-        val existingConfig = configRepository.findTopByOrderByIdAsc()
-        
-        if (existingConfig == null) {
-            val defaultConfig = RecommendationConfigEntity.createDefault()
-            configRepository.save(defaultConfig)
-            log.info { "추천 시스템 기본 설정 초기화 완료" }
-        } else {
-            log.info { "추천 시스템 설정 로드 완료 - dailyCodeCount: ${existingConfig.dailyCodeCount}, codeTimeCount: ${existingConfig.codeTimeCount}" }
+        try {
+            val existingConfig = configRepository.findTopByOrderByIdAsc()
+            
+            if (existingConfig == null) {
+                val defaultConfig = RecommendationConfigEntity.createDefault()
+                configRepository.save(defaultConfig)
+                log.info { "추천 시스템 기본 설정 초기화 완료" }
+            } else {
+                log.info { "추천 시스템 설정 로드 완료 - dailyCodeCount: ${existingConfig.dailyCodeCount}, codeTimeCount: ${existingConfig.codeTimeCount}" }
+            }
+        } catch (e: Exception) {
+            log.warn(e) { "추천 시스템 설정 초기화 실패 - 기본값으로 진행" }
         }
     }
     
@@ -43,10 +48,15 @@ class RecommendationConfigService(
      */
     @Cacheable(value = ["recommendationConfig"], key = "'singleton'")
     fun getConfig(): RecommendationConfigEntity {
-        return configRepository.findTopByOrderByIdAsc()
-            ?: RecommendationConfigEntity.createDefault().also {
-                log.warn { "설정을 찾을 수 없어 기본값 반환" }
-            }
+        return try {
+            configRepository.findTopByOrderByIdAsc()
+                ?: RecommendationConfigEntity.createDefault().also {
+                    log.warn { "설정을 찾을 수 없어 기본값 반환" }
+                }
+        } catch (e: Exception) {
+            log.warn(e) { "설정 조회 실패 - 기본값 반환" }
+            RecommendationConfigEntity.createDefault()
+        }
     }
     
     /**
