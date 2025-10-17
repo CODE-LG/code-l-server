@@ -3,9 +3,13 @@ package codel.block.business
 import codel.block.domain.BlockMemberRelation
 import codel.block.exception.BlockException
 import codel.block.infrastructure.BlockMemberRelationJpaRepository
+import codel.chat.domain.ChatRoomStatus
+import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.member.domain.Member
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
+import codel.signal.domain.SignalStatus
+import codel.signal.infrastructure.SignalJpaRepository
 import jakarta.transaction.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -14,7 +18,9 @@ import org.springframework.stereotype.Service
 @Transactional
 class BlockService(
     val memberJpaRepository : MemberJpaRepository,
-    val blockMemberRelationJpaRepository : BlockMemberRelationJpaRepository
+    val blockMemberRelationJpaRepository : BlockMemberRelationJpaRepository,
+    val signalJpaRepository: SignalJpaRepository,
+    val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository
 ) {
 
     fun blockMember(blocker: Member, blockedMemberId: Long) {
@@ -31,6 +37,46 @@ class BlockService(
         if(blockedMemberIds.contains(blockedMember.getIdOrThrow())){
             throw BlockException(HttpStatus.BAD_REQUEST, "이미 차단한 회원입니다.")
         }
+
+        // 1. 시그널 확인
+        val signalFromBlocker = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(blocker, blockedMember)
+        val signalToBlocker = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(blockedMember, blocker)
+        
+        // 2. 채팅방 확인
+        val chatRoomMembers = chatRoomMemberJpaRepository.findCommonChatRoomMembers(
+            blocker.getIdOrThrow(), 
+            blockedMemberId
+        )
+        
+        when {
+            // 시그널 전송 + 채팅방 있는 경우 -> 채팅방 DISABLED
+            chatRoomMembers.isNotEmpty() -> {
+                chatRoomMembers.forEach { chatRoomMember ->
+                    if (chatRoomMember.chatRoom.status != ChatRoomStatus.DISABLED) {
+                        chatRoomMember.chatRoom.closeConversation()
+                    }
+                }
+            }
+            // 시그널 전송 + 채팅방 없는 경우 -> 시그널 REJECT 상태로 처리
+            (signalFromBlocker != null || signalToBlocker != null) -> {
+                signalFromBlocker?.let {
+                    if (it.senderStatus != SignalStatus.REJECTED) {
+                        it.reject()
+                    }
+                }
+                signalToBlocker?.let {
+                    if (it.receiverStatus != SignalStatus.REJECTED) {
+                        it.reject()
+                    }
+                }
+            }
+            // 시그널 미전송 + 채팅방 없는 경우 -> 차단만 적용
+            else -> {
+                // 아무것도 하지 않음 (차단만 진행)
+            }
+        }
+        
+        // 3. 차단 관계 저장
         val blockMemberRelation = BlockMemberRelation(blockerMember = blocker, blockedMember = blockedMember)
         blockMemberRelationJpaRepository.save(blockMemberRelation)
     }

@@ -55,4 +55,21 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMember, Long> {
         memberStatus: ChatRoomMemberStatus,
         pageable: Pageable
     ): Page<ChatRoomMember>
+
+    /**
+     * 두 멤버가 함께 속한 채팅방의 ChatRoomMember들을 찾는 메서드
+     */
+    @Query(
+        """
+        SELECT crm1
+        FROM ChatRoomMember crm1
+        JOIN ChatRoomMember crm2 ON crm1.chatRoom = crm2.chatRoom
+        WHERE crm1.member.id = :member1Id
+        AND crm2.member.id = :member2Id
+    """
+    )
+    fun findCommonChatRoomMembers(
+        @Param("member1Id") member1Id: Long,
+        @Param("member2Id") member2Id: Long
+    ): List<ChatRoomMember>
 }
