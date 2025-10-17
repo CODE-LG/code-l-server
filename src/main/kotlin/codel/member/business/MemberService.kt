@@ -745,65 +745,78 @@ class MemberService(
         codeImages: List<MultipartFile>?,
         existingIds: List<Long>?
     ): UpdateCodeImagesResponse {
-        if(codeImages == null || existingIds == null) {
+        // 변경 없음 처리 (프론트가 아무것도 안 보냈을 때)
+        if (codeImages.isNullOrEmpty() && existingIds.isNullOrEmpty()) {
             return UpdateCodeImagesResponse(
                 uploadedCount = 0,
-                profileStatus = MemberStatus.DONE,
+                profileStatus = member.memberStatus,
                 message = "변경된 이미지가 없습니다"
             )
         }
-        val findMember = memberJpaRepository.findByMemberIdWithProfileAndCodeImages(member.getIdOrThrow())
+
+        val findMember = memberJpaRepository
+            .findByMemberIdWithProfileAndCodeImages(member.getIdOrThrow())
             ?: throw MemberException(HttpStatus.BAD_REQUEST, "회원을 찾을 수 없습니다.")
         val profile = findMember.getProfileOrThrow()
 
-        // 기존 코드 이미지 조회
-        val existingCodeImages = codeImageRepository.findByProfileIdOrderByOrdersAsc(profile.id!!)
-        val keepIds = existingIds?.toSet() ?: emptySet()
-        
-        // 유지할 이미지
-        val keptImages = existingCodeImages.filter { it.id in keepIds }
-        
-        // 새로 업로드할 이미지 개수
-        val newImageCount = codeImages.size
-        
-        // 최종 이미지 개수 (유지 + 신규) = 1~3개여야 함
-        val totalCount = keptImages.size + newImageCount
-        if (totalCount !in 1..3) {
+        val keepIdSet = (existingIds ?: emptyList()).toSet()
+
+        // 1) 유지할 기존 엔티티 (정확히 keepIds에 속하는 것만)
+        val kept = profile.codeImages
+            .sortedBy { it.orders }
+            .filter { it.id != null && it.id in keepIdSet }
+
+        // 2) 신규 업로드 개수/총 개수 검증
+        val newCount = codeImages?.size ?: 0
+        val total = kept.size + newCount
+        if (total !in 1..3) {
             throw MemberException(
                 HttpStatus.BAD_REQUEST,
-                "코드 이미지는 1~3개여야 합니다. (현재: 유지 ${keptImages.size}개 + 신규 ${newImageCount}개 = ${totalCount}개)"
+                "코드 이미지는 1~3개여야 합니다. (현재: 유지 ${kept.size}개 + 신규 ${newCount}개 = ${total}개)"
             )
         }
 
-        // 유지하지 않을 이미지 삭제
-        val imagesToDelete = existingCodeImages.filter { it.id !in keepIds }
-        codeImageRepository.deleteAll(imagesToDelete)
-        // TODO: S3에서 파일 삭제 구현 필요
+        // 3) 유지하지 않을 기존 이미지는 컬렉션에서 제거 (orphanRemoval로 DB 삭제)
+        profile.codeImages
+            .filter { it !in kept }
+            .toList()
+            .forEach { img ->
+                profile.codeImages.remove(img)
+                // S3 삭제는 트랜잭션 커밋 후 비동기로 권장 (이벤트/리스너)
+            }
 
-        // 새 이미지 업로드 및 엔티티 생성
-        val newCodeImages = codeImages.mapIndexed { index, file ->
+        // 4) 신규 업로드 → 엔티티 생성 → 컬렉션에 add
+        val startOrder = kept.size
+        val newEntities = codeImages.orEmpty().mapIndexed { idx, file ->
             val url = imageUploader.uploadFile(file)
             CodeImage(
-                profile = profile,
+                profile = profile,            // add 전에 명시해도 무방
                 url = url,
-                orders = keptImages.size + index,  // 유지한 이미지 다음 순서부터
+                orders = startOrder + idx,
                 isApproved = true
             )
         }
+        // 컬렉션에 추가하면서 연관 보장
+        newEntities.forEach { img ->
+            profile.codeImages.add(img)
+        }
 
-        // 새 이미지 엔티티 저장
-        codeImageRepository.saveAll(newCodeImages)
+        // 5) orders 재정렬(혹시 모를 갭/중복 정리)
+        profile.codeImages
+            .sortedBy { it.orders }
+            .forEachIndexed { index, img -> img.orders = index }
 
-        // Profile의 String 필드만 업데이트 (Dual Write - 하위 호환성)
-        val allCodeImageUrls = keptImages.map { it.url } + newCodeImages.map { it.url }
-        profile.updateCodeImageUrls(allCodeImageUrls)
+        // 6) Dual Write: 문자열 필드 동기화
+        profile.updateCodeImageUrls(profile.codeImages.sortedBy { it.orders }.map { it.url })
 
-        memberJpaRepository.save(findMember)
+        // 7) 상태 변경이 필요하면 여기서 처리 (예: 재심사 대기)
+        // findMember.memberStatus = MemberStatus.PENDING
 
+        // @Transactional + 영속 상태 → save 호출 불필요
         return UpdateCodeImagesResponse(
-            uploadedCount = newImageCount,
+            uploadedCount = newCount,
             profileStatus = findMember.memberStatus,
-            message = "코드 이미지 ${totalCount}개로 변경되었습니다 (유지: ${keptImages.size}개, 신규: ${newImageCount}개)"
+            message = "코드 이미지 ${total}개로 변경되었습니다 (유지: ${kept.size}개, 신규: ${newCount}개)"
         )
     }
 
