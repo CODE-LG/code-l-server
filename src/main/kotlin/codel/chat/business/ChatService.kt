@@ -17,9 +17,13 @@ import codel.chat.presentation.response.SavedChatDto
 import codel.chat.presentation.response.QuestionSendResult
 import codel.chat.repository.ChatRepository
 import codel.chat.repository.ChatRoomRepository
+import codel.config.Loggable
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
 import codel.member.infrastructure.MemberJpaRepository
+import codel.notification.business.NotificationService
+import codel.notification.domain.Notification
+import codel.notification.domain.NotificationType
 import codel.signal.infrastructure.SignalJpaRepository
 import codel.question.business.QuestionService
 import codel.question.domain.Question
@@ -43,8 +47,9 @@ class ChatService(
     private val chatJpaRepository: ChatJpaRepository,
     private val questionService: QuestionService,
     private val codeUnlockService: CodeUnlockService,
-    private val memberJpaRepository: MemberJpaRepository
-) {
+    private val memberJpaRepository: MemberJpaRepository,
+    private val notificationService: NotificationService
+) : Loggable {
 
 
     fun createInitialChatRoom(
@@ -314,6 +319,9 @@ class ChatService(
 
         val partner = chatRoomRepository.findPartner(chatRoom.getIdOrThrow(), requester)
         
+        // 코드 해제 요청 알림 전송
+        sendCodeUnlockNotification(partner, requester)
+        
         // 발송자와 수신자의 읽지 않은 메시지 수를 각각 계산
         val requesterUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, requester)
         val partnerUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, partner)
@@ -342,6 +350,34 @@ class ChatService(
         )
 
         return SavedChatDto(partner, requesterChatRoomResponse, partnerChatRoomResponse, chatResponse)
+    }
+    
+    private fun sendCodeUnlockNotification(receiver: Member, requester: Member) {
+        receiver.fcmToken?.let { token ->
+            val notification = Notification(
+                type = NotificationType.MOBILE,
+                targetId = token,
+                title = "${requester.getProfileOrThrow().getCodeNameOrThrow()}님이 코드 해제를 요청했어요 🔐",
+                body = "상대방의 프로필을 확인해보세요!"
+            )
+            
+            val startTime = System.currentTimeMillis()
+            try {
+                notificationService.send(notification)
+                val duration = System.currentTimeMillis() - startTime
+                
+                when {
+                    duration > 1000 -> log.warn { "🐌 코드 해제 요청 알림 전송 매우 느림 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 요청자: ${requester.getIdOrThrow()}" }
+                    duration > 500 -> log.warn { "⚠️ 코드 해제 요청 알림 전송 느림 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 요청자: ${requester.getIdOrThrow()}" }
+                    else -> log.info { "✅ 코드 해제 요청 알림 전송 성공 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 요청자: ${requester.getIdOrThrow()}" }
+                }
+            } catch (e: Exception) {
+                val duration = System.currentTimeMillis() - startTime
+                log.warn(e) { "❌ 코드 해제 요청 알림 전송 실패 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 요청자: ${requester.getIdOrThrow()}" }
+            }
+        } ?: run {
+            log.info { "ℹ️ FCM 토큰이 없어 코드 해제 요청 알림을 전송하지 않음 - 수신자: ${receiver.getIdOrThrow()}" }
+        }
     }
 
     /**

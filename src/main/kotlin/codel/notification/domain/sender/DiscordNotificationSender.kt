@@ -5,9 +5,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
 import codel.notification.domain.Notification as CodelNotification
 
 @Component
@@ -20,7 +18,6 @@ class DiscordNotificationSender(
     override fun supports(type: NotificationType): Boolean = type == NotificationType.DISCORD || type == NotificationType.ALL
 
     override fun send(notification: CodelNotification): String {
-
         val now = OffsetDateTime.now().toString() // ISO 8601 포맷 (Z 포함)
 
         val embedBody = createEmbedBody(notification, now)
@@ -37,31 +34,22 @@ class DiscordNotificationSender(
         notification: CodelNotification,
         now: String
     ): Map<String, List<Map<String, Any>>> {
-        val embedBody = mapOf(
-            "embeds" to listOf(
-                mapOf(
-                    "title" to "📩 [회원가입 요청]",
-                    "description" to "**새로운 사용자가 가입을 요청했습니다.**",
-                    "color" to 3447003, // 파란색 계열
-                    "fields" to listOf(
-                        mapOf(
-                            "name" to "닉네임",
-                            "value" to notification.body
-                        ),
-                        mapOf(
-                            "name" to "가입 시각",
-                            "value" to LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        ),
-                        mapOf(
-                            "name" to "상태",
-                            "value" to "PENDING"
-                        )
-                    ),
-                    "footer" to mapOf("text" to "🕒 CODEL 시스템 알림"),
-                    "timestamp" to now
-                )
-            )
+        // title에 이모지가 포함되어 있으면 그대로 사용, 아니면 기본 이모지 추가
+        val titleWithEmoji = if (notification.title.matches(Regex(".*[\\p{So}\\p{Cn}].*"))) {
+            notification.title
+        } else {
+            "📩 ${notification.title}"
+        }
+
+        // body를 필드로 분리할지 description으로 사용할지 결정
+        val embedMap = mutableMapOf<String, Any>(
+            "title" to titleWithEmoji,
+            "description" to notification.body,
+            "color" to 3447003, // 파란색 계열
+            "footer" to mapOf("text" to "🕒 CODEL 시스템 알림"),
+            "timestamp" to now
         )
-        return embedBody
+
+        return mapOf("embeds" to listOf(embedMap))
     }
 }
