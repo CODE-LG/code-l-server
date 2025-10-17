@@ -1,5 +1,6 @@
 package codel.chat.business
 
+import codel.block.business.BlockService
 import codel.chat.domain.Chat
 import codel.chat.domain.ChatContentType
 import codel.chat.domain.ChatRoom
@@ -48,7 +49,8 @@ class ChatService(
     private val questionService: QuestionService,
     private val codeUnlockService: CodeUnlockService,
     private val memberJpaRepository: MemberJpaRepository,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val blockService: BlockService
 ) : Loggable {
 
 
@@ -500,28 +502,38 @@ class ChatService(
     }
 
     fun closeConversation(chatRoomId: Long, requester: Member) : SavedChatDto{
+        // 1. 채팅방 존재 확인
+        val chatRoom = chatRoomJpaRepository.findById(chatRoomId)
+            .orElseThrow { ChatException(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다.") }
+
         val chatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, requester)
             ?: throw ChatException(HttpStatus.BAD_REQUEST, "해당 채팅방의 멤버가 아닙니다.")
 
-        // 이미 나간 상태인지 확인
+        // 2. 이미 나간 상태인지 확인
         if (chatRoomMember.hasLeft()) {
             throw ChatException(HttpStatus.BAD_REQUEST, "이미 나간 채팅방입니다.")
         }
-        chatRoomMember.closeConversation()
 
-        // 시스템 메시지 추가
+        // 3. 상대방 찾기
+        val partner = chatRoomRepository.findPartner(chatRoomId, requester)
+
+        // 4. 채팅방 나가기 처리
+        chatRoomMember.leave()
+
+        // 5. 상대방 차단 처리
+        blockService.blockMember(requester, partner.getIdOrThrow())
+
+        // 6. 시스템 메시지 추가
         val closeConversationMessage = chatJpaRepository.save(
             Chat.createSystemMessage(
-                chatRoom = chatRoomMember.chatRoom,
+                chatRoom = chatRoom,
                 message = "${requester.getProfileOrThrow().codeName}님이 대화를 종료하였습니다.",
                 chatContentType = ChatContentType.CLOSE_CONVERSATION
             )
         )
-        val chatRoom = chatRoomMember.chatRoom
-        // 최근 채팅 업데이트
-        chatRoom.updateRecentChat(closeConversationMessage)
 
-        val partner = chatRoomRepository.findPartner(chatRoomId, requester)
+        // 7. 최근 채팅 업데이트
+        chatRoom.updateRecentChat(closeConversationMessage)
 
         val unlockInfoOfRequester = codeUnlockService.getUnlockInfo(chatRoom, requester)
         val unlockInfoOfPartner = codeUnlockService.getUnlockInfo(chatRoom, partner)
