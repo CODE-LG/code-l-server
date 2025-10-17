@@ -18,11 +18,11 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.multipart.MultipartFile
 
 @Tag(name = "프로필 심사 관리", description = "프로필 심사 거절 및 이미지 교체 API")
-@RequestMapping("/v1/profile/review")
 interface ProfileReviewControllerSwagger {
 
     @Operation(
@@ -82,7 +82,6 @@ interface ProfileReviewControllerSwagger {
             )
         ]
     )
-    @GetMapping("/rejection-info")
     fun getRejectionInfo(
         @Parameter(hidden = true) @LoginMember member: Member
     ): ResponseEntity<ProfileRejectionInfoResponse>
@@ -161,7 +160,7 @@ interface ProfileReviewControllerSwagger {
             )
         ]
     )
-    @GetMapping("/images")
+
     fun getProfileImages(
         @Parameter(hidden = true) @LoginMember member: Member
     ): ResponseEntity<ProfileImagesResponse>
@@ -171,21 +170,27 @@ interface ProfileReviewControllerSwagger {
         description = """
             거절된 이미지를 새로운 이미지로 교체합니다.
             
+            **기존 이미지 유지 기능 추가:**
+            - existingFaceImageIds, existingCodeImageIds를 통해 유지할 이미지 지정 가능
+            - 지정된 이미지는 유지하고, 나머지는 새 이미지로 대체
+            - 예: 얼굴 이미지 3개 중 1개만 교체하고 싶다면, 유지할 2개의 ID를 전달하고 새 이미지 1개 업로드
+            
             **요청 제약사항:**
-            - 얼굴 이미지: 정확히 2개
-            - 코드 이미지: 1~3개
+            - 얼굴 이미지: 총 2개 (유지 + 신규)
+            - 코드 이미지: 총 1~3개 (유지 + 신규)
             - 거절된 이미지 타입만 교체 가능
-            - 둘 다 거절된 경우 한 번에 모두 교체 가능
             
             **처리 과정:**
-            1. 기존 거절된 이미지 삭제
+            1. existingIds에 없는 기존 이미지 삭제
             2. 새로운 이미지 업로드
-            3. 프로필 상태를 PENDING으로 변경
-            4. 관리자 재심사 대기
+            3. 유지할 이미지 + 새 이미지로 프로필 구성
+            4. 프로필 상태를 PENDING으로 변경
+            5. 관리자 재심사 대기
             
-            **주의사항:**
-            - 거절되지 않은 이미지 타입 전송 시 에러 발생
-            - 이미지 개수 미충족 시 에러 발생
+            **사용 예시:**
+            - 얼굴 이미지 2개 중 1개만 교체: existingFaceImageIds=[123], faceImages=1개
+            - 코드 이미지 3개 중 2개 교체: existingCodeImageIds=[456], codeImages=2개
+            - 전체 교체: existingIds 생략, 모든 이미지 업로드
         """
     )
     @ApiResponses(
@@ -200,9 +205,9 @@ interface ProfileReviewControllerSwagger {
                         name = "교체 성공",
                         value = """
                         {
-                          "uploadedCount": 3,
+                          "uploadedCount": 1,
                           "profileStatus": "PENDING",
-                          "message": "이미지가 성공적으로 교체되었습니다. 관리자 승인을 기다려주세요."
+                          "message": "얼굴 이미지 2개 (유지: 1개, 신규: 1개). 심사가 다시 진행됩니다"
                         }
                         """
                     )]
@@ -210,43 +215,41 @@ interface ProfileReviewControllerSwagger {
             ),
             ApiResponse(
                 responseCode = "400",
-                description = "잘못된 요청 (이미지 개수 부족, 거절되지 않은 타입 전송 등)",
+                description = "잘못된 요청 (이미지 개수 부족 등)",
                 content = [Content(
                     mediaType = "application/json",
                     examples = [ExampleObject(
                         name = "이미지 개수 오류",
                         value = """
                         {
-                          "message": "얼굴 이미지는 정확히 2개가 필요합니다"
+                          "message": "얼굴 이미지는 총 2개여야 합니다. (현재: 유지 1개 + 신규 0개 = 1개)"
                         }
                         """
                     )]
                 )]
-            ),
-            ApiResponse(
-                responseCode = "401",
-                description = "인증 실패",
-                content = [Content(schema = Schema(hidden = true))]
-            ),
-            ApiResponse(
-                responseCode = "404",
-                description = "회원 정보를 찾을 수 없음",
-                content = [Content(schema = Schema(hidden = true))]
             )
         ]
     )
-    @PutMapping("/images", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+
     fun replaceImages(
         @Parameter(hidden = true) @LoginMember member: Member,
         @Parameter(
-            description = "교체할 얼굴 이미지 (정확히 2개, 얼굴 이미지가 거절된 경우만 필수)",
+            description = "교체할 얼굴 이미지 (얼굴 이미지가 거절된 경우, 유지할 이미지 수 + 신규 이미지 수 = 2)",
             content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE)]
         )
         @RequestPart(value = "faceImages", required = false) faceImages: List<MultipartFile>?,
         @Parameter(
-            description = "교체할 코드 이미지 (1~3개, 코드 이미지가 거절된 경우만 필수)",
+            description = "교체할 코드 이미지 (코드 이미지가 거절된 경우, 유지할 이미지 수 + 신규 이미지 수 = 1~3)",
             content = [Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE)]
         )
-        @RequestPart(value = "codeImages", required = false) codeImages: List<MultipartFile>?
+        @RequestPart(value = "codeImages", required = false) codeImages: List<MultipartFile>?,
+        @Parameter(
+            description = "유지할 얼굴 이미지 ID 목록 (선택사항, 콤마로 구분. 예: 1,2,3)"
+        )
+        @RequestParam(value = "existingFaceImageIds", required = false) existingFaceImageIds: List<Long>?,
+        @Parameter(
+            description = "유지할 코드 이미지 ID 목록 (선택사항, 콤마로 구분. 예: 10,11,12)"
+        )
+        @RequestParam(value = "existingCodeImageIds", required = false) existingCodeImageIds: List<Long>?
     ): ResponseEntity<ReplaceImagesResponse>
 }

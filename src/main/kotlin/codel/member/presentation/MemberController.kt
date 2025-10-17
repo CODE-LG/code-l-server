@@ -8,10 +8,12 @@ import codel.member.presentation.request.MemberLoginRequest
 import codel.member.presentation.request.WithdrawnRequest
 import codel.member.presentation.request.UpdateRepresentativeQuestionRequest
 import codel.member.presentation.response.*
+import codel.member.exception.MemberException
 import codel.member.presentation.swagger.MemberControllerSwagger
 import org.springframework.data.domain.Page
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
@@ -97,15 +99,26 @@ class MemberController(
 
     /**
      * 코드 이미지 수정
-     * - Multipart 파일로 1~3개의 이미지를 받아 전체 교체
-     * - 상태가 PENDING으로 변경되어 재심사 진행
+     * - Multipart 파일로 새 이미지를 업로드
+     * - existingIds로 유지할 이미지 지정 가능
+     * - 상태가 PENDING으로 변경되어 재심사 진행 (필요 시)
      */
     @PutMapping("/v1/member/me/profile/code-images", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     override fun updateCodeImages(
         @LoginMember member: Member,
-        @RequestPart("codeImages") codeImages: List<MultipartFile>,
+        @RequestParam(value = "codeImages", required = false) codeImages: List<MultipartFile>?,
+        @RequestParam(value = "existingIds", required = false) existingIds: List<Long>?
     ): ResponseEntity<UpdateCodeImagesResponse> {
-        val response = memberService.updateCodeImages(member, codeImages)
+        println("🔍 DEBUG - codeImages: ${codeImages?.size ?: "null"}")
+        println("🔍 DEBUG - codeImages detail: ${codeImages?.map { it.originalFilename }}")
+        println("🔍 DEBUG - existingIds: $existingIds")
+        
+        // codeImages가 null이거나 비어있으면 에러
+        if (codeImages.isNullOrEmpty()) {
+            throw MemberException(HttpStatus.BAD_REQUEST, "업로드할 이미지가 없습니다.")
+        }
+        
+        val response = memberService.updateCodeImages(member, codeImages, existingIds)
         return ResponseEntity.ok(response)
     }
 
