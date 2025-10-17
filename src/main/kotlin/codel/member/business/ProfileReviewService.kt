@@ -122,11 +122,15 @@ class ProfileReviewService(
     
     /**
      * 거절된 이미지 전체 교체 (얼굴 + 코드 통합)
+     * - existingIds를 통해 유지할 이미지 지정
+     * - 지정되지 않은 기존 이미지는 삭제하고 새 이미지로 대체
      */
     fun replaceImages(
         member: Member,
         faceImages: List<MultipartFile>?,
-        codeImages: List<MultipartFile>?
+        codeImages: List<MultipartFile>?,
+        existingFaceImageIds: List<Long>?,
+        existingCodeImageIds: List<Long>?
     ): ReplaceImagesResponse {
         val findMember = memberJpaRepository.findMemberWithProfile(member.getIdOrThrow())
             ?: throw MemberException(HttpStatus.BAD_REQUEST, "회원을 조회할 수 없습니다.")
@@ -156,53 +160,98 @@ class ProfileReviewService(
         val messages = mutableListOf<String>()
         
         // 얼굴 이미지 교체
-        if (faceImages != null && faceImages.isNotEmpty()) {
-
-            // 얼굴 이미지 개수 검증 (정확히 2개)
-            if (faceImages.size != 2) {
-                throw MemberException(HttpStatus.BAD_REQUEST, "얼굴 이미지는 정확히 2개여야 합니다")
-            }
-            
-            // 기존 얼굴 이미지 삭제
+        if (hasRejectedFaceImages) {
             val existingFaceImages = faceImageRepository.findByProfileIdOrderByOrdersAsc(profile.id!!)
-            // TODO: S3에서 파일 삭제 구현 필요
-            faceImageRepository.deleteAll(existingFaceImages)
+            val keepIds = existingFaceImageIds?.toSet() ?: emptySet()
             
-            // 새 이미지 업로드
-            val newFaceImageUrls = faceImages.map { file ->
-                imageUploader.uploadFile(file)
+            // 유지할 이미지 개수
+            val keptImages = existingFaceImages.filter { it.id in keepIds }
+            
+            // 새로 업로드할 이미지 개수
+            val newImageCount = (faceImages?.size ?: 0)
+            
+            // 최종 이미지 개수 (유지 + 신규) = 2개여야 함
+            val totalCount = keptImages.size + newImageCount
+            if (totalCount != 2) {
+                throw MemberException(
+                    HttpStatus.BAD_REQUEST,
+                    "얼굴 이미지는 총 2개여야 합니다. (현재: 유지 ${keptImages.size}개 + 신규 ${newImageCount}개 = ${totalCount}개)"
+                )
             }
             
-            // Profile 업데이트 (Dual Write)
-            profile.replaceAllFaceImages(newFaceImageUrls)
-            uploadedCount += newFaceImageUrls.size
-            messages.add("얼굴 이미지 ${newFaceImageUrls.size}개 업로드 완료")
+            // 유지하지 않을 이미지 삭제
+            val imagesToDelete = existingFaceImages.filter { it.id !in keepIds }
+            faceImageRepository.deleteAll(imagesToDelete)
+            // TODO: S3에서 파일도 삭제 필요
+            
+            // 새 이미지 업로드 및 엔티티 생성
+            val newFaceImages = faceImages?.mapIndexed { index, file ->
+                val url = imageUploader.uploadFile(file)
+                codel.member.domain.FaceImage(
+                    profile = profile,
+                    url = url,
+                    orders = keptImages.size + index,
+                    isApproved = true
+                )
+            } ?: emptyList()
+            
+            // 새 이미지 엔티티 저장
+            faceImageRepository.saveAll(newFaceImages)
+            
+            // Profile의 String 필드만 업데이트 (Dual Write)
+            val allFaceImageUrls = keptImages.map { it.url } + newFaceImages.map { it.url }
+            profile.updateFaceImageUrls(allFaceImageUrls)
+            
+            uploadedCount += newImageCount
+            messages.add("얼굴 이미지 ${totalCount}개 (유지: ${keptImages.size}개, 신규: ${newImageCount}개)")
         }
         
         // 코드 이미지 교체
-        if (codeImages != null && codeImages.isNotEmpty()) {
-            
-            // 코드 이미지 개수 검증 (1~3개)
-            if (codeImages.size !in 1..3) {
-                throw MemberException(HttpStatus.BAD_REQUEST, "코드 이미지는 1개 이상 3개 이하여야 합니다")
-            }
-            
-            // 기존 코드 이미지 삭제
+        if (hasRejectedCodeImages) {
             val existingCodeImages = codeImageRepository.findByProfileIdOrderByOrdersAsc(profile.id!!)
-            // TODO: S3에서 파일 삭제 구현 필요
-            codeImageRepository.deleteAll(existingCodeImages)
+            val keepIds = existingCodeImageIds?.toSet() ?: emptySet()
             
-            // 새 이미지 업로드
-            val newCodeImageUrls = codeImages.map { file ->
-                imageUploader.uploadFile(file)
+            // 유지할 이미지 개수
+            val keptImages = existingCodeImages.filter { it.id in keepIds }
+            
+            // 새로 업로드할 이미지 개수
+            val newImageCount = (codeImages?.size ?: 0)
+            
+            // 최종 이미지 개수 (유지 + 신규) = 1~3개여야 함
+            val totalCount = keptImages.size + newImageCount
+            if (totalCount !in 1..3) {
+                throw MemberException(
+                    HttpStatus.BAD_REQUEST,
+                    "코드 이미지는 1~3개여야 합니다. (현재: 유지 ${keptImages.size}개 + 신규 ${newImageCount}개 = ${totalCount}개)"
+                )
             }
             
-            // Profile 업데이트 (Dual Write)
-            profile.replaceAllCodeImages(newCodeImageUrls)
-            uploadedCount += newCodeImageUrls.size
-            messages.add("코드 이미지 ${newCodeImageUrls.size}개 업로드 완료")
+            // 유지하지 않을 이미지 삭제
+            val imagesToDelete = existingCodeImages.filter { it.id !in keepIds }
+            codeImageRepository.deleteAll(imagesToDelete)
+            // TODO: S3에서 파일도 삭제 필요
+            
+            // 새 이미지 업로드 및 엔티티 생성
+            val newCodeImages = codeImages?.mapIndexed { index, file ->
+                val url = imageUploader.uploadFile(file)
+                codel.member.domain.CodeImage(
+                    profile = profile,
+                    url = url,
+                    orders = keptImages.size + index,
+                    isApproved = true
+                )
+            } ?: emptyList()
+            
+            // 새 이미지 엔티티 저장
+            codeImageRepository.saveAll(newCodeImages)
+            
+            // Profile의 String 필드만 업데이트 (Dual Write)
+            val allCodeImageUrls = keptImages.map { it.url } + newCodeImages.map { it.url }
+            profile.updateCodeImageUrls(allCodeImageUrls)
+            
+            uploadedCount += newImageCount
+            messages.add("코드 이미지 ${totalCount}개 (유지: ${keptImages.size}개, 신규: ${newImageCount}개)")
         }
-
 
         findMember.memberStatus = MemberStatus.PENDING
         messages.add("심사가 다시 진행됩니다")

@@ -737,40 +737,73 @@ class MemberService(
 
     /**
      * 코드 이미지만 수정 (사용자용)
-     * - ProfileReviewService의 replaceImages와 유사하지만 코드 이미지만 처리
+     * - existingIds를 통해 유지할 이미지 지정
+     * - 지정되지 않은 기존 이미지는 삭제하고 새 이미지로 대체
      */
     fun updateCodeImages(
         member: Member,
-        codeImages: List<MultipartFile>
+        codeImages: List<MultipartFile>?,
+        existingIds: List<Long>?
     ): UpdateCodeImagesResponse {
+        if(codeImages == null || existingIds == null) {
+            return UpdateCodeImagesResponse(
+                uploadedCount = 0,
+                profileStatus = MemberStatus.DONE,
+                message = "변경된 이미지가 없습니다"
+            )
+        }
         val findMember = memberJpaRepository.findByMemberIdWithProfileAndCodeImages(member.getIdOrThrow())
             ?: throw MemberException(HttpStatus.BAD_REQUEST, "회원을 찾을 수 없습니다.")
         val profile = findMember.getProfileOrThrow()
 
-        // 코드 이미지 개수 검증 (1~3개)
-        if (codeImages.size !in 1..3) {
-            throw MemberException(HttpStatus.BAD_REQUEST, "코드 이미지는 1개 이상 3개 이하여야 합니다")
-        }
-
-        // 기존 코드 이미지 삭제
+        // 기존 코드 이미지 조회
         val existingCodeImages = codeImageRepository.findByProfileIdOrderByOrdersAsc(profile.id!!)
-        // TODO: S3에서 파일 삭제 구현 필요
-        codeImageRepository.deleteAll(existingCodeImages)
-
-        // 새 이미지 업로드
-        val newCodeImageUrls = codeImages.map { file ->
-            imageUploader.uploadFile(file)
+        val keepIds = existingIds?.toSet() ?: emptySet()
+        
+        // 유지할 이미지
+        val keptImages = existingCodeImages.filter { it.id in keepIds }
+        
+        // 새로 업로드할 이미지 개수
+        val newImageCount = codeImages.size
+        
+        // 최종 이미지 개수 (유지 + 신규) = 1~3개여야 함
+        val totalCount = keptImages.size + newImageCount
+        if (totalCount !in 1..3) {
+            throw MemberException(
+                HttpStatus.BAD_REQUEST,
+                "코드 이미지는 1~3개여야 합니다. (현재: 유지 ${keptImages.size}개 + 신규 ${newImageCount}개 = ${totalCount}개)"
+            )
         }
 
-        // Profile 업데이트 (Dual Write)
-        profile.replaceAllCodeImages(newCodeImageUrls)
+        // 유지하지 않을 이미지 삭제
+        val imagesToDelete = existingCodeImages.filter { it.id !in keepIds }
+        codeImageRepository.deleteAll(imagesToDelete)
+        // TODO: S3에서 파일 삭제 구현 필요
+
+        // 새 이미지 업로드 및 엔티티 생성
+        val newCodeImages = codeImages.mapIndexed { index, file ->
+            val url = imageUploader.uploadFile(file)
+            CodeImage(
+                profile = profile,
+                url = url,
+                orders = keptImages.size + index,  // 유지한 이미지 다음 순서부터
+                isApproved = true
+            )
+        }
+
+        // 새 이미지 엔티티 저장
+        codeImageRepository.saveAll(newCodeImages)
+
+        // Profile의 String 필드만 업데이트 (Dual Write - 하위 호환성)
+        val allCodeImageUrls = keptImages.map { it.url } + newCodeImages.map { it.url }
+        profile.updateCodeImageUrls(allCodeImageUrls)
 
         memberJpaRepository.save(findMember)
 
         return UpdateCodeImagesResponse(
-            uploadedCount = newCodeImageUrls.size,
+            uploadedCount = newImageCount,
             profileStatus = findMember.memberStatus,
-            message = "오픈 코드프로필 이미지가 변경되었습니다."
+            message = "코드 이미지 ${totalCount}개로 변경되었습니다 (유지: ${keptImages.size}개, 신규: ${newImageCount}개)"
         )
     }
 

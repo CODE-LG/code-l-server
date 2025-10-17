@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.multipart.MultipartFile
 
 @Tag(name = "Member", description = "회원 관련 API")
 interface MemberControllerSwagger {
@@ -132,10 +133,22 @@ interface MemberControllerSwagger {
     @Operation(
         summary = "코드 이미지 수정",
         description = """
-            사용자의 코드 이미지를 수정합니다. 
-            - 1~3개의 이미지 파일을 업로드할 수 있습니다
-            - 기존 이미지는 모두 삭제되고 새로운 이미지로 전체 교체됩니다
-            - 수정 후 상태가 PENDING으로 변경되어 재심사가 진행됩니다
+            사용자의 코드 이미지를 수정합니다.
+            
+            **기존 이미지 유지 기능 추가:**
+            - existingIds를 통해 유지할 이미지 지정 가능
+            - 지정된 이미지는 유지하고, 나머지는 새 이미지로 대체
+            - 예: 코드 이미지 3개 중 1개만 교체하고 싶다면, 유지할 2개의 ID를 전달하고 새 이미지 1개 업로드
+            
+            **제약사항:**
+            - 최종 이미지 개수(유지 + 신규) = 1~3개
+            - 수정 후 상태가 PENDING으로 변경되어 재심사가 진행될 수 있습니다
+            
+            **사용 예시:**
+            - 3개 중 1개만 교체: existingIds=[1,2], codeImages=1개 업로드
+            - 3개 중 2개 교체: existingIds=[1], codeImages=2개 업로드
+            - 전체 교체: existingIds 생략, codeImages=1~3개 업로드
+            
             (※ Authorization 헤더에 JWT를 포함시켜야 합니다.)
         """
     )
@@ -149,8 +162,10 @@ interface MemberControllerSwagger {
     )
     fun updateCodeImages(
         @Parameter(hidden = true) @LoginMember member: Member,
-        @Parameter(description = "업로드할 코드 이미지 파일 (1~3개)", required = true)
-        codeImages: List<org.springframework.web.multipart.MultipartFile>,
+        @Parameter(description = "업로드할 코드 이미지 파일 (유지할 이미지 수 + 신규 이미지 수 = 1~3)", required = false)
+        @RequestParam(value = "codeImages", required = false) codeImages: List<MultipartFile>?,
+        @Parameter(description = "유지할 코드 이미지 ID 목록 (선택사항, 콤마로 구분. 예: 1,2,3)", required = false)
+        @RequestParam(value = "existingIds", required = false) existingIds: List<Long>?
     ): ResponseEntity<UpdateCodeImagesResponse>
     
     @Operation(

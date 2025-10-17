@@ -474,6 +474,24 @@ class Profile(
     }
     
     /**
+     * 코드 이미지 String 필드만 업데이트 (엔티티는 Repository에서 직접 관리)
+     */
+    fun updateCodeImageUrls(urls: List<String>) {
+        require(urls.isNotEmpty()) { "코드 이미지가 필요합니다" }
+        this.codeImage = serializeList(urls)
+        this.updatedAt = LocalDateTime.now()
+    }
+    
+    /**
+     * 얼굴 이미지 String 필드만 업데이트 (엔티티는 Repository에서 직접 관리)
+     */
+    fun updateFaceImageUrls(urls: List<String>) {
+        require(urls.size == 2) { "얼굴 이미지는 정확히 2개가 필요합니다" }
+        this.faceImage = serializeList(urls)
+        this.updatedAt = LocalDateTime.now()
+    }
+    
+    /**
      * 거절된 얼굴 이미지를 새 이미지로 전체 교체
      */
     fun replaceAllFaceImages(newFaceImages: List<String>) {
