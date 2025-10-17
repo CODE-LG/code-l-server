@@ -3,6 +3,7 @@ package codel.admin.business
 import codel.admin.domain.Admin
 import codel.admin.presentation.request.ImageRejection
 import codel.auth.business.AuthService
+import codel.config.Loggable
 import codel.member.business.MemberService
 import codel.member.domain.Member
 import codel.notification.business.NotificationService
@@ -26,7 +27,7 @@ class AdminService(
     private val questionService: QuestionService,
     @Value("\${security.admin.password}")
     private val answerPassword: String,
-) {
+) : Loggable{
     @Transactional
     fun loginAdmin(admin: Admin): String {
         admin.validatePassword(answerPassword)
@@ -56,7 +57,7 @@ class AdminService(
     @Transactional
     fun approveMemberProfile(memberId: Long) {
         val approvedMember = memberService.approveMember(memberId)
-//        sendNotification(approvedMember)
+        sendApprovalNotification(approvedMember)
     }
 
     @Transactional
@@ -65,7 +66,7 @@ class AdminService(
         reason: String,
     ) {
         val rejectedMember = memberService.rejectMember(memberId, reason)
-//        sendNotification(rejectedMember)
+        sendRejectionNotification(rejectedMember)
     }
     
     /**
@@ -77,27 +78,164 @@ class AdminService(
         faceImageRejections: List<ImageRejection>?,
         codeImageRejections: List<ImageRejection>?
     ) {
-        memberService.rejectMemberWithImages(memberId, faceImageRejections, codeImageRejections)
-//        sendNotification(rejectedMember)
+        val rejectedMember = memberService.rejectMemberWithImages(memberId, faceImageRejections, codeImageRejections)
+        sendRejectionNotification(rejectedMember)
+    }
+
+    // ========== 알림 전송 메서드 ==========
+    
+    /**
+     * 승인 알림 전송 (FCM + Discord)
+     */
+    private fun sendApprovalNotification(member: Member) {
+        // 1. FCM 알림 전송
+        sendApprovalFcmNotification(member)
+        
+        // 2. Discord 알림 전송
+        sendApprovalDiscordNotification(member)
+    }
+    
+    /**
+     * 반려 알림 전송 (FCM + Discord)
+     */
+    private fun sendRejectionNotification(member: Member) {
+        // 1. FCM 알림 전송
+        sendRejectionFcmNotification(member)
+        
+        // 2. Discord 알림 전송
+        sendRejectionDiscordNotification(member)
+    }
+
+    /**
+     * 승인 FCM 알림
+     */
+    private fun sendApprovalFcmNotification(member: Member) {
+        member.fcmToken?.let { token ->
+            val notification = Notification(
+                type = NotificationType.MOBILE,
+                targetId = token,
+                title = "프로필 심사가 완료되었어요 ✅",
+                body = "이제 Code:L을 이용할 수 있어요. 코드가 맞는 우리만의 공간에서 진짜 인연을 만나보세요."
+            )
+            
+            sendNotificationWithMonitoring(notification, member, "프로필 승인")
+        } ?: run {
+            log.info { "ℹ️ FCM 토큰이 없어 프로필 승인 알림을 전송하지 않음 - 회원: ${member.getIdOrThrow()}" }
+        }
+    }
+
+    /**
+     * 반려 FCM 알림
+     */
+    private fun sendRejectionFcmNotification(member: Member) {
+        member.fcmToken?.let { token ->
+            val notification = Notification(
+                type = NotificationType.MOBILE,
+                targetId = token,
+                title = "프로필 심사가 반려되었습니다 ❌",
+                body = "자세한 이유는 앱에서 확인할 수 있습니다."
+            )
+            
+            sendNotificationWithMonitoring(notification, member, "프로필 반려")
+        } ?: run {
+            log.info { "ℹ️ FCM 토큰이 없어 프로필 반려 알림을 전송하지 않음 - 회원: ${member.getIdOrThrow()}" }
+        }
+    }
+
+    /**
+     * 승인 Discord 알림
+     */
+    private fun sendApprovalDiscordNotification(member: Member) {
+        try {
+            val notification = Notification(
+                type = NotificationType.DISCORD,
+                targetId = member.getIdOrThrow().toString(),
+                title = "✅ 프로필 승인 완료",
+                body = """
+                    **회원 프로필이 승인되었습니다.**
+                    
+                    👤 **회원 정보**
+                    • 코드네임: **${member.getProfileOrThrow().getCodeNameOrThrow()}**
+                    • 회원 ID: ${member.getIdOrThrow()}
+                    
+                    📱 **알림 전송**
+                    • FCM 알림: ${if (member.fcmToken != null) "전송 완료 ✅" else "토큰 없음 ⚠️"}
+                    
+                    🕐 **처리 시각**
+                    • ${java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))} (KST)
+                """.trimIndent()
+            )
+            
+            notificationService.send(notification)
+            log.info { "✅ Discord 승인 알림 전송 완료 - 회원: ${member.getIdOrThrow()}" }
+        } catch (e: Exception) {
+            log.warn(e) { "❌ Discord 승인 알림 전송 실패 - 회원: ${member.getIdOrThrow()}" }
+        }
+    }
+
+    /**
+     * 반려 Discord 알림
+     */
+    private fun sendRejectionDiscordNotification(member: Member) {
+        try {
+            val rejectReason = member.rejectReason ?: "사유 없음"
+            
+            val notification = Notification(
+                type = NotificationType.DISCORD,
+                targetId = member.getIdOrThrow().toString(),
+                title = "❌ 프로필 반려 처리",
+                body = """
+                    **회원 프로필이 반려되었습니다.**
+                    
+                    👤 **회원 정보**
+                    • 코드네임: **${member.getProfileOrThrow().getCodeNameOrThrow()}**
+                    • 회원 ID: ${member.getIdOrThrow()}
+                    
+                    📝 **반려 사유**
+                    • $rejectReason
+                    
+                    📱 **알림 전송**
+                    • FCM 알림: ${if (member.fcmToken != null) "전송 완료 ✅" else "토큰 없음 ⚠️"}
+                    
+                    🕐 **처리 시각**
+                    • ${java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))} (KST)
+                """.trimIndent()
+            )
+            
+            notificationService.send(notification)
+            log.info { "✅ Discord 반려 알림 전송 완료 - 회원: ${member.getIdOrThrow()}" }
+        } catch (e: Exception) {
+            log.warn(e) { "❌ Discord 반려 알림 전송 실패 - 회원: ${member.getIdOrThrow()}" }
+        }
+    }
+
+    /**
+     * 알림 전송 with 성능 모니터링
+     */
+    private fun sendNotificationWithMonitoring(
+        notification: Notification,
+        member: Member,
+        type: String
+    ) {
+        val startTime = System.currentTimeMillis()
+        try {
+            notificationService.send(notification)
+            val duration = System.currentTimeMillis() - startTime
+            
+            when {
+                duration > 1000 -> log.warn { "🐌 $type 알림 전송 매우 느림 (${duration}ms) - 회원: ${member.getIdOrThrow()}" }
+                duration > 500 -> log.warn { "⚠️ $type 알림 전송 느림 (${duration}ms) - 회원: ${member.getIdOrThrow()}" }
+                else -> log.info { "✅ $type 알림 전송 성공 (${duration}ms) - 회원: ${member.getIdOrThrow()}" }
+            }
+        } catch (e: Exception) {
+            val duration = System.currentTimeMillis() - startTime
+            log.warn(e) { "❌ $type 알림 전송 실패 (${duration}ms) - 회원: ${member.getIdOrThrow()}" }
+        }
     }
 
     fun countAllMembers(): Long = memberService.countAllMembers()
 
     fun countPendingMembers(): Long = memberService.countPendingMembers()
-
-    private fun sendNotification(member: Member) {
-        member.fcmToken?.let { fcmToken ->
-            notificationService.send(
-                notification =
-                    Notification(
-                        type = NotificationType.MOBILE,
-                        targetId = fcmToken,
-                        title = "심사가 완료되었습니다.",
-                        body = "code:L 프로필 심사가 완료되었습니다.",
-                    ),
-            )
-        }
-    }
 
     fun findMembersWithFilter(
         keyword: String?,
