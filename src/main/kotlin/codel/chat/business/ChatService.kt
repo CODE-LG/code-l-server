@@ -1,6 +1,7 @@
 package codel.chat.business
 
-import codel.block.business.BlockService
+import codel.block.domain.BlockMemberRelation
+import codel.block.infrastructure.BlockMemberRelationJpaRepository
 import codel.chat.domain.Chat
 import codel.chat.domain.ChatContentType
 import codel.chat.domain.ChatRoom
@@ -51,7 +52,7 @@ class ChatService(
     private val codeUnlockService: CodeUnlockService,
     private val memberJpaRepository: MemberJpaRepository,
     private val notificationService: NotificationService,
-    private val blockService: BlockService
+    private val blockMemberRelationJpaRepository: BlockMemberRelationJpaRepository
 ) : Loggable {
 
 
@@ -524,11 +525,30 @@ class ChatService(
         // 2. 상대방 찾기
         val partner = chatRoomRepository.findPartner(chatRoomId, requester)
 
-        // 3. 상대방 차단 처리 (직접 처리)
-        blockService.blockMemberWithoutChatMessage(requester, partner.getIdOrThrow())
+        // 3. 상대방 차단 처리 (직접 처리 - 순환 참조 방지)
+        saveBlockRelationIfNotExists(requester, partner)
 
         // 4. 시스템 메시지 추가 및 WebSocket 응답 생성
         return createCloseConversationMessage(chatRoom, requester, partner)
+    }
+
+    /**
+     * 차단 관계 저장 (이미 차단한 경우 무시)
+     * 순환 참조 방지를 위해 ChatService에서 직접 처리
+     */
+    private fun saveBlockRelationIfNotExists(blocker: Member, blocked: Member) {
+        val existingBlock = blockMemberRelationJpaRepository.findByBlockerMemberAndBlockedMember(
+            blocker.getIdOrThrow(),
+            blocked.getIdOrThrow()
+        )
+
+        if (existingBlock == null) {
+            val blockRelation = BlockMemberRelation(
+                blockerMember = blocker,
+                blockedMember = blocked
+            )
+            blockMemberRelationJpaRepository.save(blockRelation)
+        }
     }
 
     /**

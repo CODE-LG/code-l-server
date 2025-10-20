@@ -82,29 +82,6 @@ class BlockService(
         }
     }
 
-    /**
-     * 채팅방 메시지 없이 차단만 처리 (closeConversation에서 사용)
-     */
-    fun blockMemberWithoutChatMessage(blocker: Member, blockedMemberId: Long) {
-        if (blocker.getIdOrThrow() == blockedMemberId) {
-            throw BlockException(HttpStatus.BAD_REQUEST, "자기 자신을 차단할 수 없습니다.")
-        }
-
-        val blockedMemberIds = blockMemberRelationJpaRepository.findBlockMembersBy(blocker.getIdOrThrow())
-            .map { it.blockedMember.id }
-
-        val blockedMember = memberJpaRepository.findById(blockedMemberId)
-            .orElseThrow { MemberException(HttpStatus.BAD_REQUEST, "차단할 회원을 찾을 수 없습니다.") }
-
-        if (blockedMemberIds.contains(blockedMember.getIdOrThrow())) {
-            return // 이미 차단한 경우 무시 (예외 던지지 않음)
-        }
-
-        // 차단 관계만 저장
-        val blockMemberRelation = BlockMemberRelation(blockerMember = blocker, blockedMember = blockedMember)
-        blockMemberRelationJpaRepository.save(blockMemberRelation)
-    }
-
     fun unBlockMember(blocker: Member, blockedMemberId: Long) {
         if (blocker.getIdOrThrow() == blockedMemberId) {
             throw BlockException(HttpStatus.BAD_REQUEST, "자기 자신을 차단 해제할 수 없습니다.")
