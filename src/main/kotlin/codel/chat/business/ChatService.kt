@@ -13,6 +13,7 @@ import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.chat.presentation.request.ChatSendRequest
 import codel.chat.presentation.response.ChatResponse
+import codel.chat.presentation.response.ChatRoomEventType
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.response.SavedChatDto
 import codel.chat.presentation.response.QuestionSendResult
@@ -488,8 +489,8 @@ class ChatService(
     /**
      * 채팅방 나가기
      */
-    fun leaveChatRoom(chatRoomId: Long, member: Member) {
-        val chatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, member)
+    fun leaveChatRoom(chatRoomId: Long, requester: Member) : ChatRoomResponse {
+        val chatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, requester)
             ?: throw ChatException(HttpStatus.BAD_REQUEST, "해당 채팅방의 멤버가 아닙니다.")
 
         // 이미 나간 상태인지 확인
@@ -499,6 +500,19 @@ class ChatService(
 
         // 개별 사용자 상태 변경
         chatRoomMember.leave()
+
+
+        val unlockInfoOfRequester = codeUnlockService.getUnlockInfo(chatRoomMember.chatRoom, requester)
+
+        // 발송자와 수신자의 읽지 않은 메시지 수를 각각 계산
+        val requesterUnReadCount = chatRepository.getUnReadMessageCount(chatRoomMember.chatRoom, requester)
+
+        return ChatRoomResponse.toResponseWithRemove(
+            chatRoomMember.chatRoom, ChatRoomEventType.REMOVED,requester, null, requester,
+            requesterUnReadCount,
+            unlockInfoOfRequester
+        )
+
     }
 
     fun closeConversation(chatRoomId: Long, requester: Member) : SavedChatDto{

@@ -5,6 +5,7 @@ import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.ChatLogRequest
 import codel.chat.presentation.request.ChatSendRequest
 import codel.chat.presentation.response.ChatResponse
+import codel.chat.presentation.response.ChatRoomEventType
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.swagger.ChatControllerSwagger
 import codel.config.argumentresolver.LoginMember
@@ -124,18 +125,17 @@ class ChatController(
     }
 
     @PostMapping("/v1/chatroom/{chatRoomId}/leave")
-    fun leaveChatRoom(
+    override fun leaveChatRoom(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
     ): ResponseEntity<Unit> {
-        chatService.leaveChatRoom(chatRoomId, requester)
-        
-        // TODO 상대방에게 채팅방 나감 알림 (WebSocket)
-//        val partner = chatService.findPartner(chatRoomId, requester)
-//        messagingTemplate.convertAndSend(
-//            "/sub/v1/chatroom/member/${partner.getIdOrThrow()}/leave",
-//            mapOf("chatRoomId" to chatRoomId, "leftMember" to requester.getProfileOrThrow().codeName)
-//        )
+        val requesterChatRoomResponse = chatService.leaveChatRoom(chatRoomId, requester)
+
+        // 본인에게 채팅방 삭제 이벤트 전송
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${requester.id}",
+            requesterChatRoomResponse.copy(eventType = ChatRoomEventType.REMOVED),
+        )
         
         return ResponseEntity.ok().build()
     }
