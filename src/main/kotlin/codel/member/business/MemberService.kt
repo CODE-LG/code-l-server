@@ -745,15 +745,6 @@ class MemberService(
         codeImages: List<MultipartFile>?,
         existingIds: List<Long>?
     ): UpdateCodeImagesResponse {
-        // 변경 없음 처리 (프론트가 아무것도 안 보냈을 때)
-        if (codeImages.isNullOrEmpty() && existingIds.isNullOrEmpty()) {
-            return UpdateCodeImagesResponse(
-                uploadedCount = 0,
-                profileStatus = member.memberStatus,
-                message = "변경된 이미지가 없습니다"
-            )
-        }
-
         val findMember = memberJpaRepository
             .findByMemberIdWithProfileAndCodeImages(member.getIdOrThrow())
             ?: throw MemberException(HttpStatus.BAD_REQUEST, "회원을 찾을 수 없습니다.")

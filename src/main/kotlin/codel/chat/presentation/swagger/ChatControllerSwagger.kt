@@ -164,4 +164,22 @@ interface ChatControllerSwagger {
         )
         @PathVariable chatRoomId: Long,
     ): ResponseEntity<Unit>
+
+    @Operation(
+        summary = "채팅방 나가기",
+        description = "지정된 채팅방을 나갑니다. 요청한 사용자가 해당 채팅방의 참여자여야 합니다."
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "대화 종료 성공"),
+            ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+            ApiResponse(responseCode = "403", description = "채팅방 접근 권한 없음"),
+            ApiResponse(responseCode = "404", description = "존재하지 않는 채팅방"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류")
+        ]
+    )
+    fun leaveChatRoom(
+        @Parameter(hidden = true) @LoginMember requester: Member,
+        @PathVariable chatRoomId: Long,
+    ): ResponseEntity<Unit>
 }

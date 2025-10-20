@@ -9,6 +9,7 @@ import java.time.LocalDateTime
 
 data class ChatRoomResponse(
     val chatRoomId: Long,
+    val eventType: ChatRoomEventType = ChatRoomEventType.UPDATE,
     val unReadMessageCount: Int,
     val partner: FullProfileResponse,
     val lastReadChatId: Long?,
@@ -73,6 +74,32 @@ data class ChatRoomResponse(
         ): ChatRoomResponse =
             ChatRoomResponse(
                 chatRoomId = chatRoom.getIdOrThrow(),
+                partner = if (unlockInfo.isUnlocked) {
+                    FullProfileResponse.createFull(partner) // 코드 해제된 경우 Full Profile
+                } else {
+                    FullProfileResponse.createOpen(partner) // 그렇지 않으면 Open만
+                },
+                lastReadChatId = lastReadChatId,
+                recentChat = chatRoom.recentChat?.let { ChatResponse.toResponse(requester, it) },
+                unReadMessageCount = unReadMessageCount,
+                chatRoomStatus = chatRoom.status,
+                unlockInfo = UnlockInfoResponse.from(unlockInfo),
+                createdAt = chatRoom.createdAt,
+                updatedAt = chatRoom.updatedAt,
+            )
+
+        fun toResponseWithRemove(
+            chatRoom: ChatRoom,
+            chatRoomEventType: ChatRoomEventType = ChatRoomEventType.REMOVED,
+            requester: Member,
+            lastReadChatId: Long?,
+            partner: Member,
+            unReadMessageCount: Int,
+            unlockInfo: UnlockInfo,
+        ): ChatRoomResponse =
+            ChatRoomResponse(
+                chatRoomId = chatRoom.getIdOrThrow(),
+                eventType = chatRoomEventType,
                 partner = if (unlockInfo.isUnlocked) {
                     FullProfileResponse.createFull(partner) // 코드 해제된 경우 Full Profile
                 } else {
