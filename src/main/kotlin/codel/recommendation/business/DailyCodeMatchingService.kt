@@ -156,6 +156,8 @@ class DailyCodeMatchingService(
         // 2. 중복 방지 대상 조회
         val excludeIds = getExcludeIdsForDailyCodeMatching(user)
 
+        log.info { "코드매칭 중 제외된 아이디 전부 조회 :::: " + excludeIds.joinToString(",") }
+
         log.debug {
             "오늘의 코드매칭 생성 - userId: ${user.getIdOrThrow()}, " +
                     "region: $userMainRegion-$userSubRegion, excludeCount: ${excludeIds.size}개"

@@ -106,11 +106,12 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
         @Param("todayMidnight") todayMidnight: LocalDateTime
     ): List<Long>
 
+
     @Query(
         """
     SELECT s.toMember.id FROM Signal s
     WHERE s.fromMember = :fromMember
-      AND s.toMember IN :candidates
+      AND s.fromMember IN :candidates
       AND (
         (s.senderStatus = 'REJECTED' AND s.updatedAt >= :sevenDaysAgo AND s.updatedAt < :todayMidnight)
         OR (s.senderStatus IN ('ACCEPTED', 'PENDING', 'PENDING_HIDDEN') AND s.updatedAt < :todayMidnight)
@@ -125,6 +126,54 @@ interface SignalJpaRepository : JpaRepository<Signal, Long> {
     fun findExcludedToMemberIdsAtMidnight(
         @Param("fromMember") fromMember: Member,
         @Param("candidates") candidates: List<Member>,
+        @Param("sevenDaysAgo") sevenDaysAgo: LocalDateTime,
+        @Param("todayMidnight") todayMidnight: LocalDateTime
+    ): List<Long>
+
+    @Query(
+        """
+        SELECT s.fromMember.id
+        FROM Signal s
+        WHERE s.toMember = :toMember
+          AND s.id = (
+              SELECT MAX(s2.id)
+              FROM Signal s2
+              WHERE s2.toMember = :toMember
+                AND s2.fromMember = s.fromMember
+          )
+          AND (
+            (s.senderStatus = 'REJECTED' AND s.updatedAt >= :sevenDaysAgo AND s.updatedAt < :todayMidnight)
+            OR (s.senderStatus IN ('ACCEPTED', 'PENDING', 'PENDING_HIDDEN') AND s.updatedAt < :todayMidnight)
+          )
+        """
+    )
+    fun findExcludedFromMemberIdsAtMidnight(
+        @Param("toMember") toMember: Member,
+        @Param("sevenDaysAgo") sevenDaysAgo: LocalDateTime,
+        @Param("todayMidnight") todayMidnight: LocalDateTime
+    ): List<Long>
+
+
+
+    @Query(
+        """
+        SELECT s.toMember.id
+        FROM Signal s
+        WHERE s.fromMember = :fromMember
+          AND s.id = (
+              SELECT MAX(s2.id)
+              FROM Signal s2
+              WHERE s2.fromMember = :fromMember
+                AND s2.toMember = s.toMember
+          )
+          AND (
+            (s.senderStatus = 'REJECTED' AND s.updatedAt >= :sevenDaysAgo AND s.updatedAt < :todayMidnight)
+            OR (s.senderStatus IN ('ACCEPTED', 'PENDING', 'PENDING_HIDDEN') AND s.updatedAt < :todayMidnight)
+          )
+        """
+    )
+    fun findExcludedToMemberIdsAtMidnight(
+        @Param("fromMember") fromMember: Member,
         @Param("sevenDaysAgo") sevenDaysAgo: LocalDateTime,
         @Param("todayMidnight") todayMidnight: LocalDateTime
     ): List<Long>

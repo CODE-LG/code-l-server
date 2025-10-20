@@ -1,6 +1,7 @@
 package codel.recommendation.business
 
 import codel.block.infrastructure.BlockMemberRelationJpaRepository
+import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.member.domain.DailySeedProvider
 import codel.member.domain.Member
 import codel.member.infrastructure.MemberJpaRepository
@@ -19,11 +20,13 @@ import java.time.LocalDateTime
  * 2. 추천 이력 기반 중복 방지 (N일 내 추천받은 사용자)
  * 3. 차단 관계 (내가 차단 + 나를 차단)
  * 4. 최근 시그널 관계 (7일 내 시그널 주고받음)
+ * 5. 채팅방 관계 (현재 또는 과거 채팅방에서 만난 사용자)
  */
 @Service
 class RecommendationExclusionService(
     private val signalJpaRepository: SignalJpaRepository,
     private val blockMemberRelationJpaRepository: BlockMemberRelationJpaRepository,
+    private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
     private val memberJpaRepository: MemberJpaRepository,
     private val historyService: RecommendationHistoryService,
     private val config: RecommendationConfig
@@ -74,11 +77,19 @@ class RecommendationExclusionService(
             "제외 - 7일 내 시그널: $signalIds (${signalIds.size}명)"
         }
 
+        // 5. 채팅방 관계 (새로 추가)
+        val chatRoomIds = getChatRoomMemberIds(user)
+        excludeIds.addAll(chatRoomIds)
+        logger.debug {
+            "제외 - 채팅방 관계: $chatRoomIds (${chatRoomIds.size}명)"
+        }
+
         logger.info {
             "제외 대상 조회 완료 - userId: ${user.getIdOrThrow()}, " +
                     "type: $type, 전체 제외: ${excludeIds.size}개 " +
                     "(본인:1, history:${historyExcludeIds.size}, " +
-                    "blocked:${blockedIds.size}, signal:${signalIds.size}), " +
+                    "blocked:${blockedIds.size}, signal:${signalIds.size}, " +
+                    "chatroom:${chatRoomIds.size}), " +
                     "제외 ID 목록: $excludeIds"
         }
 
@@ -133,35 +144,61 @@ class RecommendationExclusionService(
         val sevenDaysAgo = LocalDateTime.now().minusDays(7)
         val targetTime = getLastRecommendationTime(LocalDateTime.now())
 
-        // 전체 후보자 목록 조회 (시그널 쿼리에 필요)
-        val seed = DailySeedProvider.generateMemberSeedEveryTenHours(userId)
-        val candidates = memberJpaRepository.findRandomMembersStatusDone(userId, seed)
-
-        if (candidates.isEmpty()) {
-            logger.debug { "시그널 관계 조회 - userId: $userId, 후보자 없음" }
-            return emptySet()
-        }
-
         // 내가 시그널 보낸 사용자들 (최근 추천 시간 기준)
         val sentSignalIds = signalJpaRepository.findExcludedFromMemberIdsAtMidnight(
-            user, candidates, sevenDaysAgo, targetTime
+            user, sevenDaysAgo, targetTime
         )
 
         // 내가 시그널 받은 사용자들 (최근 추천 시간 기준)
         val receivedSignalIds = signalJpaRepository.findExcludedToMemberIdsAtMidnight(
-            user, candidates, sevenDaysAgo, targetTime
+            user, sevenDaysAgo, targetTime
         )
 
         val result = (sentSignalIds + receivedSignalIds).toSet()
 
         logger.debug {
             "시그널 관계 조회 - userId: $userId, " +
-                    "targetTime: $targetTime, candidates: ${candidates.size}명, " +
+                    "targetTime: $targetTime, " +
                     "sent: ${sentSignalIds.size}명, received: ${receivedSignalIds.size}명, " +
                     "total: ${result.size}명"
         }
 
         return result
+    }
+
+    /**
+     * 채팅방에서 만난 적이 있는 사용자 ID를 반환합니다.
+     * 현재 활성 채팅방뿐만 아니라 나간 채팅방의 사용자도 모두 제외합니다.
+     *
+     * @param user 기준 사용자
+     * @return 채팅방 관계 사용자 ID Set
+     */
+    fun getChatRoomMemberIds(user: Member): Set<Long> {
+        val userId = user.getIdOrThrow()
+
+        // 사용자가 속한 모든 채팅방의 ChatRoomMember 조회 (나간 채팅방 포함)
+        val myChatRoomMembers = chatRoomMemberJpaRepository.findAllByMember(user)
+
+        // 각 채팅방의 상대방 ID 추출
+        val partnerIds = myChatRoomMembers.mapNotNull { myChatRoomMember ->
+            val chatRoomId = myChatRoomMember.chatRoom.getIdOrThrow()
+
+            // 같은 채팅방의 다른 멤버 찾기
+            val otherMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMemberNot(
+                chatRoomId, user
+            )
+
+            otherMember?.member?.id
+        }.toSet()
+
+        logger.debug {
+            "채팅방 관계 조회 - userId: $userId, " +
+                    "myChatRooms: ${myChatRoomMembers.size}개, " +
+                    "partners: ${partnerIds.size}명, " +
+                    "partnerIds: $partnerIds"
+        }
+
+        return partnerIds
     }
 
     /**
