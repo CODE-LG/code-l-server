@@ -17,7 +17,7 @@ class ChatRoomMember(
     @ManyToOne(optional = false)
     @JoinColumn(name = "member_id", nullable = false)
     var member: Member,
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "chat_id")
     var lastReadChat: Chat? = null,
     
