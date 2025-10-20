@@ -109,15 +109,6 @@ class MemberController(
         @RequestParam(value = "codeImages", required = false) codeImages: List<MultipartFile>?,
         @RequestParam(value = "existingIds", required = false) existingIds: List<Long>?
     ): ResponseEntity<UpdateCodeImagesResponse> {
-        println("🔍 DEBUG - codeImages: ${codeImages?.size ?: "null"}")
-        println("🔍 DEBUG - codeImages detail: ${codeImages?.map { it.originalFilename }}")
-        println("🔍 DEBUG - existingIds: $existingIds")
-        
-        // codeImages가 null이거나 비어있으면 에러
-        if (codeImages.isNullOrEmpty()) {
-            throw MemberException(HttpStatus.BAD_REQUEST, "업로드할 이미지가 없습니다.")
-        }
-        
         val response = memberService.updateCodeImages(member, codeImages, existingIds)
         return ResponseEntity.ok(response)
     }
