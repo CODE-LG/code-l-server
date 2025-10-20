@@ -520,19 +520,8 @@ class ChatService(
         val chatRoom = chatRoomJpaRepository.findById(chatRoomId)
             .orElseThrow { ChatException(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다.") }
 
-        val chatRoomMember = chatRoomMemberJpaRepository.findByChatRoomIdAndMember(chatRoomId, requester)
-            ?: throw ChatException(HttpStatus.BAD_REQUEST, "해당 채팅방의 멤버가 아닙니다.")
-
-        // 2. 이미 나간 상태인지 확인
-        if (chatRoomMember.hasLeft()) {
-            throw ChatException(HttpStatus.BAD_REQUEST, "이미 나간 채팅방입니다.")
-        }
-
         // 3. 상대방 찾기
         val partner = chatRoomRepository.findPartner(chatRoomId, requester)
-
-        // 4. 채팅방 나가기 처리
-        chatRoomMember.leave()
 
         // 5. 상대방 차단 처리
         blockService.blockMember(requester, partner.getIdOrThrow())
