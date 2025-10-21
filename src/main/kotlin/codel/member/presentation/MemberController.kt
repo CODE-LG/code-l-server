@@ -10,17 +10,23 @@ import codel.member.presentation.request.UpdateRepresentativeQuestionRequest
 import codel.member.presentation.response.*
 import codel.member.exception.MemberException
 import codel.member.presentation.swagger.MemberControllerSwagger
+import codel.notification.business.NotificationService
+import codel.notification.domain.Notification
+import codel.notification.domain.NotificationType
 import org.springframework.data.domain.Page
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @RestController
 class MemberController(
     private val memberService: MemberService,
     private val authService: AuthService,
+    private val notificationService: NotificationService,
 ) : MemberControllerSwagger {
     @PostMapping("/v1/member/login")
     override fun loginMember(
@@ -92,6 +98,19 @@ class MemberController(
         @RequestBody request : WithdrawnRequest
     ): ResponseEntity<Void> {
         memberService.withdrawMember(member, request.reason)
+        notificationService.send(
+            notification =
+                Notification(
+                    type = NotificationType.DISCORD,
+                    targetId = member.getIdOrThrow().toString(),
+                    title = "${member.getProfileOrThrow().getCodeNameOrThrow()}님이 탈퇴하였습니다.",
+                    body = """
+                        👩‍💻 탈퇴 회원: ${member.getProfileOrThrow().getCodeNameOrThrow()}
+                        🗓 탈퇴 시각: ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}
+                        📊 탈퇴 사유: ${request.reason.ifBlank { "미입력" }}
+                    """.trimIndent(),
+                ),
+        )
         return ResponseEntity.noContent().build()
     }
 
