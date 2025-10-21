@@ -88,8 +88,8 @@ class SignupController(
                 Notification(
                     type = NotificationType.DISCORD,
                     targetId = member.getIdOrThrow().toString(),
-                    title = "심사가 완료되었습니다.",
-                    body = "code:L 프로필 심사가 완료되었습니다.",
+                    title = "${member.getProfileOrThrow().getCodeNameOrThrow()}님이 심사를 요청하였습니다.",
+                    body = "code:L 프로필 심사 요청이 왔습니다.",
                 ),
         )
         return ResponseEntity.ok().build()

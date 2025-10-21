@@ -2,6 +2,9 @@ package codel.report.presentation
 
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
+import codel.notification.business.NotificationService
+import codel.notification.domain.Notification
+import codel.notification.domain.NotificationType
 import codel.report.business.ReportService
 import codel.report.presentation.request.ReportRequest
 import codel.report.presentation.swagger.ReportControllerSwagger
@@ -12,11 +15,14 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @RestController
 @RequestMapping("/v1/reports")
 class ReportController(
     val reportService: ReportService,
+    val notificationService: NotificationService,
     val messagingTemplate: SimpMessagingTemplate
 ) : ReportControllerSwagger {
 
@@ -46,7 +52,23 @@ class ReportController(
                 "/sub/v1/chatroom/${responseDto.requesterChatRoomResponse.chatRoomId}",
                 responseDto.chatResponse
             )
+
+            notificationService.send(
+                notification =
+                    Notification(
+                        type = NotificationType.DISCORD,
+                        targetId = member.getProfileOrThrow().toString(),
+                        title = "🚨 신고 접수 알림",
+                        body = """
+                            👮‍♀️ 신고자: ${member.getProfileOrThrow().getCodeNameOrThrow()}
+                            🎯 피신고자: ${responseDto.partner.getProfileOrThrow().getCodeNameOrThrow()}
+                            🗓 신고 시각: ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}
+                            💬 신고 사유: ${reportRequest.reason.ifBlank { "미입력" }}
+                        """.trimIndent(),
+                    ),
+            )
         }
+
 
         return ResponseEntity.ok().build()
     }
