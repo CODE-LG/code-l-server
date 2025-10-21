@@ -75,9 +75,15 @@ echo -e "${BLUE}🔄 Nginx 설정 전환 중...${NC}"
 # 백업 생성
 sudo cp /etc/nginx/conf.d/www.codelg.store.conf /etc/nginx/conf.d/www.codelg.store.conf.backup
 
-# 포트 변경
-sudo sed -i "s/server localhost:$CURRENT_PORT/server localhost:$NEW_PORT/g" /etc/nginx/conf.d/www.codelg.store.conf
-sudo sed -i "s/server localhost:[0-9]\+/server localhost:$NEW_PORT/g" /etc/nginx/conf.d/www.codelg.store.conf
+# 포트 변경 (Spring Boot upstream만 변경, Next.js는 그대로 유지)
+# upstream backend 블록 내의 8080/8081 포트만 변경
+if [ $CURRENT_PORT -ne 0 ]; then
+    # 기존 포트가 있는 경우: CURRENT_PORT -> NEW_PORT
+    sudo sed -i "/upstream backend/,/}/s/server localhost:$CURRENT_PORT/server localhost:$NEW_PORT/g" /etc/nginx/conf.d/www.codelg.store.conf
+else
+    # 기존 포트가 없는 경우: 8080 또는 8081 중 하나를 NEW_PORT로
+    sudo sed -i "/upstream backend/,/}/s/server localhost:808[01]/server localhost:$NEW_PORT/g" /etc/nginx/conf.d/www.codelg.store.conf
+fi
 
 # 설정 검증
 sudo nginx -t
