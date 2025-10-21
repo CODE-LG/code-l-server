@@ -5,6 +5,9 @@ import codel.block.presentation.request.BlockMemberRequest
 import codel.block.presentation.swagger.BlockControllerSwagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
+import codel.notification.business.NotificationService
+import codel.notification.domain.Notification
+import codel.notification.domain.NotificationType
 import org.springframework.http.ResponseEntity
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -13,12 +16,15 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @RestController
 @RequestMapping("/v1/block")
 class BlockController(
     val blockService: BlockService,
-    val messagingTemplate: SimpMessagingTemplate
+    val messagingTemplate: SimpMessagingTemplate,
+    val notificationService: NotificationService
 ) : BlockControllerSwagger {
 
     @PostMapping
@@ -46,6 +52,20 @@ class BlockController(
             messagingTemplate.convertAndSend(
                 "/sub/v1/chatroom/${responseDto.requesterChatRoomResponse.chatRoomId}",
                 responseDto.chatResponse
+            )
+
+            notificationService.send(
+                notification =
+                    Notification(
+                        type = NotificationType.DISCORD,
+                        targetId = blocker.getProfileOrThrow().toString(),
+                        title = "🚨 차단 접수 알림",
+                        body = """
+                            👮‍♀️ 차단자: ${blocker.getProfileOrThrow().getCodeNameOrThrow()}
+                            🎯 피차단자: ${responseDto.partner.getProfileOrThrow().getCodeNameOrThrow()}
+                            🗓 차단 시각: ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}
+                        """.trimIndent(),
+                    ),
             )
         }
 
