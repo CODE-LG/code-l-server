@@ -71,6 +71,7 @@ class DailyCodeMatchingService(
             log.info {
                 "모든 추천이 필터링됨, 새로 생성 - userId: ${user.getIdOrThrow()}"
             }
+            return emptyList()
         }
 
         // 5. 새로운 추천 생성
