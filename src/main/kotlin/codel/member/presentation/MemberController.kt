@@ -92,7 +92,7 @@ class MemberController(
         return ResponseEntity.ok(memberProfileDetail)
     }
 
-    @DeleteMapping("/v1/member/me")
+    @PostMapping("/v1/member/me")
     override fun withdrawMember(
         @LoginMember member: Member,
         @RequestBody request : WithdrawnRequest
