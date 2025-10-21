@@ -527,6 +527,7 @@ class ChatService(
 
         // 3. 상대방 차단 처리 (직접 처리 - 순환 참조 방지)
         saveBlockRelationIfNotExists(requester, partner)
+        chatRoom.closeConversation()
 
         // 4. 시스템 메시지 추가 및 WebSocket 응답 생성
         return createCloseConversationMessage(chatRoom, requester, partner)
