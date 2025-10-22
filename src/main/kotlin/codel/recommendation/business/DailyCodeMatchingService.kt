@@ -103,6 +103,7 @@ class DailyCodeMatchingService(
      * - 차단한 사용자
      * - 나를 차단한 사용자
      * - 최근 시그널 보낸 사용자
+     * - WITHDRAWN 상태의 사용자 (회원 탈퇴)
      *
      * @param user 기준 사용자
      * @param memberIds 필터링할 사용자 ID 목록
@@ -119,13 +120,19 @@ class DailyCodeMatchingService(
         // 1. 차단 관계
         excludeIds.addAll(exclusionService.getBlockedMemberIds(user))
 
+        // 2. WITHDRAWN 상태의 회원 필터링
+        // getMembersByIds를 통해 조회하면 자동으로 WITHDRAWN이 제외되므로
+        // 여기서는 ID만 필터링
+        val validMembers = bucketService.getMembersByIds(memberIds)
+        val validIds = validMembers.map { it.getIdOrThrow() }
 
-        // 2. 필터링
-        val filteredIds = memberIds.filter { it !in excludeIds }
+        // 3. 최종 필터링
+        val filteredIds = validIds.filter { it !in excludeIds }
 
         log.debug {
             "실시간 필터링 - userId: ${user.getIdOrThrow()}, " +
                     "original: ${memberIds.size}명, excluded: ${excludeIds.size}명, " +
+                    "withdrawn: ${memberIds.size - validIds.size}명, " +
                     "result: ${filteredIds.size}명"
         }
 

@@ -27,6 +27,7 @@ class MemberController(
     private val memberService: MemberService,
     private val authService: AuthService,
     private val notificationService: NotificationService,
+    private val messagingTemplate: org.springframework.messaging.simp.SimpMessagingTemplate,
 ) : MemberControllerSwagger {
     @PostMapping("/v1/member/login")
     override fun loginMember(
@@ -97,7 +98,25 @@ class MemberController(
         @LoginMember member: Member,
         @RequestBody request : WithdrawnRequest
     ): ResponseEntity<Void> {
-        memberService.withdrawMember(member, request.reason)
+        // 1. 회원 탈퇴 처리 (Signal, ChatRoom, Member 상태 변경)
+        val chatNotifications = memberService.withdrawMember(member, request.reason)
+
+        // 2. WebSocket으로 채팅방 종료 알림 발송
+        chatNotifications.forEach { notification ->
+            messagingTemplate.convertAndSend(
+                "/sub/v1/chatroom/member/${notification.partner.id}",
+                notification.partnerChatRoomResponse
+            )
+
+            // 채팅방 구독자들에게 시스템 메시지 전송
+            messagingTemplate.convertAndSend(
+                "/sub/v1/chatroom/${notification.partnerChatRoomResponse.chatRoomId}",
+                notification.chatResponse
+            )
+            // 상대방에게 채팅방 종료 알림 전송
+        }
+        
+        // 3. Discord 알림 발송
         notificationService.send(
             notification =
                 Notification(
@@ -108,9 +127,11 @@ class MemberController(
                         👩‍💻 탈퇴 회원: ${member.getProfileOrThrow().getCodeNameOrThrow()}
                         🗓 탈퇴 시각: ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}
                         📊 탈퇴 사유: ${request.reason.ifBlank { "미입력" }}
+                        💬 종료된 채팅방: ${chatNotifications.size}개
                     """.trimIndent(),
                 ),
         )
+        
         return ResponseEntity.noContent().build()
     }
 
