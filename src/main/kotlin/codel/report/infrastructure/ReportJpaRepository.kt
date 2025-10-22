@@ -28,19 +28,52 @@ interface ReportJpaRepository : JpaRepository<Report, Long> {
     fun countByReported(reported: Member): Long
     
     /**
-     * 피신고자의 신고 이력 조회
+     * 피신고자의 신고 이력 조회 (FETCH JOIN 추가)
      */
-    fun findByReportedOrderByCreatedAtDesc(reported: Member, pageable: Pageable): Page<Report>
-    
+    @Query("""
+        SELECT r FROM Report r
+        JOIN FETCH r.reporter
+        JOIN FETCH r.reported
+        WHERE r.reported = :reported
+        ORDER BY r.createdAt DESC
+    """)
+    fun findByReportedOrderByCreatedAtDesc(@Param("reported") reported: Member, pageable: Pageable): Page<Report>
+
     /**
-     * 상태별 신고 목록 조회 (페이징)
+     * 상태별 신고 목록 조회 (FETCH JOIN 추가)
      */
-    fun findByStatusOrderByCreatedAtDesc(status: ReportStatus, pageable: Pageable): Page<Report>
-    
+    @Query("""
+        SELECT r FROM Report r
+        JOIN FETCH r.reporter
+        JOIN FETCH r.reported
+        WHERE r.status = :status
+        ORDER BY r.createdAt DESC
+    """)
+    fun findByStatusOrderByCreatedAtDesc(@Param("status") status: ReportStatus, pageable: Pageable): Page<Report>
+
     /**
-     * 전체 신고 목록 조회 (최신순)
+     * 전체 신고 목록 조회 (FETCH JOIN 추가)
      */
+    @Query("""
+        SELECT r FROM Report r
+        JOIN FETCH r.reporter
+        JOIN FETCH r.reported
+        ORDER BY r.createdAt DESC
+    """)
     fun findAllByOrderByCreatedAtDesc(pageable: Pageable): Page<Report>
+
+    /**
+     * ID로 신고 조회 (FETCH JOIN 추가)
+     */
+    @Query("""
+        SELECT r FROM Report r
+        JOIN FETCH r.reporter reporter
+        JOIN FETCH r.reported reported
+        LEFT JOIN FETCH reporter.profile
+        LEFT JOIN FETCH reported.profile
+        WHERE r.id = :id
+    """)
+    fun findByIdWithMembers(@Param("id") id: Long): Report?
     
     /**
      * 복합 필터링 쿼리

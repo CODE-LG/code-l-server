@@ -164,7 +164,9 @@
             <h2>📊 최근 30일 신고 많이 받은 사용자 TOP 10</h2>
             <div th:each="item : ${topReported}" class="top-reported-item">
                 <div>
-                    <span th:text="${item.first.profile?.codeName ?: item.first.email}">사용자</span>
+                    <a th:href="@{/v1/admin/member/{id}(id=${item.first.id})}"
+                       th:text="${item.first.profile?.codeName ?: item.first.email}">
+                    사용자</a>
                     <small style="color:#999;margin-left:10px;" th:text="${item.first.email}">email</small>
                 </div>
                 <div class="report-count"><span th:text="${item.second}">5</span>건</div>

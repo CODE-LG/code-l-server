@@ -56,8 +56,8 @@ class ReportAdminService(
      * 신고 상세 조회
      */
     fun getReportDetail(reportId: Long): Report {
-        return reportJpaRepository.findById(reportId)
-            .orElseThrow { ReportException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다.") }
+        return reportJpaRepository.findByIdWithMembers(reportId)
+            ?: throw ReportException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다.")
     }
 
     /**
@@ -154,8 +154,8 @@ class ReportAdminService(
      */
     @Transactional
     fun updateReportStatus(reportId: Long, status: ReportStatus, note: String? = null) {
-        val report = reportJpaRepository.findById(reportId)
-            .orElseThrow { ReportException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다.") }
+        val report = reportJpaRepository.findByIdWithMembers(reportId)
+            ?: throw ReportException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다.")
         
         report.updateStatus(status, note)
         reportJpaRepository.save(report)
@@ -166,8 +166,8 @@ class ReportAdminService(
      */
     @Transactional
     fun startProcessing(reportId: Long) {
-        val report = reportJpaRepository.findById(reportId)
-            .orElseThrow { ReportException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다.") }
+        val report = reportJpaRepository.findByIdWithMembers(reportId)
+            ?: throw ReportException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다.")
         
         report.startProcessing()
         reportJpaRepository.save(report)
@@ -178,8 +178,8 @@ class ReportAdminService(
      */
     @Transactional
     fun resolveReport(reportId: Long, note: String? = null) {
-        val report = reportJpaRepository.findById(reportId)
-            .orElseThrow { ReportException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다.") }
+        val report = reportJpaRepository.findByIdWithMembers(reportId)
+            ?: throw ReportException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다.")
         
         report.resolve(note)
         reportJpaRepository.save(report)
@@ -190,8 +190,8 @@ class ReportAdminService(
      */
     @Transactional
     fun dismissReport(reportId: Long, note: String? = null) {
-        val report = reportJpaRepository.findById(reportId)
-            .orElseThrow { ReportException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다.") }
+        val report = reportJpaRepository.findByIdWithMembers(reportId)
+            ?: throw ReportException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다.")
         
         report.dismiss(note)
         reportJpaRepository.save(report)
@@ -202,8 +202,8 @@ class ReportAdminService(
      */
     @Transactional
     fun markAsDuplicate(reportId: Long, note: String? = null) {
-        val report = reportJpaRepository.findById(reportId)
-            .orElseThrow { ReportException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다.") }
+        val report = reportJpaRepository.findByIdWithMembers(reportId)
+            ?: throw ReportException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다.")
         
         report.markAsDuplicate(note)
         reportJpaRepository.save(report)
