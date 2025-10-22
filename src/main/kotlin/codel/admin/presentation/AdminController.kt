@@ -1,6 +1,8 @@
 package codel.admin.presentation
 
 import codel.admin.business.AdminService
+import codel.report.business.ReportAdminService
+import codel.report.domain.ReportStatus
 import codel.admin.domain.Admin
 import codel.admin.exception.AdminException
 import codel.admin.presentation.request.AdminLoginRequest
@@ -21,6 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes
 @Controller
 class AdminController(
     private val adminService: AdminService,
+    private val reportAdminService: ReportAdminService,
 ) {
     @GetMapping("/v1/admin/login")
     fun login(): String = "login"
@@ -436,4 +439,138 @@ class AdminController(
         }
         return "redirect:/v1/admin/questions"
     }
+
+    // ========== 신고 관리 ==========
+
+    /**
+     * 신고 목록 조회 페이지
+     */
+    @GetMapping("/v1/admin/reports")
+    fun reportList(
+        model: Model,
+        @RequestParam(required = false) keyword: String?,
+        @RequestParam(required = false) status: String?,
+        @RequestParam(required = false) startDate: String?,
+        @RequestParam(required = false) endDate: String?,
+        @PageableDefault(size = 20) pageable: Pageable
+    ): String {
+        // 신고 목록 조회
+        val reports = reportAdminService.getReportsWithFilter(keyword, status, startDate, endDate, pageable)
+
+        // 통계 정보
+        val stats = mapOf(
+            "total" to reportAdminService.getTotalReportsCount(),
+            "pending" to reportAdminService.getReportCountByStatus(ReportStatus.PENDING),
+            "inProgress" to reportAdminService.getReportCountByStatus(ReportStatus.IN_PROGRESS),
+            "resolved" to reportAdminService.getReportCountByStatus(ReportStatus.RESOLVED),
+            "dismissed" to reportAdminService.getReportCountByStatus(ReportStatus.DISMISSED),
+            "today" to reportAdminService.getTodayReportsCount(),
+            "weekly" to reportAdminService.getWeeklyReportsCount(),
+            "monthly" to reportAdminService.getMonthlyReportsCount()
+        )
+
+        // 신고 많이 받은 사용자 TOP 10
+        val topReported = reportAdminService.getMostReportedMembers(30, 10)
+
+        model.addAttribute("reports", reports)
+        model.addAttribute("stats", stats)
+        model.addAttribute("topReported", topReported)
+        model.addAttribute("statuses", ReportStatus.values())
+        model.addAttribute("param", mapOf(
+            "keyword" to (keyword ?: ""),
+            "status" to (status ?: ""),
+            "startDate" to (startDate ?: ""),
+            "endDate" to (endDate ?: "")
+        ))
+
+        return "reportList"
+    }
+
+    /**
+     * 신고 상세 조회 페이지
+     */
+    @GetMapping("/v1/admin/reports/{reportId}")
+    fun reportDetail(
+        model: Model,
+        @PathVariable reportId: Long
+    ): String {
+        try {
+            val report = reportAdminService.getReportDetail(reportId)
+
+            // 피신고자의 신고 이력
+            val reportedMemberId = report.reported.getIdOrThrow()
+            val reportHistory = reportAdminService.getReportedMemberReports(
+                reportedMemberId,
+                Pageable.ofSize(10)
+            )
+            val totalReportCount = reportAdminService.getReportedMemberReportCount(reportedMemberId)
+
+            model.addAttribute("report", report)
+            model.addAttribute("reportHistory", reportHistory)
+            model.addAttribute("totalReportCount", totalReportCount)
+            model.addAttribute("statuses", ReportStatus.values())
+
+            return "reportDetail"
+        } catch (e: Exception) {
+            model.addAttribute("error", "신고 내역을 불러올 수 없습니다 (ID: $reportId)")
+            return "redirect:/v1/admin/reports"
+        }
+    }
+
+    /**
+     * 신고 처리 상태 변경
+     */
+    @PostMapping("/v1/admin/reports/{reportId}/status")
+    fun updateReportStatus(
+        @PathVariable reportId: Long,
+        @RequestParam status: String,
+        @RequestParam(required = false) note: String?,
+        redirectAttributes: RedirectAttributes
+    ): String {
+        try {
+            val reportStatus = ReportStatus.valueOf(status)
+            reportAdminService.updateReportStatus(reportId, reportStatus, note)
+            redirectAttributes.addFlashAttribute("success", "신고 상태가 변경되었습니다.")
+        } catch (e: Exception) {
+            redirectAttributes.addFlashAttribute("error", "신고 상태 변경에 실패했습니다: ${e.message}")
+        }
+        return "redirect:/v1/admin/reports/$reportId"
+    }
+
+    /**
+     * 신고 처리 완료
+     */
+    @PostMapping("/v1/admin/reports/{reportId}/resolve")
+    fun resolveReport(
+        @PathVariable reportId: Long,
+        @RequestParam(required = false) note: String?,
+        redirectAttributes: RedirectAttributes
+    ): String {
+        try {
+            reportAdminService.resolveReport(reportId, note)
+            redirectAttributes.addFlashAttribute("success", "신고가 처리되었습니다.")
+        } catch (e: Exception) {
+            redirectAttributes.addFlashAttribute("error", "신고 처리에 실패했습니다: ${e.message}")
+        }
+        return "redirect:/v1/admin/reports/$reportId"
+    }
+
+    /**
+     * 신고 반려
+     */
+    @PostMapping("/v1/admin/reports/{reportId}/dismiss")
+    fun dismissReport(
+        @PathVariable reportId: Long,
+        @RequestParam(required = false) note: String?,
+        redirectAttributes: RedirectAttributes
+    ): String {
+        try {
+            reportAdminService.dismissReport(reportId, note)
+            redirectAttributes.addFlashAttribute("success", "신고가 반려되었습니다.")
+        } catch (e: Exception) {
+            redirectAttributes.addFlashAttribute("error", "신고 반려에 실패했습니다: ${e.message}")
+        }
+        return "redirect:/v1/admin/reports/$reportId"
+    }
 }
+
