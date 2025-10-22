@@ -138,7 +138,7 @@ class ChatService(
             Chat(
                 chatRoom = chatRoom,
                 fromChatRoomMember = fromApprover,
-                message = """${profile.getCodeNameOrThrow()}님의 코드 질문\n💭 ${profile.getRepresentativeQuestionOrThrow().content}""",
+                message = "${profile.getCodeNameOrThrow()}님의 코드 질문\n💭 ${profile.getRepresentativeQuestionOrThrow().content}",
                 sentAt = now,
                 senderType = ChatSenderType.SYSTEM,
                 chatContentType = ChatContentType.QUESTION
