@@ -70,16 +70,10 @@ class ChatRepository(
             )
 
         if(lastChatId == null){
-            throw ChatException(HttpStatus.NO_CONTENT, "이전 채팅이 존재하지 않습니다.")
+            return Page.empty(pageableWithSort)
         }
 
-        val findPrevChats = chatJpaRepository.findPrevChats(chatRoom, lastChatId, pageableWithSort)
-
-        if(findPrevChats.totalElements == 0.toLong()){
-            throw ChatException(HttpStatus.NO_CONTENT, "이전 채팅이 존재하지 않습니다.")
-        }
-
-        return findPrevChats
+        return chatJpaRepository.findPrevChats(chatRoom, lastChatId, pageableWithSort)
     }
 
     fun findChat(chatId: Long): Chat =
