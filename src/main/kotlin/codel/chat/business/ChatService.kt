@@ -600,6 +600,52 @@ class ChatService(
     }
 
     /**
+     * 회원 탈퇴 시 모든 채팅방 종료 처리
+     * - 차단 처리는 하지 않음
+     * - 대화 종료 시스템 메시지만 추가
+     * - WebSocket 알림 반환 (MemberService에서 발송)
+     */
+    fun closeAllConversationsForWithdrawal(withdrawnMember: Member): List<SavedChatDto> {
+        log.info { "회원 탈퇴로 인한 모든 채팅방 종료 시작 - userId: ${withdrawnMember.getIdOrThrow()}" }
+        
+        // 1. 탈퇴 회원이 속한 모든 채팅방 조회 (이미 나간 채팅방 제외)
+        val chatRoomMembers = chatRoomMemberJpaRepository
+            .findAllByMember(withdrawnMember)
+            .filter { 
+                !it.hasLeft() && 
+                it.chatRoom.status != ChatRoomStatus.DISABLED 
+            }
+        
+        log.info { 
+            "종료할 채팅방 수: ${chatRoomMembers.size}개 - userId: ${withdrawnMember.getIdOrThrow()}" 
+        }
+        
+        // 2. 각 채팅방에 대해 대화 종료 처리
+        val notifications = chatRoomMembers.map { chatRoomMember ->
+            val chatRoom = chatRoomMember.chatRoom
+            val partner = findPartner(chatRoom.getIdOrThrow(), withdrawnMember)
+            
+            log.debug { 
+                "채팅방 종료 처리 - chatRoomId: ${chatRoom.getIdOrThrow()}, " +
+                "partnerId: ${partner.getIdOrThrow()}" 
+            }
+            
+            // 3. 채팅방 상태 변경 (차단 없이)
+            chatRoom.closeConversation()
+            
+            // 4. 시스템 메시지 생성 및 WebSocket 응답 반환
+            createCloseConversationMessage(chatRoom, withdrawnMember, partner)
+        }
+        
+        log.info { 
+            "회원 탈퇴로 인한 모든 채팅방 종료 완료 - userId: ${withdrawnMember.getIdOrThrow()}, " +
+            "종료된 채팅방: ${notifications.size}개" 
+        }
+        
+        return notifications
+    }
+
+    /**
      * 채팅방 존재 여부 확인 및 조회
      */
     fun findChatRoomBetweenMembers(member1: Member, member2: Member): ChatRoom? {

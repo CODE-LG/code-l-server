@@ -191,17 +191,19 @@ class RecommendationBucketService(
      * ID 목록으로부터 Member 객체들을 조회합니다.
      * 추천 이력에서 실제 Member 객체를 가져올 때 사용합니다.
      * 
+     * WITHDRAWN 상태의 회원은 자동으로 필터링됩니다.
+     *
      * @param memberIds 조회할 Member ID 목록
-     * @return ID 순서대로 정렬된 Member 목록 (존재하지 않는 ID는 제외)
+     * @return ID 순서대로 정렬된 Member 목록 (존재하지 않는 ID 및 WITHDRAWN 회원 제외)
      */
     fun getMembersByIds(memberIds: List<Long>): List<Member> {
         if (memberIds.isEmpty()) {
             return emptyList()
         }
-        
+
         // ID 목록으로 Member들 조회
         val members = memberJpaRepository.findAllByIdsWithProfileAndQuestion(memberIds)
-        
+
         // Lazy Loading 강제 초기화 (Hibernate.initialize 사용)
         members.forEach { member ->
             Hibernate.initialize(member.profile)
@@ -212,21 +214,24 @@ class RecommendationBucketService(
 
         val membersMap = members.associateBy { it.getIdOrThrow() }
 
-        // 원본 순서 유지하면서 존재하는 Member만 반환
+        // 원본 순서 유지하면서 존재하는 Member만 반환 (WITHDRAWN 회원 제외)
         val result = memberIds.mapNotNull { id ->
-            membersMap[id]
+            membersMap[id]?.takeIf { !it.isWithdrawn() }
         }
-        
+
+        val withdrawnCount = memberIds.size - members.size - (members.size - result.size)
+
         if (result.size != memberIds.size) {
-            logger.warn { 
-                "일부 Member ID가 존재하지 않음 - requested: ${memberIds.size}개, " +
-                "found: ${result.size}개, missing: ${memberIds - result.map { it.getIdOrThrow() }.toSet()}" 
+            logger.warn {
+                "일부 Member가 필터링됨 - requested: ${memberIds.size}개, " +
+                "found: ${result.size}개, withdrawn: ${withdrawnCount}개, " +
+                "missing: ${memberIds - result.map { it.getIdOrThrow() }.toSet()}"
             }
         }
-        
-        logger.debug { 
+
+        logger.debug {
             "Member ID 목록 조회 완료 - requested: ${memberIds.size}개, " +
-            "found: ${result.size}개" 
+            "found: ${result.size}개, withdrawn filtered: ${withdrawnCount}개"
         }
         
         return result

@@ -4,6 +4,7 @@ import codel.member.domain.Member
 import codel.signal.domain.Signal
 import codel.signal.domain.SignalStatus
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
@@ -11,6 +12,28 @@ import java.time.LocalDateTime
 
 @Repository
 interface SignalJpaRepository : JpaRepository<Signal, Long> {
+    
+    /**
+     * 회원 탈퇴 시 해당 회원이 보낸 모든 시그널을 REJECTED로 변경
+     */
+    @Modifying
+    @Query("""
+        UPDATE Signal s 
+        SET s.senderStatus = 'REJECTED', s.receiverStatus = 'REJECTED'
+        WHERE s.fromMember = :member
+    """)
+    fun rejectAllSignalsFromMember(@Param("member") member: Member): Int
+    
+    /**
+     * 회원 탈퇴 시 해당 회원이 받은 모든 시그널을 REJECTED로 변경
+     */
+    @Modifying
+    @Query("""
+        UPDATE Signal s 
+        SET s.senderStatus = 'REJECTED', s.receiverStatus = 'REJECTED'
+        WHERE s.toMember = :member
+    """)
+    fun rejectAllSignalsToMember(@Param("member") member: Member): Int
     fun findTopByFromMemberAndToMemberOrderByIdDesc(fromMember: Member, toMember: Member): Signal?
 
     @Query("""

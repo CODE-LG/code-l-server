@@ -3,9 +3,13 @@ package codel.member.business
 import codel.admin.presentation.request.ImageRejection
 import codel.block.infrastructure.BlockMemberRelationJpaRepository
 import codel.chat.domain.ChatRoomStatus
+import codel.chat.domain.ChatContentType
 import codel.chat.exception.ChatException
 import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
+import codel.chat.infrastructure.ChatJpaRepository
+import codel.chat.presentation.response.SavedChatDto
+import codel.chat.repository.ChatRepository
 import codel.member.domain.*
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
@@ -45,6 +49,8 @@ class MemberService(
     private val signalJpaRepository: SignalJpaRepository,
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
     private val chatRoomJpaRepository: ChatRoomJpaRepository,
+    private val chatJpaRepository: ChatJpaRepository,
+    private val chatRepository: ChatRepository,
     private val notificationService: NotificationService,
     private val blockMemberRelationJpaRepository: BlockMemberRelationJpaRepository,
     private val faceImageRepository: FaceImageRepository,
@@ -539,13 +545,66 @@ class MemberService(
 
     /**
      * 회원 탈퇴 처리
+     * 1. Signal 상태를 모두 REJECTED로 변경
+     * 2. 관련된 모든 채팅방 종료 처리
+     * 3. 회원 상태를 WITHDRAWN으로 변경
      */
-    fun withdrawMember(member: Member, reason :  String) {
+    fun withdrawMember(member: Member, reason: String): List<SavedChatDto> {
+        // 1. Signal 상태 변경 - 이 회원과 관련된 모든 시그널을 REJECTED로 변경
+        val rejectedFromSignals = signalJpaRepository.rejectAllSignalsFromMember(member)
+        val rejectedToSignals = signalJpaRepository.rejectAllSignalsToMember(member)
+        
+        // 2. 모든 채팅방 종료 처리 (시스템 메시지 추가 + 상태 변경)
+        val chatNotifications = chatRoomMemberJpaRepository.findAllByMember(member)
+            .filter { !it.hasLeft() && it.chatRoom.status != ChatRoomStatus.DISABLED }
+            .map { chatRoomMember ->
+                val chatRoom = chatRoomMember.chatRoom
+                val partner = chatRoomMemberJpaRepository.findByChatRoomIdAndMemberNot(
+                    chatRoom.getIdOrThrow(), 
+                    member
+                )?.member ?: throw ChatException(HttpStatus.BAD_REQUEST, "상대방을 찾을 수 없습니다.")
+                
+                // 채팅방 상태 변경
+                chatRoom.closeConversation()
+                
+                // 시스템 메시지 생성
+                val closeMessage = chatJpaRepository.save(
+                    codel.chat.domain.Chat.createSystemMessage(
+                        chatRoom = chatRoom,
+                        message = "${member.getProfileOrThrow().codeName}님이 대화를 종료하였습니다.",
+                        chatContentType = ChatContentType.CLOSE_CONVERSATION
+                    )
+                )
+                
+                chatRoom.updateRecentChat(closeMessage)
+                
+                // WebSocket 응답 생성
+                val requesterUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, member)
+                val partnerUnReadCount = chatRepository.getUnReadMessageCount(chatRoom, partner)
+                val chatResponse = codel.chat.presentation.response.ChatResponse.toResponse(member, closeMessage)
+                
+                val requesterChatRoomResponse = codel.chat.presentation.response.ChatRoomResponse.toResponse(
+                    chatRoom, member, closeMessage.getIdOrThrow(), member, requesterUnReadCount
+                )
+                
+                val partnerChatRoomResponse = codel.chat.presentation.response.ChatRoomResponse.toResponse(
+                    chatRoom, partner, null, member, partnerUnReadCount
+                )
+
+                SavedChatDto(
+                    partner, 
+                    requesterChatRoomResponse, 
+                    partnerChatRoomResponse, 
+                    chatResponse
+                )
+            }
+        
+        // 3. 회원 상태 변경
         member.withdraw(reason)
         memberRepository.updateMember(member)
-
-        // TODO: JWT 토큰 블랙리스트 처리 고려
-        // TODO: 필요시 추가 처리 (알림, 로깅 등)
+        
+        // 4. WebSocket 알림 데이터 반환 (Controller에서 발송)
+        return chatNotifications
     }
 
     // ========== 통계 관련 메서드 ==========
