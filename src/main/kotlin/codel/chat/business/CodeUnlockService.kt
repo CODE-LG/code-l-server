@@ -45,18 +45,7 @@ class CodeUnlockService(
         )
 
         val savedRequest = codeUnlockRequestRepository.save(unlockRequest)
-        
-        // 시스템 메시지 생성
-        val systemMessage = chatJpaRepository.save(
-            Chat.createSystemMessage(
-                chatRoom = chatRoom,
-                message = "코드해제 요청이 왔습니다.",
-                chatContentType = ChatContentType.UNLOCKED_REQUEST
-            )
-        )
 
-        chatRoom.updateRecentChat(systemMessage)
-        
         return savedRequest
     }
 
