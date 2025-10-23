@@ -4,7 +4,9 @@ import codel.block.business.BlockService
 import codel.block.presentation.request.BlockMemberRequest
 import codel.block.presentation.swagger.BlockControllerSwagger
 import codel.config.argumentresolver.LoginMember
+import codel.member.business.MemberService
 import codel.member.domain.Member
+import codel.member.domain.MemberRepository
 import codel.notification.business.NotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
@@ -23,8 +25,9 @@ import java.time.format.DateTimeFormatter
 @RequestMapping("/v1/block")
 class BlockController(
     val blockService: BlockService,
+    val memberService : MemberService,
     val messagingTemplate: SimpMessagingTemplate,
-    val notificationService: NotificationService
+    val notificationService: NotificationService,
 ) : BlockControllerSwagger {
 
     @PostMapping
@@ -53,21 +56,23 @@ class BlockController(
                 "/sub/v1/chatroom/${responseDto.requesterChatRoomResponse.chatRoomId}",
                 responseDto.chatResponse
             )
-
-            notificationService.send(
-                notification =
-                    Notification(
-                        type = NotificationType.DISCORD,
-                        targetId = blocker.getProfileOrThrow().toString(),
-                        title = "🚨 차단 접수 알림",
-                        body = """
-                            👮‍♀️ 차단자: ${blocker.getProfileOrThrow().getCodeNameOrThrow()}
-                            🎯 피차단자: ${responseDto.partner.getProfileOrThrow().getCodeNameOrThrow()}
-                            🗓 차단 시각: ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}
-                        """.trimIndent(),
-                    ),
-            )
         }
+
+        // 디스코드 알림은 채팅방 존재 여부와 관계없이 항상 전송
+        val blockedMember = memberService.findMember(blockMemberRequest.blockedMemberId)
+        notificationService.send(
+            notification =
+                Notification(
+                    type = NotificationType.DISCORD,
+                    targetId = blocker.getProfileOrThrow().toString(),
+                    title = "🚨 차단 접수 알림",
+                    body = buildString {
+                        append("👮‍♀️ 차단자: ${blocker.getProfileOrThrow().getCodeNameOrThrow()}\n")
+                        append("🎯 피차단자: ${blockedMember.getProfileOrThrow().getCodeNameOrThrow()}\n")
+                        append("🗓 차단 시각: ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}")
+                    },
+                ),
+        )
 
         return ResponseEntity.ok().build()
     }
