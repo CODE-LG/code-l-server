@@ -3,11 +3,7 @@ package codel.notification.domain.sender
 import codel.config.Loggable
 import codel.notification.domain.NotificationType
 import codel.notification.exception.NotificationException
-import com.google.firebase.messaging.FirebaseMessaging
-import com.google.firebase.messaging.FirebaseMessagingException
-import com.google.firebase.messaging.Message
-import com.google.firebase.messaging.MessagingErrorCode
-import com.google.firebase.messaging.Notification
+import com.google.firebase.messaging.*
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import codel.notification.domain.Notification as CodelNotification
@@ -36,6 +32,56 @@ class FcmNotificationSender : NotificationSender, Loggable {
         } catch (e: FirebaseMessagingException) {
             handleFcmError(e, notification.targetId)
             throw NotificationException(HttpStatus.BAD_GATEWAY, "알림 전송중 오류가 발생했습니다: ${e.messagingErrorCode}")
+        }
+    }
+    
+    /**
+     * FCM 배치 전송 (최대 500개)
+     * 
+     * @param notifications 전송할 알림 리스트 (최대 500개)
+     * @return BatchResponse
+     */
+    fun sendBatch(notifications: List<CodelNotification>): BatchResponse {
+        require(notifications.size <= 500) { "FCM 배치는 최대 500개까지만 가능합니다" }
+        
+        val messages = notifications.map { notification ->
+            Message
+                .builder()
+                .setToken(notification.targetId)
+                .setNotification(
+                    Notification
+                        .builder()
+                        .setTitle(notification.title)
+                        .setBody(notification.body)
+                        .build(),
+                ).build()
+        }
+        
+        return try {
+            val batchResponse = FirebaseMessaging.getInstance().sendAll(messages)
+            
+            log.info { 
+                "📦 FCM 배치 전송 완료 - " +
+                "성공: ${batchResponse.successCount}, " +
+                "실패: ${batchResponse.failureCount}"
+            }
+            
+            // 실패한 항목 로깅
+            batchResponse.responses.forEachIndexed { index, response ->
+                if (!response.isSuccessful) {
+                    val token = notifications[index].targetId
+                    log.warn { "❌ FCM 배치 전송 실패 [${index}] - token=$token, error=${response.exception?.message}" }
+                    
+                    if (response.exception is FirebaseMessagingException) {
+                        handleFcmError(response.exception as FirebaseMessagingException, token)
+                    }
+                }
+            }
+            
+            batchResponse
+        } catch (e: FirebaseMessagingException) {
+            log.error(e) { "🔴 FCM 배치 전송 중 오류 발생" }
+            throw NotificationException(HttpStatus.BAD_GATEWAY, "배치 알림 전송중 오류가 발생했습니다: ${e.messagingErrorCode}")
         }
     }
     

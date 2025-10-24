@@ -6,8 +6,7 @@ import codel.block.presentation.swagger.BlockControllerSwagger
 import codel.config.argumentresolver.LoginMember
 import codel.member.business.MemberService
 import codel.member.domain.Member
-import codel.member.domain.MemberRepository
-import codel.notification.business.NotificationService
+import codel.notification.business.IAsyncNotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
 import org.springframework.http.ResponseEntity
@@ -27,7 +26,7 @@ class BlockController(
     val blockService: BlockService,
     val memberService : MemberService,
     val messagingTemplate: SimpMessagingTemplate,
-    val notificationService: NotificationService,
+    val asyncNotificationService: IAsyncNotificationService,
 ) : BlockControllerSwagger {
 
     @PostMapping
@@ -60,7 +59,7 @@ class BlockController(
 
         // 디스코드 알림은 채팅방 존재 여부와 관계없이 항상 전송
         val blockedMember = memberService.findMember(blockMemberRequest.blockedMemberId)
-        notificationService.send(
+        asyncNotificationService.sendAsync(
             notification =
                 Notification(
                     type = NotificationType.DISCORD,
