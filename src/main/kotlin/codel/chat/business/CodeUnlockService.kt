@@ -8,7 +8,7 @@ import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.chat.repository.ChatRoomRepository
 import codel.config.Loggable
 import codel.member.domain.Member
-import codel.notification.business.NotificationService
+import codel.notification.business.IAsyncNotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
 import org.springframework.http.HttpStatus
@@ -23,7 +23,7 @@ class CodeUnlockService(
     private val chatJpaRepository: ChatJpaRepository,
     private val policyService: CodeUnlockPolicyService,
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
-    private val notificationService: NotificationService
+    private val asyncNotificationService: IAsyncNotificationService
 ) : Loggable{
 
     /**
@@ -112,20 +112,19 @@ class CodeUnlockService(
                 body = "서로의 히든 코드프로필을 확인해보세요!"
             )
             
-            val startTime = System.currentTimeMillis()
-            try {
-                notificationService.send(notification)
-                val duration = System.currentTimeMillis() - startTime
-                
-                when {
-                    duration > 1000 -> log.warn { "🐌 코드 해제 완료 알림 전송 매우 느림 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
-                    duration > 500 -> log.warn { "⚠️ 코드 해제 완료 알림 전송 느림 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
-                    else -> log.info { "✅ 코드 해제 완료 알림 전송 성공 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
+            // 비동기 알림 전송으로 변경
+            asyncNotificationService.sendAsync(notification)
+                .thenAccept { result ->
+                    if (result.success) {
+                        log.info { "✅ 코드 해제 완료 알림 전송 성공 - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
+                    } else {
+                        log.warn { "❌ 코드 해제 완료 알림 전송 실패 - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}, 사유: ${result.error}" }
+                    }
                 }
-            } catch (e: Exception) {
-                val duration = System.currentTimeMillis() - startTime
-                log.warn(e) { "❌ 코드 해제 완료 알림 전송 실패 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
-            }
+                .exceptionally { e ->
+                    log.warn(e) { "❌ 코드 해제 완료 알림 전송 예외 발생 - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
+                    null
+                }
         } ?: run {
             log.info { "ℹ️ FCM 토큰이 없어 코드 해제 완료 알림을 전송하지 않음 - 수신자: ${receiver.getIdOrThrow()}" }
         }

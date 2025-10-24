@@ -21,6 +21,7 @@ import codel.member.presentation.response.MemberProfileDetailResponse
 import codel.member.presentation.response.UpdateCodeImagesResponse
 import codel.member.presentation.response.UpdateRepresentativeQuestionResponse
 import codel.notification.business.NotificationService
+import codel.notification.business.IAsyncNotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
 import codel.signal.domain.Signal
@@ -52,6 +53,7 @@ class MemberService(
     private val chatJpaRepository: ChatJpaRepository,
     private val chatRepository: ChatRepository,
     private val notificationService: NotificationService,
+    private val asyncNotificationService: IAsyncNotificationService,
     private val blockMemberRelationJpaRepository: BlockMemberRelationJpaRepository,
     private val faceImageRepository: FaceImageRepository,
     private val codeImageRepository: CodeImageRepository,
@@ -108,7 +110,7 @@ class MemberService(
         CodeImageVO(files.map { file -> imageUploader.uploadFile(file) })
 
     private fun sendNotification(member: Member) {
-        notificationService.send(
+        asyncNotificationService.sendAsync(
             Notification(
                 type = NotificationType.DISCORD,
                 targetId = member.getIdOrThrow().toString(), // DISCORD는 없어도 됨

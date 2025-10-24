@@ -7,7 +7,7 @@ import codel.member.presentation.response.ProfileRejectionInfoResponse
 import codel.member.presentation.response.ProfileImagesResponse
 import codel.member.presentation.response.ReplaceImagesResponse
 import codel.member.presentation.swagger.ProfileReviewControllerSwagger
-import codel.notification.business.NotificationService
+import codel.notification.business.IAsyncNotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
 import org.springframework.http.MediaType
@@ -22,7 +22,7 @@ import org.springframework.web.multipart.MultipartFile
 @RequestMapping("/v1/profile/review")
 class ProfileReviewController(
     private val profileReviewService: ProfileReviewService,
-    private val notificationService: NotificationService
+    private val asyncNotificationService: IAsyncNotificationService
 ) : ProfileReviewControllerSwagger {
 
 
@@ -60,7 +60,8 @@ class ProfileReviewController(
             existingCodeImageIds
         )
 
-        notificationService.send(
+        // 비동기로 알림 전송
+        asyncNotificationService.sendAsync(
             notification =
                 Notification(
                     type = NotificationType.DISCORD,

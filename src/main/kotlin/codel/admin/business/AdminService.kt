@@ -6,7 +6,7 @@ import codel.auth.business.AuthService
 import codel.config.Loggable
 import codel.member.business.MemberService
 import codel.member.domain.Member
-import codel.notification.business.NotificationService
+import codel.notification.business.IAsyncNotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
 import codel.question.business.QuestionService
@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional
 class AdminService(
     private val memberService: MemberService,
     private val authService: AuthService,
-    private val notificationService: NotificationService,
+    private val asyncNotificationService: IAsyncNotificationService,
     private val questionService: QuestionService,
     @Value("\${security.admin.password}")
     private val answerPassword: String,
@@ -118,7 +118,19 @@ class AdminService(
                 body = "이제 Code:L을 이용할 수 있어요. 코드가 맞는 우리만의 공간에서 진짜 인연을 만나보세요."
             )
             
-            sendNotificationWithMonitoring(notification, member, "프로필 승인")
+            // 비동기 알림 전송으로 변경
+            asyncNotificationService.sendAsync(notification)
+                .thenAccept { result ->
+                    if (result.success) {
+                        log.info { "✅ 프로필 승인 알림 전송 성공 - 회원: ${member.getIdOrThrow()}" }
+                    } else {
+                        log.warn { "❌ 프로필 승인 알림 전송 실패 - 회원: ${member.getIdOrThrow()}, 사유: ${result.error}" }
+                    }
+                }
+                .exceptionally { e ->
+                    log.warn(e) { "❌ 프로필 승인 알림 전송 예외 발생 - 회원: ${member.getIdOrThrow()}" }
+                    null
+                }
         } ?: run {
             log.info { "ℹ️ FCM 토큰이 없어 프로필 승인 알림을 전송하지 않음 - 회원: ${member.getIdOrThrow()}" }
         }
@@ -136,7 +148,19 @@ class AdminService(
                 body = "자세한 이유는 앱에서 확인할 수 있습니다."
             )
             
-            sendNotificationWithMonitoring(notification, member, "프로필 반려")
+            // 비동기 알림 전송으로 변경
+            asyncNotificationService.sendAsync(notification)
+                .thenAccept { result ->
+                    if (result.success) {
+                        log.info { "✅ 프로필 반려 알림 전송 성공 - 회원: ${member.getIdOrThrow()}" }
+                    } else {
+                        log.warn { "❌ 프로필 반려 알림 전송 실패 - 회원: ${member.getIdOrThrow()}, 사유: ${result.error}" }
+                    }
+                }
+                .exceptionally { e ->
+                    log.warn(e) { "❌ 프로필 반려 알림 전송 예외 발생 - 회원: ${member.getIdOrThrow()}" }
+                    null
+                }
         } ?: run {
             log.info { "ℹ️ FCM 토큰이 없어 프로필 반려 알림을 전송하지 않음 - 회원: ${member.getIdOrThrow()}" }
         }
@@ -166,8 +190,15 @@ class AdminService(
                 """.trimIndent()
             )
             
-            notificationService.send(notification)
-            log.info { "✅ Discord 승인 알림 전송 완료 - 회원: ${member.getIdOrThrow()}" }
+            // Discord는 동기 전송 유지 (관리자용이므로)
+            asyncNotificationService.sendAsync(notification)
+                .thenAccept { result ->
+                    if (result.success) {
+                        log.info { "✅ Discord 승인 알림 전송 완료 - 회원: ${member.getIdOrThrow()}" }
+                    } else {
+                        log.warn { "❌ Discord 승인 알림 전송 실패 - 회원: ${member.getIdOrThrow()}" }
+                    }
+                }
         } catch (e: Exception) {
             log.warn(e) { "❌ Discord 승인 알림 전송 실패 - 회원: ${member.getIdOrThrow()}" }
         }
@@ -202,36 +233,20 @@ class AdminService(
                 """.trimIndent()
             )
             
-            notificationService.send(notification)
-            log.info { "✅ Discord 반려 알림 전송 완료 - 회원: ${member.getIdOrThrow()}" }
+            // Discord는 동기 전송 유지 (관리자용이므로)
+            asyncNotificationService.sendAsync(notification)
+                .thenAccept { result ->
+                    if (result.success) {
+                        log.info { "✅ Discord 반려 알림 전송 완료 - 회원: ${member.getIdOrThrow()}" }
+                    } else {
+                        log.warn { "❌ Discord 반려 알림 전송 실패 - 회원: ${member.getIdOrThrow()}" }
+                    }
+                }
         } catch (e: Exception) {
             log.warn(e) { "❌ Discord 반려 알림 전송 실패 - 회원: ${member.getIdOrThrow()}" }
         }
     }
 
-    /**
-     * 알림 전송 with 성능 모니터링
-     */
-    private fun sendNotificationWithMonitoring(
-        notification: Notification,
-        member: Member,
-        type: String
-    ) {
-        val startTime = System.currentTimeMillis()
-        try {
-            notificationService.send(notification)
-            val duration = System.currentTimeMillis() - startTime
-            
-            when {
-                duration > 1000 -> log.warn { "🐌 $type 알림 전송 매우 느림 (${duration}ms) - 회원: ${member.getIdOrThrow()}" }
-                duration > 500 -> log.warn { "⚠️ $type 알림 전송 느림 (${duration}ms) - 회원: ${member.getIdOrThrow()}" }
-                else -> log.info { "✅ $type 알림 전송 성공 (${duration}ms) - 회원: ${member.getIdOrThrow()}" }
-            }
-        } catch (e: Exception) {
-            val duration = System.currentTimeMillis() - startTime
-            log.warn(e) { "❌ $type 알림 전송 실패 (${duration}ms) - 회원: ${member.getIdOrThrow()}" }
-        }
-    }
 
     fun countAllMembers(): Long = memberService.countAllMembers()
 

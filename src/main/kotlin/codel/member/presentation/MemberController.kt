@@ -8,15 +8,13 @@ import codel.member.presentation.request.MemberLoginRequest
 import codel.member.presentation.request.WithdrawnRequest
 import codel.member.presentation.request.UpdateRepresentativeQuestionRequest
 import codel.member.presentation.response.*
-import codel.member.exception.MemberException
 import codel.member.presentation.swagger.MemberControllerSwagger
-import codel.notification.business.NotificationService
+import codel.notification.business.IAsyncNotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
 import org.springframework.data.domain.Page
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDateTime
@@ -26,7 +24,7 @@ import java.time.format.DateTimeFormatter
 class MemberController(
     private val memberService: MemberService,
     private val authService: AuthService,
-    private val notificationService: NotificationService,
+    private val asyncNotificationService: IAsyncNotificationService,
     private val messagingTemplate: org.springframework.messaging.simp.SimpMessagingTemplate,
 ) : MemberControllerSwagger {
     @PostMapping("/v1/member/login")
@@ -116,8 +114,8 @@ class MemberController(
             // 상대방에게 채팅방 종료 알림 전송
         }
         
-        // 3. Discord 알림 발송
-        notificationService.send(
+        // 3. 비동기로 Discord 알림 발송
+        asyncNotificationService.sendAsync(
             notification =
                 Notification(
                     type = NotificationType.DISCORD,

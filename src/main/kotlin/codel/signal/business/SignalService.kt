@@ -1,22 +1,14 @@
 package codel.signal.business
 
 import codel.chat.business.ChatService
-import codel.chat.domain.Chat
-import codel.chat.domain.ChatContentType
-import codel.chat.domain.ChatRoom
-import codel.chat.domain.ChatRoomMember
 import codel.chat.domain.ChatRoomStatus
-import codel.chat.domain.ChatSenderType
-import codel.chat.infrastructure.ChatJpaRepository
-import codel.chat.infrastructure.ChatRoomJpaRepository
 import codel.chat.infrastructure.ChatRoomMemberJpaRepository
 import codel.chat.presentation.response.ChatRoomResponse
-import codel.chat.repository.ChatRepository
 import codel.config.Loggable
 import codel.member.domain.Member
 import codel.member.domain.MemberRepository
 import codel.member.presentation.response.UnlockedMemberProfileResponse
-import codel.notification.business.NotificationService
+import codel.notification.business.IAsyncNotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
 import codel.signal.domain.Signal
@@ -29,8 +21,6 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Service
 class SignalService(
@@ -38,7 +28,7 @@ class SignalService(
     private val signalJpaRepository: SignalJpaRepository,
     private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
     private val chatService: ChatService,
-    private val notificationService: NotificationService
+    private val asyncNotificationService: IAsyncNotificationService
 ) : Loggable {
     @Transactional
     fun sendSignal(fromMember: Member, toMemberId: Long, message: String): Signal {
@@ -65,21 +55,19 @@ class SignalService(
                 body = "${sender.getProfileOrThrow().getCodeNameOrThrow()}님이 시그널을 보냈습니다."
             )
             
-            val startTime = System.currentTimeMillis()
-            try {
-                notificationService.send(notification)
-                val duration = System.currentTimeMillis() - startTime
-                
-                // 성능 모니터링
-                when {
-                    duration > 1000 -> log.warn { "🐌 알림 전송 매우 느림 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
-                    duration > 500 -> log.warn { "⚠️ 알림 전송 느림 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
-                    else -> log.info { "✅ 시그널 알림 전송 성공 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
+            // 비동기 알림 전송으로 변경
+            asyncNotificationService.sendAsync(notification)
+                .thenAccept { result ->
+                    if (result.success) {
+                        log.info { "✅ 시그널 알림 전송 성공 - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
+                    } else {
+                        log.warn { "❌ 시그널 알림 전송 실패 - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}, 사유: ${result.error}" }
+                    }
                 }
-            } catch (e: Exception) {
-                val duration = System.currentTimeMillis() - startTime
-                log.warn(e) { "❌ 시그널 알림 전송 실패 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
-            }
+                .exceptionally { e ->
+                    log.warn(e) { "❌ 시그널 알림 전송 예외 발생 - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
+                    null
+                }
         } ?: run {
             log.info { "ℹ️ FCM 토큰이 없어 알림을 전송하지 않음 - 수신자: ${receiver.getIdOrThrow()}" }
         }
@@ -155,21 +143,19 @@ class SignalService(
                 body = "${partner.getProfileOrThrow().getCodeNameOrThrow()}님과 대화를 시작해보세요!"
             )
             
-            val startTime = System.currentTimeMillis()
-            try {
-                notificationService.send(notification)
-                val duration = System.currentTimeMillis() - startTime
-                
-                // 성능 모니터링
-                when {
-                    duration > 1000 -> log.warn { "🐌 매칭 알림 전송 매우 느림 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
-                    duration > 500 -> log.warn { "⚠️ 매칭 알림 전송 느림 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
-                    else -> log.info { "✅ 매칭 알림 전송 성공 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
+            // 비동기 알림 전송으로 변경
+            asyncNotificationService.sendAsync(notification)
+                .thenAccept { result ->
+                    if (result.success) {
+                        log.info { "✅ 매칭 알림 전송 성공 - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
+                    } else {
+                        log.warn { "❌ 매칭 알림 전송 실패 - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}, 사유: ${result.error}" }
+                    }
                 }
-            } catch (e: Exception) {
-                val duration = System.currentTimeMillis() - startTime
-                log.warn(e) { "❌ 매칭 알림 전송 실패 (${duration}ms) - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
-            }
+                .exceptionally { e ->
+                    log.warn(e) { "❌ 매칭 알림 전송 예외 발생 - 수신자: ${receiver.getIdOrThrow()}, 상대방: ${partner.getIdOrThrow()}" }
+                    null
+                }
         } ?: run {
             log.info { "ℹ️ FCM 토큰이 없어 매칭 알림을 전송하지 않음 - 수신자: ${receiver.getIdOrThrow()}" }
         }
