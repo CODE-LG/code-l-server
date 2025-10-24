@@ -3,8 +3,7 @@ package codel.report.presentation
 import codel.config.argumentresolver.LoginMember
 import codel.member.business.MemberService
 import codel.member.domain.Member
-import codel.member.domain.MemberRepository
-import codel.notification.business.NotificationService
+import codel.notification.business.IAsyncNotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
 import codel.report.business.ReportService
@@ -12,7 +11,6 @@ import codel.report.presentation.request.ReportRequest
 import codel.report.presentation.swagger.ReportControllerSwagger
 import org.springframework.http.ResponseEntity
 import org.springframework.messaging.simp.SimpMessagingTemplate
-import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -25,7 +23,7 @@ import java.time.format.DateTimeFormatter
 class ReportController(
     val reportService: ReportService,
     val memberService : MemberService,
-    val notificationService: NotificationService,
+    val asyncNotificationService: IAsyncNotificationService,
     val messagingTemplate: SimpMessagingTemplate,
 ) : ReportControllerSwagger {
 
@@ -59,7 +57,7 @@ class ReportController(
 
         // 디스코드 알림은 채팅방 존재 여부와 관계없이 항상 전송
         val reportedMember = memberService.findMember(reportRequest.reportedId)
-        notificationService.send(
+        asyncNotificationService.sendAsync(
             notification =
                 Notification(
                     type = NotificationType.DISCORD,
