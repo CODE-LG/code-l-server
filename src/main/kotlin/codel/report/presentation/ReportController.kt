@@ -1,7 +1,9 @@
 package codel.report.presentation
 
 import codel.config.argumentresolver.LoginMember
+import codel.member.business.MemberService
 import codel.member.domain.Member
+import codel.member.domain.MemberRepository
 import codel.notification.business.NotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
@@ -22,8 +24,9 @@ import java.time.format.DateTimeFormatter
 @RequestMapping("/v1/reports")
 class ReportController(
     val reportService: ReportService,
+    val memberService : MemberService,
     val notificationService: NotificationService,
-    val messagingTemplate: SimpMessagingTemplate
+    val messagingTemplate: SimpMessagingTemplate,
 ) : ReportControllerSwagger {
 
     @PostMapping
@@ -52,23 +55,24 @@ class ReportController(
                 "/sub/v1/chatroom/${responseDto.requesterChatRoomResponse.chatRoomId}",
                 responseDto.chatResponse
             )
-
-            notificationService.send(
-                notification =
-                    Notification(
-                        type = NotificationType.DISCORD,
-                        targetId = member.getProfileOrThrow().toString(),
-                        title = "🚨 신고 접수 알림",
-                        body = """
-                            👮‍♀️ 신고자: ${member.getProfileOrThrow().getCodeNameOrThrow()}
-                            🎯 피신고자: ${responseDto.partner.getProfileOrThrow().getCodeNameOrThrow()}
-                            🗓 신고 시각: ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}
-                            💬 신고 사유: ${reportRequest.reason.ifBlank { "미입력" }}
-                        """.trimIndent(),
-                    ),
-            )
         }
 
+        // 디스코드 알림은 채팅방 존재 여부와 관계없이 항상 전송
+        val reportedMember = memberService.findMember(reportRequest.reportedId)
+        notificationService.send(
+            notification =
+                Notification(
+                    type = NotificationType.DISCORD,
+                    targetId = member.getProfileOrThrow().toString(),
+                    title = "🚨 신고 접수 알림",
+                    body = buildString {
+                        append("👮‍♀️ 신고자: ${member.getProfileOrThrow().getCodeNameOrThrow()}\n")
+                        append("🎯 피신고자: ${reportedMember.getProfileOrThrow().getCodeNameOrThrow()}\n")
+                        append("🗓 신고 시각: ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}\n")
+                        append("💬 신고 사유: ${reportRequest.reason.ifBlank { "미입력" }}")
+                    },
+                ),
+        )
 
         return ResponseEntity.ok().build()
     }
