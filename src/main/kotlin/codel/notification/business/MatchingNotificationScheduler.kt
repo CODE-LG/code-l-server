@@ -189,10 +189,10 @@ class MatchingNotificationScheduler(
      * 테스트용 - 매 1분마다 실행 (개발/테스트용)
      * 프로덕션에서는 제거하거나 주석 처리
      */
-    @Scheduled(cron = "0 */1 * * * *", zone = "Asia/Seoul")
-    @Transactional(readOnly = true)
-    fun sendTestNotification() {
-        log.info { "🧪 테스트 알림 전송 시작 (1분마다)" }
-        sendMatchingNotificationToAllUsersAsync("test")
-    }
+//    @Scheduled(cron = "0 */1 * * * *", zone = "Asia/Seoul")
+//    @Transactional(readOnly = true)
+//    fun sendTestNotification() {
+//        log.info { "🧪 테스트 알림 전송 시작 (1분마다)" }
+//        sendMatchingNotificationToAllUsersAsync("test")
+//    }
 }
