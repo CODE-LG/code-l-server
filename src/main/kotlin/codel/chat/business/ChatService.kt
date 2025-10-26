@@ -60,37 +60,49 @@ class ChatService(
     fun createInitialChatRoom(
         approver: Member,
         sender: Member,
-        responseOfApproverQuestion: String
+        responseOfApproverQuestion: String,
+        responseOfSenderQuestion: String
     ): InitialChatRoomResult {
         // 1. 채팅방 생성
         val managedApprover = memberRepository.findMemberWithProfileAndQuestion(
             approver.getIdOrThrow()
         ) ?: throw ChatException(HttpStatus.NOT_FOUND, "approver를 찾을 수 없습니다.")
 
+        val managedSender = memberRepository.findMemberWithProfileAndQuestion(
+            sender.getIdOrThrow()
+        ) ?: throw ChatException(HttpStatus.NOT_FOUND, "sender를 찾을 수 없습니다.")
+
         val newChatRoom = ChatRoom()
         val savedChatRoom = chatRoomJpaRepository.save(newChatRoom)
 
         // 2. 멤버 등록
         val approverMember = ChatRoomMember(chatRoom = savedChatRoom, member = managedApprover)
-        val senderMember = ChatRoomMember(chatRoom = savedChatRoom, member = sender)
+        val senderMember = ChatRoomMember(chatRoom = savedChatRoom, member = managedSender)
         val savedApprover = chatRoomMemberJpaRepository.save(approverMember)
         val savedSender = chatRoomMemberJpaRepository.save(senderMember)
 
         // 3. 메시지 생성
         saveSystemMessages(savedChatRoom, savedApprover)
-        saveUserMessages(savedChatRoom, savedApprover, senderMember, managedApprover, responseOfApproverQuestion)
+        saveUserMessages(savedChatRoom, savedApprover, savedSender, managedApprover, managedSender, responseOfApproverQuestion, responseOfSenderQuestion)
 
-        // 4. 생성된 채팅방의 읽지 않은 메시지 수 계산 (각자 기준)
+        // 4. 양쪽 대표 질문을 사용된 것으로 표시
+        val approverRepresentativeQuestion = managedApprover.getProfileOrThrow().getRepresentativeQuestionOrThrow()
+        val senderRepresentativeQuestion = managedSender.getProfileOrThrow().getRepresentativeQuestionOrThrow()
+        
+        questionService.markQuestionAsUsed(savedChatRoom.getIdOrThrow(), approverRepresentativeQuestion, managedSender)
+        questionService.markQuestionAsUsed(savedChatRoom.getIdOrThrow(), senderRepresentativeQuestion, managedApprover)
+
+        // 5. 생성된 채팅방의 읽지 않은 메시지 수 계산 (각자 기준)
         val approverUnReadCount = chatRepository.getUnReadMessageCount(savedChatRoom, managedApprover)
-        val senderUnReadCount = chatRepository.getUnReadMessageCount(savedChatRoom, sender)
+        val senderUnReadCount = chatRepository.getUnReadMessageCount(savedChatRoom, managedSender)
 
-        // 5. 각 사용자별 ChatRoomResponse 생성
+        // 6. 각 사용자별 ChatRoomResponse 생성
         val approverChatRoomResponse = ChatRoomResponse.toResponse(
-            newChatRoom, managedApprover, null, sender, approverUnReadCount
+            newChatRoom, managedApprover, null, managedSender, approverUnReadCount
         )
         
         val senderChatRoomResponse = ChatRoomResponse.toResponse(
-            newChatRoom, sender, null, managedApprover, senderUnReadCount
+            newChatRoom, managedSender, null, managedApprover, senderUnReadCount
         )
 
         return InitialChatRoomResult(
@@ -143,28 +155,34 @@ class ChatService(
         fromApprover: ChatRoomMember,
         fromSender: ChatRoomMember,
         approver: Member,
-        responseOfApproverQuestion: String
+        sender: Member,
+        responseOfApproverQuestion: String,
+        responseOfSenderQuestion: String
     ) {
         val now = LocalDateTime.now()
-        val profile = approver.getProfileOrThrow()
+        val approverProfile = approver.getProfileOrThrow()
+        val senderProfile = sender.getProfileOrThrow()
 
         val userMessages = listOf(
+            // 1. 승인자 질문
             Chat(
                 chatRoom = chatRoom,
                 fromChatRoomMember = fromApprover,
-                message = "${profile.getCodeNameOrThrow()}님의 코드 질문\n💭 ${profile.getRepresentativeQuestionOrThrow().content}",
+                message = "${approverProfile.getCodeNameOrThrow()}님의 코드 질문\n💭 ${approverProfile.getRepresentativeQuestionOrThrow().content}",
                 sentAt = now,
                 senderType = ChatSenderType.SYSTEM,
                 chatContentType = ChatContentType.QUESTION
             ),
+            // 2. 승인자 대답
             Chat(
                 chatRoom = chatRoom,
                 fromChatRoomMember = fromApprover,
-                message = profile.getRepresentativeAnswerOrThrow(),
+                message = approverProfile.getRepresentativeAnswerOrThrow(),
                 sentAt = now,
                 senderType = ChatSenderType.USER,
                 chatContentType = ChatContentType.TEXT
             ),
+            // 3. 발송자 대답
             Chat(
                 chatRoom = chatRoom,
                 fromChatRoomMember = fromSender,
@@ -172,7 +190,26 @@ class ChatService(
                 sentAt = now,
                 senderType = ChatSenderType.USER,
                 chatContentType = ChatContentType.TEXT
-            )
+            ),
+            // 4. 발송자 질문
+            Chat(
+                chatRoom = chatRoom,
+                fromChatRoomMember = fromSender,
+                message = "${senderProfile.getCodeNameOrThrow()}님의 코드 질문\n💭 ${senderProfile.getRepresentativeQuestionOrThrow().content}",
+                sentAt = now,
+                senderType = ChatSenderType.SYSTEM,
+                chatContentType = ChatContentType.QUESTION
+            ),
+            // 5. 발송자 본인 대답 (발송자 질문에 대한)
+            Chat(
+                chatRoom = chatRoom,
+                fromChatRoomMember = fromSender,
+                message = responseOfSenderQuestion,
+                sentAt = now,
+                senderType = ChatSenderType.USER,
+                chatContentType = ChatContentType.TEXT
+            ),
+
         )
 
         val savedMessages = chatJpaRepository.saveAll(userMessages)
