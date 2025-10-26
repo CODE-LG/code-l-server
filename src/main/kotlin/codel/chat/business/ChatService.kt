@@ -16,6 +16,7 @@ import codel.chat.presentation.request.ChatSendRequest
 import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomEventType
 import codel.chat.presentation.response.ChatRoomResponse
+import codel.chat.presentation.response.InitialChatRoomResult
 import codel.chat.presentation.response.SavedChatDto
 import codel.chat.presentation.response.QuestionSendResult
 import codel.chat.repository.ChatRepository
@@ -60,7 +61,7 @@ class ChatService(
         approver: Member,
         sender: Member,
         responseOfApproverQuestion: String
-    ): ChatRoomResponse {
+    ): InitialChatRoomResult {
         // 1. 채팅방 생성
         val managedApprover = memberRepository.findMemberWithProfileAndQuestion(
             approver.getIdOrThrow()
@@ -79,10 +80,23 @@ class ChatService(
         saveSystemMessages(savedChatRoom, savedApprover)
         saveUserMessages(savedChatRoom, savedApprover, senderMember, managedApprover, responseOfApproverQuestion)
 
-        // 4. 생성된 채팅방의 읽지 않은 메시지 수 계산 (시그널 발송자 기준)
+        // 4. 생성된 채팅방의 읽지 않은 메시지 수 계산 (각자 기준)
+        val approverUnReadCount = chatRepository.getUnReadMessageCount(savedChatRoom, managedApprover)
         val senderUnReadCount = chatRepository.getUnReadMessageCount(savedChatRoom, sender)
 
-        return ChatRoomResponse.toResponse(newChatRoom, sender, null, managedApprover, senderUnReadCount)
+        // 5. 각 사용자별 ChatRoomResponse 생성
+        val approverChatRoomResponse = ChatRoomResponse.toResponse(
+            newChatRoom, managedApprover, null, sender, approverUnReadCount
+        )
+        
+        val senderChatRoomResponse = ChatRoomResponse.toResponse(
+            newChatRoom, sender, null, managedApprover, senderUnReadCount
+        )
+
+        return InitialChatRoomResult(
+            approverChatRoomResponse = approverChatRoomResponse,
+            senderChatRoomResponse = senderChatRoomResponse
+        )
     }
 
     private fun saveSystemMessages(chatRoom: ChatRoom, from: ChatRoomMember) {

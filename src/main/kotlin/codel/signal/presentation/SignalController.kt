@@ -67,16 +67,18 @@ class SignalController(
         @LoginMember me: Member,
         @PathVariable id: Long
     ): ResponseEntity<Unit> {
-        val chatRoomResponse = signalService.acceptSignal(me, id)
-
+        val result = signalService.acceptSignal(me, id)
+        
+        // 시그널 발송자(partner)에게 전송
         messagingTemplate.convertAndSend(
-            "/sub/v1/chatroom/member/${id}",
-            chatRoomResponse,
+            "/sub/v1/chatroom/member/${result.partner.id}",
+            result.partnerChatRoomResponse,
         )
 
+        // 시그널 수신자(me)에게 전송
         messagingTemplate.convertAndSend(
             "/sub/v1/chatroom/member/${me.id}",
-            chatRoomResponse,
+            result.approverChatRoomResponse,
         )
         return ResponseEntity.ok().build()
     }

@@ -15,6 +15,7 @@ import codel.signal.domain.Signal
 import codel.signal.domain.SignalStatus
 import codel.signal.exception.SignalException
 import codel.signal.infrastructure.SignalJpaRepository
+import codel.signal.presentation.response.AcceptSignalResult
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -107,7 +108,7 @@ class SignalService(
     fun acceptSignal(
         me: Member,
         id: Long
-    ) : ChatRoomResponse{
+    ) : AcceptSignalResult {
         val findSignal = signalJpaRepository.findById(id)
             .orElseThrow { SignalException(HttpStatus.NOT_FOUND, "해당 시그널을 찾을 수 없습니다.") }
 
@@ -118,12 +119,16 @@ class SignalService(
 
         val partner = findSignal.fromMember
         
-        val chatRoomResponse = chatService.createInitialChatRoom(me, partner, approvedSignal.message)
+        val result = chatService.createInitialChatRoom(me, partner, approvedSignal.message)
         
         // 매칭 성공 알림 전송 (양쪽 모두에게)
         sendMatchingSuccessNotification(me, partner)
 
-        return chatRoomResponse
+        return AcceptSignalResult(
+            approverChatRoomResponse = result.approverChatRoomResponse,
+            partnerChatRoomResponse = result.senderChatRoomResponse,
+            partner = partner
+        )
     }
     
     private fun sendMatchingSuccessNotification(accepter: Member, sender: Member) {
