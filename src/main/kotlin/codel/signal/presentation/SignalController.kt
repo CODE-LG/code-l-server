@@ -27,7 +27,7 @@ class SignalController(
         @LoginMember fromMember: Member,
         @RequestBody request: SendSignalRequest
     ): ResponseEntity<SignalResponse> {
-        val signal = signalService.sendSignal(fromMember, request.toMemberId, request.message)
+        val signal = signalService.sendSignal(fromMember, request.toMemberId, request.message, request.myAnswer)
         return ResponseEntity.ok(SignalResponse.fromSend(signal))
     }
 
