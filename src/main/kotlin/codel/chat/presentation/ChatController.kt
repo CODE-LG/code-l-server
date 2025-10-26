@@ -8,6 +8,7 @@ import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomEventType
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.swagger.ChatControllerSwagger
+import codel.config.Loggable
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import org.springframework.data.domain.Page
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.*
 class ChatController(
     private val chatService: ChatService,
     private val messagingTemplate: SimpMessagingTemplate,
-) : ChatControllerSwagger {
+) : ChatControllerSwagger, Loggable {
     @GetMapping("/v1/chatrooms")
     override fun getChatRooms(
         @LoginMember requester: Member,
@@ -40,7 +41,6 @@ class ChatController(
         @PageableDefault(size = 30, page = 0) pageable: Pageable,
     ): ResponseEntity<Page<ChatResponse>> {
         val chatResponses = chatService.getChats(chatRoomId, lastReadChatId, requester, pageable)
-
         return ResponseEntity.ok(chatResponses)
     }
 

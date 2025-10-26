@@ -32,13 +32,13 @@ class SignalService(
     private val asyncNotificationService: IAsyncNotificationService
 ) : Loggable {
     @Transactional
-    fun sendSignal(fromMember: Member, toMemberId: Long, message: String, myAnswer: String): Signal {
+    fun sendSignal(fromMember: Member, toMemberId: Long, message: String): Signal {
         validateNotSelf(fromMember.getIdOrThrow(), toMemberId)
         val toMember = memberRepository.findMember(toMemberId)
         val lastSignal = signalJpaRepository.findTopByFromMemberAndToMemberOrderByIdDesc(fromMember, toMember)
         lastSignal?.validateSendable()
 
-        val signal = Signal(fromMember = fromMember, toMember = toMember, message = message, myAnswer = myAnswer)
+        val signal = Signal(fromMember = fromMember, toMember = toMember, message = message)
         val savedSignal = signalJpaRepository.save(signal)
         
         // 알림 전송
@@ -119,7 +119,7 @@ class SignalService(
 
         val partner = findSignal.fromMember
         
-        val result = chatService.createInitialChatRoom(me, partner, approvedSignal.message, approvedSignal.myAnswer)
+        val result = chatService.createInitialChatRoom(me, partner, approvedSignal.message)
         
         // 매칭 성공 알림 전송 (양쪽 모두에게)
         sendMatchingSuccessNotification(me, partner)

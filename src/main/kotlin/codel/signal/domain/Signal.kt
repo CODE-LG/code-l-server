@@ -19,8 +19,6 @@ class Signal(
     val toMember: Member,
 
     var message : String = "",  // 상대방(승인자) 질문에 대한 답변
-    var myAnswer : String = "",  // 내(발송자) 질문에 대한 답변
-
     @Enumerated(EnumType.STRING)
     var senderStatus: SignalStatus = SignalStatus.PENDING,
 

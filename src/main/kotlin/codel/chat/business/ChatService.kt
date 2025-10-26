@@ -60,8 +60,7 @@ class ChatService(
     fun createInitialChatRoom(
         approver: Member,
         sender: Member,
-        responseOfApproverQuestion: String,
-        responseOfSenderQuestion: String
+        responseOfApproverQuestion: String
     ): InitialChatRoomResult {
         // 1. 채팅방 생성
         val managedApprover = memberRepository.findMemberWithProfileAndQuestion(
@@ -71,6 +70,8 @@ class ChatService(
         val managedSender = memberRepository.findMemberWithProfileAndQuestion(
             sender.getIdOrThrow()
         ) ?: throw ChatException(HttpStatus.NOT_FOUND, "sender를 찾을 수 없습니다.")
+
+        val responseOfSenderQuestion = managedSender.getProfileOrThrow().getRepresentativeQuestionOrThrow().content
 
         val newChatRoom = ChatRoom()
         val savedChatRoom = chatRoomJpaRepository.save(newChatRoom)
