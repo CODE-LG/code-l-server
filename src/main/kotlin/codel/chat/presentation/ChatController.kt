@@ -88,11 +88,6 @@ class ChatController(
             "/sub/v1/chatroom/member/${result.partner.getIdOrThrow()}",
             result.partnerChatRoomResponse,
         )
-
-
-        // TODO : 실시간 채팅 도중 상대방에게 실시간으로 바텀시트 올라가게끔 알려줄 수 있는 이벤트 발행
-        //  messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId/events")
-
         return ResponseEntity.ok(result.chatResponse)
     }
 

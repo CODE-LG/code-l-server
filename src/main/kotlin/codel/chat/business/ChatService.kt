@@ -71,8 +71,6 @@ class ChatService(
             sender.getIdOrThrow()
         ) ?: throw ChatException(HttpStatus.NOT_FOUND, "sender를 찾을 수 없습니다.")
 
-        val responseOfSenderQuestion = managedSender.getProfileOrThrow().getRepresentativeQuestionOrThrow().content
-
         val newChatRoom = ChatRoom()
         val savedChatRoom = chatRoomJpaRepository.save(newChatRoom)
 
@@ -84,7 +82,7 @@ class ChatService(
 
         // 3. 메시지 생성
         saveSystemMessages(savedChatRoom, savedApprover)
-        saveUserMessages(savedChatRoom, savedApprover, savedSender, managedApprover, managedSender, responseOfApproverQuestion, responseOfSenderQuestion)
+        saveUserMessages(savedChatRoom, savedApprover, savedSender, managedApprover, managedSender, responseOfApproverQuestion)
 
         // 4. 양쪽 대표 질문을 사용된 것으로 표시
         val approverRepresentativeQuestion = managedApprover.getProfileOrThrow().getRepresentativeQuestionOrThrow()
@@ -157,8 +155,7 @@ class ChatService(
         fromSender: ChatRoomMember,
         approver: Member,
         sender: Member,
-        responseOfApproverQuestion: String,
-        responseOfSenderQuestion: String
+        responseOfApproverQuestion: String
     ) {
         val now = LocalDateTime.now()
         val approverProfile = approver.getProfileOrThrow()
@@ -205,7 +202,7 @@ class ChatService(
             Chat(
                 chatRoom = chatRoom,
                 fromChatRoomMember = fromSender,
-                message = responseOfSenderQuestion,
+                message = senderProfile.getRepresentativeAnswerOrThrow(),
                 sentAt = now,
                 senderType = ChatSenderType.USER,
                 chatContentType = ChatContentType.TEXT
