@@ -38,6 +38,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalDateTime
+import codel.common.util.DateTimeFormatter as CodelDateTimeFormatter
 
 @Transactional
 @Service
@@ -82,12 +83,19 @@ class ChatService(
 
         // 3. 메시지 생성
         saveSystemMessages(savedChatRoom, savedApprover)
-        saveUserMessages(savedChatRoom, savedApprover, savedSender, managedApprover, managedSender, responseOfApproverQuestion)
+        saveUserMessages(
+            savedChatRoom,
+            savedApprover,
+            savedSender,
+            managedApprover,
+            managedSender,
+            responseOfApproverQuestion
+        )
 
         // 4. 양쪽 대표 질문을 사용된 것으로 표시
         val approverRepresentativeQuestion = managedApprover.getProfileOrThrow().getRepresentativeQuestionOrThrow()
         val senderRepresentativeQuestion = managedSender.getProfileOrThrow().getRepresentativeQuestionOrThrow()
-        
+
         questionService.markQuestionAsUsed(savedChatRoom.getIdOrThrow(), approverRepresentativeQuestion, managedSender)
         questionService.markQuestionAsUsed(savedChatRoom.getIdOrThrow(), senderRepresentativeQuestion, managedApprover)
 
@@ -99,7 +107,7 @@ class ChatService(
         val approverChatRoomResponse = ChatRoomResponse.toResponse(
             newChatRoom, managedApprover, null, managedSender, approverUnReadCount
         )
-        
+
         val senderChatRoomResponse = ChatRoomResponse.toResponse(
             newChatRoom, managedSender, null, managedApprover, senderUnReadCount
         )
@@ -112,7 +120,7 @@ class ChatService(
 
     private fun saveSystemMessages(chatRoom: ChatRoom, from: ChatRoomMember) {
         val now = LocalDateTime.now()
-        val today = LocalDate.now()
+        val todayFormatted = CodelDateTimeFormatter.getTodayInLocalFormat("ko")
 
         val systemMessages = listOf(
             Chat(
@@ -139,7 +147,7 @@ class ChatService(
             Chat(
                 chatRoom = chatRoom,
                 fromChatRoomMember = from,
-                message = today.toString(), // 또는 한국어 포맷으로
+                message = todayFormatted,
                 sentAt = now,
                 senderType = ChatSenderType.SYSTEM,
                 chatContentType = ChatContentType.TIME
@@ -208,7 +216,7 @@ class ChatService(
                 chatContentType = ChatContentType.TEXT
             ),
 
-        )
+            )
 
         val savedMessages = chatJpaRepository.saveAll(userMessages)
         chatRoom.updateRecentChat(savedMessages.last())
@@ -267,21 +275,15 @@ class ChatService(
         requester: Member,
         chatSendRequest: ChatSendRequest,
     ): SavedChatDto {
-
-
         // 메시지 전송 가능 여부 확인
         validateCanSendMessage(chatRoomId, requester)
 
-        val now = LocalDate.now()
-        val recentChatTime = chatSendRequest.recentChatTime
-
         val chatRoom = chatRoomRepository.findChatRoomById(chatRoomId)
-        if (now != recentChatTime) {
-            val dateMessage = now.toString()
-            chatRepository.saveDateChat(chatRoom, dateMessage)
-        }
-        val savedChat = chatRepository.saveChat(chatRoomId, requester, chatSendRequest)
 
+        // 날짜 변경 확인 및 날짜 메시지 추가
+        checkAndSaveDateMessageIfNeeded(chatRoom, chatSendRequest.recentChatTime)
+
+        val savedChat = chatRepository.saveChat(chatRoomId, requester, chatSendRequest)
         chatRoom.updateRecentChat(savedChat)
 
         val partner = chatRoomRepository.findPartner(chatRoomId, requester)
@@ -655,41 +657,41 @@ class ChatService(
      */
     fun closeAllConversationsForWithdrawal(withdrawnMember: Member): List<SavedChatDto> {
         log.info { "회원 탈퇴로 인한 모든 채팅방 종료 시작 - userId: ${withdrawnMember.getIdOrThrow()}" }
-        
+
         // 1. 탈퇴 회원이 속한 모든 채팅방 조회 (이미 나간 채팅방 제외)
         val chatRoomMembers = chatRoomMemberJpaRepository
             .findAllByMember(withdrawnMember)
-            .filter { 
-                !it.hasLeft() && 
-                it.chatRoom.status != ChatRoomStatus.DISABLED 
+            .filter {
+                !it.hasLeft() &&
+                        it.chatRoom.status != ChatRoomStatus.DISABLED
             }
-        
-        log.info { 
-            "종료할 채팅방 수: ${chatRoomMembers.size}개 - userId: ${withdrawnMember.getIdOrThrow()}" 
+
+        log.info {
+            "종료할 채팅방 수: ${chatRoomMembers.size}개 - userId: ${withdrawnMember.getIdOrThrow()}"
         }
-        
+
         // 2. 각 채팅방에 대해 대화 종료 처리
         val notifications = chatRoomMembers.map { chatRoomMember ->
             val chatRoom = chatRoomMember.chatRoom
             val partner = findPartner(chatRoom.getIdOrThrow(), withdrawnMember)
-            
-            log.debug { 
+
+            log.debug {
                 "채팅방 종료 처리 - chatRoomId: ${chatRoom.getIdOrThrow()}, " +
-                "partnerId: ${partner.getIdOrThrow()}" 
+                        "partnerId: ${partner.getIdOrThrow()}"
             }
-            
+
             // 3. 채팅방 상태 변경 (차단 없이)
             chatRoom.closeConversation()
-            
+
             // 4. 시스템 메시지 생성 및 WebSocket 응답 반환
             createCloseConversationMessage(chatRoom, withdrawnMember, partner)
         }
-        
-        log.info { 
+
+        log.info {
             "회원 탈퇴로 인한 모든 채팅방 종료 완료 - userId: ${withdrawnMember.getIdOrThrow()}, " +
-            "종료된 채팅방: ${notifications.size}개" 
+                    "종료된 채팅방: ${notifications.size}개"
         }
-        
+
         return notifications
     }
 
@@ -733,6 +735,30 @@ class ChatService(
      */
     fun buildChatResponse(requester: Member, chat: Chat): ChatResponse {
         return ChatResponse.toResponse(requester, chat)
+    }
+
+    /**
+     * 날짜가 변경되었는지 확인하고 필요시 날짜 메시지 저장
+     *
+     * @param chatRoom 채팅방
+     * @param recentChatTimeUtc 최근 채팅 시간 (UTC 기준)
+     * @param locale 지역 코드 (기본값: "ko")
+     */
+    private fun checkAndSaveDateMessageIfNeeded(
+        chatRoom: ChatRoom,
+        recentChatTimeUtc: LocalDate,
+        locale: String = "ko"
+    ) {
+        val todayInLocale = CodelDateTimeFormatter.getToday(locale)
+
+        // UTC 날짜를 지역 시간대로 변환
+        val recentChatTimeInLocale = CodelDateTimeFormatter.convertUtcDateToLocale(recentChatTimeUtc, locale)
+
+        // 지역 시간대 기준으로 날짜가 다르면 날짜 메시지 추가
+        if (todayInLocale != recentChatTimeInLocale) {
+            val dateMessage = CodelDateTimeFormatter.formatToLocal(todayInLocale, locale)
+            chatRepository.saveDateChat(chatRoom, dateMessage)
+        }
     }
 
     /**
