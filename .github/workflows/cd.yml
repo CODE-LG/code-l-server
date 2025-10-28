@@ -100,8 +100,6 @@ jobs:
             table: flyway_schema_history
             clean-disabled: true  # 프로덕션에서는 반드시 true
           
-            jackson:
-              time-zone: Asia/Seoul
           springdoc:
             override-with-generic-response: false
           EOF
