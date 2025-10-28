@@ -83,6 +83,13 @@ jobs:
               url: ${{ secrets.DEV_DISCORD_WEBHOOK_URL }}
           
             # Flyway 설정 (MySQL 환경에서 활성화)
+          logging:
+            level:
+              org.hibernate.SQL: debug
+              org.hibernate.type.descriptor.sql: trace
+              org.springframework.web.socket: DEBUG
+              org.springframework.messaging: DEBUG
+              org.springframework.web.socket.messaging: DEBUG
           
           flyway:
             enabled: true
