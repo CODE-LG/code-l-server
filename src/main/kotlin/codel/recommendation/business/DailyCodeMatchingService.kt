@@ -24,14 +24,15 @@ class DailyCodeMatchingService(
     private val config: RecommendationConfig,
     private val bucketService: RecommendationBucketService,
     private val historyService: RecommendationHistoryService,
-    private val exclusionService: RecommendationExclusionService
+    private val exclusionService: RecommendationExclusionService,
+    private val timeZoneService: TimeZoneService
 ) : Loggable {
 
     /**
      * 오늘의 코드매칭 추천을 수행합니다.
      *
      * 동작 원리:
-     * 1. 기존 오늘 추천 이력 확인 (24시간 유지)
+     * 1. 사용자 타임존 기준 오늘 추천 이력 확인 (24시간 유지)
      * 2. 기존 이력이 있으면 실시간 필터링 후 반환 (차단/시그널 체크)
      * 3. 없으면 새로 생성 (버킷 정책 + 중복 방지)
      * 4. 생성된 추천 결과를 이력에 저장
@@ -42,7 +43,7 @@ class DailyCodeMatchingService(
     fun getDailyCodeMatching(user: Member): List<Member> {
         log.info { "오늘의 코드매칭 요청 - userId: ${user.getIdOrThrow()}" }
 
-        // 1. 기존 오늘 추천 결과 확인
+        // 1. 사용자 타임존 기준 오늘 추천 결과 확인
         val existingRecommendationIds = historyService.getTodayDailyCodeMatchingIds(user)
 
         if (existingRecommendationIds.isNotEmpty()) {
@@ -205,13 +206,25 @@ class DailyCodeMatchingService(
 
     /**
      * 오늘의 코드매칭 이력이 있는지 확인합니다.
+     * 타임존 기준으로 "오늘"을 판단합니다.
      *
      * @param user 확인할 사용자
-     * @param date 확인할 날짜 (기본값: 오늘)
+     * @param date 확인할 날짜 (타임존 기준, 기본값: 오늘)
+     * @param timeZoneId 타임존 ID (null이면 기본값 KST 사용)
      * @return 해당 날짜에 오늘의 코드매칭 이력이 있는지 여부
      */
-    fun hasTodayDailyCodeMatching(user: Member, date: LocalDate = LocalDate.now()): Boolean {
-        return historyService.hasRecommendationHistory(user, RecommendationType.DAILY_CODE_MATCHING, date)
+    fun hasTodayDailyCodeMatching(user: Member, date: LocalDate? = null, timeZoneId: String? = null): Boolean {
+        val targetDate = date ?: timeZoneService.getToday(timeZoneId)
+        val userToday = timeZoneService.getToday(timeZoneId)
+        
+        // 오늘이 아닌 날짜는 false 반환
+        if (targetDate != userToday) {
+            return false
+        }
+        
+        // 오늘이면 실제 이력 조회
+        val ids = historyService.getTodayDailyCodeMatchingIds(user, timeZoneId)
+        return ids.isNotEmpty()
     }
 
     /**

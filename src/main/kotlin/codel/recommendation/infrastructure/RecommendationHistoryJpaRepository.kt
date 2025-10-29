@@ -49,9 +49,34 @@ interface RecommendationHistoryJpaRepository : JpaRepository<RecommendationHisto
     ): List<Long>
     
     /**
-     * 오늘의 코드매칭에서 추천받은 사용자 ID (오늘 기준)
-     * 24시간 유지를 위한 기존 추천 결과 조회
+     * 오늘의 코드매칭에서 추천받은 사용자 ID (시간 범위 기준)
+     * 사용자 타임존 기준 24시간 유지를 위한 기존 추천 결과 조회
+     * 
+     * @param user 사용자
+     * @param startDateTime 시작 시간 (포함, UTC 기준)
+     * @param endDateTime 종료 시간 (미포함, UTC 기준)
+     * @return 해당 시간 범위 내 추천된 사용자 ID 목록
      */
+    @Query("""
+        SELECT rh.recommendedUser.id 
+        FROM RecommendationHistory rh 
+        WHERE rh.user = :user 
+        AND rh.recommendationType = 'DAILY_CODE_MATCHING'
+        AND rh.recommendedAt >= :startDateTime
+        AND rh.recommendedAt < :endDateTime
+        ORDER BY rh.createdAt ASC
+    """)
+    fun findDailyCodeMatchingIdsByTimeRange(
+        @Param("user") user: Member,
+        @Param("startDateTime") startDateTime: LocalDateTime,
+        @Param("endDateTime") endDateTime: LocalDateTime
+    ): List<Long>
+    
+    /**
+     * 오늘의 코드매칭에서 추천받은 사용자 ID (오늘 기준) - 하위 호환성
+     * @deprecated findDailyCodeMatchingIdsByTimeRange 사용 권장
+     */
+    @Deprecated("Use findDailyCodeMatchingIdsByTimeRange instead")
     @Query("""
         SELECT rh.recommendedUser.id 
         FROM RecommendationHistory rh 
