@@ -56,7 +56,7 @@ jobs:
           spring:
             datasource:
               driver-class-name: com.mysql.cj.jdbc.Driver
-              url: jdbc:mysql://codel-db.cbu0ugiswpor.ap-northeast-2.rds.amazonaws.com:3306/codel?serverTimezone=UTC&/Seoul&useUnicode=true&characterEncoding=UTF-8
+              url: jdbc:mysql://codel-db.cbu0ugiswpor.ap-northeast-2.rds.amazonaws.com:3306/codel?serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8
               username: ${{ secrets.DEV_RDS_USER_NAME }}
               password: ${{ secrets.DEV_RDS_USER_PASSWORD }}
             
