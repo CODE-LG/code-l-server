@@ -69,6 +69,7 @@ class CodeTimeService(
             startDateTime = startDateTime,
             endDateTime = endDateTime
         )
+        log.info { "유효 기간 내 추천 이력 확인 : " + existingRecommendationIds.size }
 
         if (existingRecommendationIds.isNotEmpty()) {
             log.info {
@@ -98,6 +99,10 @@ class CodeTimeService(
             log.info {
                 "모든 추천이 필터링됨, 새로 생성 - userId: ${user.getIdOrThrow()}"
             }
+
+            val pageable = PageRequest.of(page, size)
+
+            return PageImpl(ArrayList(), pageable, 0L)
         }
 
         // 5. 새로운 추천 생성
@@ -192,7 +197,7 @@ class CodeTimeService(
         val validMembers = bucketService.getMembersByIds(memberIds)
         val validIds = validMembers.map { it.getIdOrThrow() }
 
-        val filteredIds = validIds.filter { it in excludeIds }
+        val filteredIds = validIds.filter { it !in excludeIds }
 
         log.debug {
             "실시간 필터링 - userId: ${user.getIdOrThrow()}, " +
