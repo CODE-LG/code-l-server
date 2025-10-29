@@ -127,7 +127,7 @@ class DailyCodeMatchingService(
         val validIds = validMembers.map { it.getIdOrThrow() }
 
         // 3. 최종 필터링
-        val filteredIds = validIds.filter { it in excludeIds }
+        val filteredIds = validIds.filter { it !in excludeIds }
 
         log.debug {
             "실시간 필터링 - userId: ${user.getIdOrThrow()}, " +
