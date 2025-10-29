@@ -53,6 +53,7 @@ class CodeTimeService(
                                   size : Int,
                                   timeZoneId: String? = null
     ): Page<Member> {
+        val timeSlotCalculator = TimeSlotCalculator("ko")
         log.info { "코드타임 추천 요청 - userId: ${user.getIdOrThrow()}" }
 
         // 1. 타임존 기준 현재 시간대 확인 (항상 "10:00" 또는 "22:00" 반환)
@@ -185,6 +186,7 @@ class CodeTimeService(
         date: LocalDate = LocalDate.now(),
         timeZoneId: String? = null
     ): CodeTimeRecommendationResult {
+        val timeSlotCalculator = TimeSlotCalculator("ko")
         log.info {
             "특정 시간대 코드타임 조회 - userId: ${user.getIdOrThrow()}, " +
             "timeSlot: $timeSlot, date: $date"
