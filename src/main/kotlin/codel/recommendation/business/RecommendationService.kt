@@ -4,6 +4,9 @@ import codel.config.Loggable
 import codel.member.domain.Member
 import codel.recommendation.domain.CodeTimeRecommendationResult
 import codel.recommendation.domain.RecommendationConfig
+import codel.recommendation.domain.RecommendationType
+import codel.member.business.MemberService
+import codel.member.presentation.response.FullProfileResponse
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.stereotype.Service
@@ -102,7 +105,7 @@ class RecommendationService(
                 
                 // 트랜잭션 내에서 DTO 변환 → Lazy Loading 문제 해결
                 memberPage.map { memberEntity ->
-                    codel.member.presentation.response.FullProfileResponse.createOpen(memberEntity)
+                    FullProfileResponse.createOpen(memberEntity)
                 }
             } ?: PageImpl(emptyList())
             

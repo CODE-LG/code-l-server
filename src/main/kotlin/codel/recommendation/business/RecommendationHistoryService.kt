@@ -25,7 +25,8 @@ import java.time.LocalDateTime
 @Transactional
 class RecommendationHistoryService(
     private val recommendationHistoryJpaRepository: RecommendationHistoryJpaRepository,
-    private val config: RecommendationConfig
+    private val config: RecommendationConfig,
+    private val timeZoneService: TimeZoneService
 ) : Loggable{
     
     /**
@@ -126,22 +127,30 @@ class RecommendationHistoryService(
     
     /**
      * 오늘의 코드매칭에서 추천받은 사용자 ID 목록을 조회합니다.
-     * 24시간 유지 정책을 위해 기존 추천 결과를 재사용할 때 사용합니다.
+     * 타임존 기준으로 "오늘"을 판단합니다.
+     * 
+     * 예: 타임존이 KST이고 2025-10-29 02:00에 호출
+     * → 2025-10-29 00:00 KST ~ 2025-10-30 00:00 KST 사이의 추천 조회
+     * → UTC로는 2025-10-28 15:00 UTC ~ 2025-10-29 15:00 UTC
      * 
      * @param user 추천을 받은 사용자
+     * @param timeZoneId 타임존 ID (null이면 기본값 KST 사용)
      * @return 오늘 추천받은 사용자 ID 목록 (생성 순서대로 정렬)
      */
-    fun getTodayDailyCodeMatchingIds(user: Member): List<Long> {
-        val today = LocalDate.now()
+    fun getTodayDailyCodeMatchingIds(user: Member, timeZoneId: String? = null): List<Long> {
+        // 타임존 기준 오늘 자정 ~ 내일 자정 (UTC로 변환)
+        val todayStartUTC = timeZoneService.getTodayStartInUTC(timeZoneId)
+        val tomorrowStartUTC = timeZoneService.getTomorrowStartInUTC(timeZoneId)
         
-        val recommendedIds = recommendationHistoryJpaRepository.findTodayDailyCodeMatchingIds(
+        val recommendedIds = recommendationHistoryJpaRepository.findDailyCodeMatchingIdsByTimeRange(
             user = user,
-            today = today
+            startDateTime = todayStartUTC,
+            endDateTime = tomorrowStartUTC
         )
         
         log.debug {
             "오늘의 코드매칭 이력 조회 - userId: ${user.getIdOrThrow()}, " +
-            "today: $today, count: ${recommendedIds.size}개" 
+            "range(UTC): $todayStartUTC ~ $tomorrowStartUTC, count: ${recommendedIds.size}개" 
         }
         
         return recommendedIds
@@ -174,12 +183,12 @@ class RecommendationHistoryService(
     
     /**
      * 시간 범위 내 코드타임 추천 사용자 ID를 조회합니다.
-     * 날짜가 바뀌는 경우(22시 추천이 다음날까지 유지)를 처리합니다.
+     * 타임존을 고려하여 올바른 시간 범위를 계산합니다.
      * 
      * @param user 추천을 받은 사용자
      * @param timeSlot 시간대 (예: "10:00", "22:00")
-     * @param startDateTime 시작 시간 (포함)
-     * @param endDateTime 종료 시간 (미포함)
+     * @param startDateTime 시작 시간 (포함, UTC 기준)
+     * @param endDateTime 종료 시간 (미포함, UTC 기준)
      * @return 해당 시간 범위 내 추천받은 사용자 ID 목록
      */
     fun getCodeTimeIdsByTimeRange(
@@ -197,7 +206,7 @@ class RecommendationHistoryService(
         
         log.debug {
             "코드타임 범위 조회 - userId: ${user.getIdOrThrow()}, " +
-            "timeSlot: $timeSlot, range: $startDateTime ~ $endDateTime, " +
+            "timeSlot: $timeSlot, range(UTC): $startDateTime ~ $endDateTime, " +
             "count: ${recommendedIds.size}개"
         }
         

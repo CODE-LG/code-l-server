@@ -115,7 +115,7 @@ class RecommendationExclusionService(
         // 나를 차단한 사용자들
         val blockingMe = blockMemberRelationJpaRepository
             .findBlockerMembersTo(userId)
-            .mapNotNull { it.blockedMember.id }
+            .mapNotNull { it.blockerMember.id }
 
         val result = (blockedByMe + blockingMe).toSet()
 

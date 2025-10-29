@@ -30,37 +30,44 @@ class CodeTimeService(
     private val config: RecommendationConfig,
     private val bucketService: RecommendationBucketService,
     private val historyService: RecommendationHistoryService,
-    private val exclusionService: RecommendationExclusionService
+    private val exclusionService: RecommendationExclusionService,
+    private val timeZoneService: TimeZoneService
 ) : Loggable {
 
     /**
      * 코드타임 추천을 수행합니다.
      * 
      * 동작:
-     * - 현재 시간대(10:00 또는 22:00) 확인
+     * - 타임존 기준으로 현재 시간대(10:00 또는 22:00) 확인
      * - 해당 시간대의 유효 기간 내 추천 이력 확인
      * - 이력이 있으면 실시간 필터링 후 반환
      * - 없으면 새로 생성
+     * 
+     * @param user 추천을 받을 사용자
+     * @param page 페이지 번호
+     * @param size 페이지 크기
+     * @param timeZoneId 타임존 ID (null이면 기본값 KST 사용)
      */
     fun getCodeTimeRecommendation(user: Member,
                                   page : Int,
-                                  size : Int
+                                  size : Int,
+                                  timeZoneId: String? = null
     ): Page<Member> {
         val timeSlotCalculator = TimeSlotCalculator("ko")
         log.info { "코드타임 추천 요청 - userId: ${user.getIdOrThrow()}" }
 
-        // 1. 현재 시간대 확인 (항상 "10:00" 또는 "22:00" 반환)
-        val currentTimeSlot = timeSlotCalculator.getCurrentTimeSlot()
-
-        log.debug {
-            "현재 시간대: $currentTimeSlot - currentTime: ${LocalTime.now()}"
-        }
-
-        // 2. 현재 시간대의 유효 기간 계산
-        val (startDateTime, endDateTime) = timeSlotCalculator.getValidRangeFor(currentTimeSlot)
+        // 1. 타임존 기준 현재 시간대 확인 (항상 "10:00" 또는 "22:00" 반환)
+        val currentTimeSlot = timeZoneService.getCurrentTimeSlot(timeZoneId)
         
         log.debug {
-            "유효 기간: $startDateTime ~ $endDateTime"
+            "현재 시간대: $currentTimeSlot - now: ${timeZoneService.getNow(timeZoneId)}"
+        }
+
+        // 2. 타임존 기준 현재 시간대의 유효 기간 계산 (UTC로 변환)
+        val (startDateTime, endDateTime) = timeZoneService.getTimeSlotRangeInUTC(currentTimeSlot, timeZoneId)
+        
+        log.debug {
+            "유효 기간(UTC): $startDateTime ~ $endDateTime"
         }
 
         // 3. 유효 기간 내 추천 이력 확인
@@ -70,6 +77,7 @@ class CodeTimeService(
             startDateTime = startDateTime,
             endDateTime = endDateTime
         )
+        log.info { "유효 기간 내 추천 이력 확인 : " + existingRecommendationIds.size }
 
         if (existingRecommendationIds.isNotEmpty()) {
             log.info {
@@ -99,6 +107,10 @@ class CodeTimeService(
             log.info {
                 "모든 추천이 필터링됨, 새로 생성 - userId: ${user.getIdOrThrow()}"
             }
+
+            val pageable = PageRequest.of(page, size)
+
+            return PageImpl(ArrayList(), pageable, 0L)
         }
 
         // 5. 새로운 추천 생성
@@ -120,18 +132,12 @@ class CodeTimeService(
                     "timeSlot: $currentTimeSlot, count: ${newRecommendations.size}개"
         }
 
-//        return CodeTimeRecommendationResult(
-//            timeSlot = currentTimeSlot,
-//            members = newRecommendations,
-//            isActiveTime = true,
-//            nextTimeSlot = getNextTimeSlot()
-//        )
         val pageable = PageRequest.of(page, size)
 
         return PageImpl(newRecommendations, pageable, newRecommendations.size.toLong())
 
     }
-
+    
     /**
      * 기존 추천 목록에서 실시간으로 제외해야 할 사용자를 필터링합니다.
      *
@@ -177,7 +183,8 @@ class CodeTimeService(
     fun getCodeTimeRecommendationBySlot(
         user: Member,
         timeSlot: String,
-        date: LocalDate = LocalDate.now()
+        date: LocalDate = LocalDate.now(),
+        timeZoneId: String? = null
     ): CodeTimeRecommendationResult {
         val timeSlotCalculator = TimeSlotCalculator("ko")
         log.info {
@@ -195,13 +202,16 @@ class CodeTimeService(
                 timeSlot = timeSlot,
                 members = emptyList(),
                 isActiveTime = false,
-                nextTimeSlot = getNextTimeSlot()
+                nextTimeSlot = getNextTimeSlot(timeZoneId)
             )
         }
 
         // 해당 시간대 추천 결과 조회
-        val recommendationIds = if (date == LocalDate.now()) {
-            historyService.getTodayCodeTimeIds(user, timeSlot)
+        val today = timeZoneService.getToday(timeZoneId)
+        val recommendationIds = if (date == today) {
+            // 타임존 기준 오늘이면 시간 범위로 조회
+            val (startDateTime, endDateTime) = timeZoneService.getTimeSlotRangeInUTC(timeSlot, timeZoneId)
+            historyService.getCodeTimeIdsByTimeRange(user, timeSlot, startDateTime, endDateTime)
         } else {
             emptyList()
         }
@@ -212,13 +222,13 @@ class CodeTimeService(
             emptyList()
         }
 
-        val isCurrentTimeSlot = timeSlotCalculator.getCurrentTimeSlot() == timeSlot
+        val isCurrentTimeSlot = getCurrentTimeSlot(timeZoneId) == timeSlot
 
         return CodeTimeRecommendationResult(
             timeSlot = timeSlot,
             members = members,
             isActiveTime = isCurrentTimeSlot,
-            nextTimeSlot = getNextTimeSlot()
+            nextTimeSlot = getNextTimeSlot(timeZoneId)
         )
     }
 
@@ -264,10 +274,20 @@ class CodeTimeService(
         return exclusionService.getAllExcludedIds(user, RecommendationType.CODE_TIME)
     }
 
-    fun getNextTimeSlot(): String? {
-        // 간단한 하드코딩된 로직으로 임시 해결
-        val currentTime = LocalTime.now()
-        val currentHour = currentTime.hour
+    /**
+     * 타임존 기준으로 현재 활성 시간대를 반환합니다.
+     * 
+     * @param timeZoneId 타임존 ID (null이면 기본값 KST 사용)
+     * @return 현재 활성 시간대 ("10:00" 또는 "22:00")
+     */
+    fun getCurrentTimeSlot(timeZoneId: String? = null): String {
+        return timeZoneService.getCurrentTimeSlot(timeZoneId)
+    }
+
+    fun getNextTimeSlot(timeZoneId: String? = null): String? {
+        val zone = timeZoneService.getTimeZone(timeZoneId)
+        val now = java.time.LocalDateTime.now(zone)
+        val currentHour = now.hour
 
         return when {
             currentHour < 10 -> "10:00"
@@ -284,8 +304,7 @@ class CodeTimeService(
         return historyService.hasCodeTimeHistory(user, timeSlot, date)
     }
 
-    fun forceRefreshCodeTime(user: Member, timeSlot: String): CodeTimeRecommendationResult {
-        val timeSlotCalculator = TimeSlotCalculator("ko")
+    fun forceRefreshCodeTime(user: Member, timeSlot: String, timeZoneId: String? = null): CodeTimeRecommendationResult {
         log.info {
             "코드타임 강제 새로고침 - userId: ${user.getIdOrThrow()}, " +
             "timeSlot: $timeSlot"
@@ -296,7 +315,7 @@ class CodeTimeService(
                 "유효하지 않은 시간대로 강제 새로고침 시도 - userId: ${user.getIdOrThrow()}, " +
                 "timeSlot: $timeSlot, validSlots: ${config.codeTimeSlots}"
             }
-            return CodeTimeRecommendationResult.createEmptyActiveResult(timeSlot, getNextTimeSlot())
+            return CodeTimeRecommendationResult.createEmptyActiveResult(timeSlot, getNextTimeSlot(timeZoneId))
         }
 
         val newRecommendations = generateNewCodeTimeRecommendation(user, timeSlot)
@@ -319,19 +338,18 @@ class CodeTimeService(
         return CodeTimeRecommendationResult(
             timeSlot = timeSlot,
             members = newRecommendations,
-            isActiveTime = timeSlotCalculator.getCurrentTimeSlot() == timeSlot,
-            nextTimeSlot = getNextTimeSlot()
+            isActiveTime = getCurrentTimeSlot(timeZoneId) == timeSlot,
+            nextTimeSlot = getNextTimeSlot(timeZoneId)
         )
     }
 
-    fun getCodeTimeStats(user: Member): Map<String, Any> {
-        val timeSlotCalculator = TimeSlotCalculator("ko")
+    fun getCodeTimeStats(user: Member, timeZoneId: String? = null): Map<String, Any> {
         val stats = mutableMapOf<String, Any>()
 
-        val currentTimeSlot = timeSlotCalculator.getCurrentTimeSlot()
-        stats["currentTimeSlot"] = currentTimeSlot ?: ""
-        stats["isActiveTime"] = currentTimeSlot != null
-        stats["nextTimeSlot"] = getNextTimeSlot() ?: ""
+        val currentTimeSlot = getCurrentTimeSlot(timeZoneId)
+        stats["currentTimeSlot"] = currentTimeSlot
+        stats["isActiveTime"] = true
+        stats["nextTimeSlot"] = getNextTimeSlot(timeZoneId) ?: ""
 
         stats["configuredTimeSlots"] = config.codeTimeSlots
         stats["targetCountPerSlot"] = config.codeTimeCount
@@ -339,7 +357,15 @@ class CodeTimeService(
         val slotStats = mutableMapOf<String, Map<String, Any>>()
         for (timeSlot in config.codeTimeSlots) {
             val hasHistory = hasCodeTimeHistory(user, timeSlot)
-            val recommendationIds = historyService.getTodayCodeTimeIds(user, timeSlot)
+            
+            // 타임존 기준으로 오늘인지 확인
+            val today = timeZoneService.getToday(timeZoneId)
+            val recommendationIds = if (today == LocalDate.now()) {
+                val (startDateTime, endDateTime) = timeZoneService.getTimeSlotRangeInUTC(timeSlot, timeZoneId)
+                historyService.getCodeTimeIdsByTimeRange(user, timeSlot, startDateTime, endDateTime)
+            } else {
+                emptyList()
+            }
 
             slotStats[timeSlot] = mapOf(
                 "hasHistory" to hasHistory,
