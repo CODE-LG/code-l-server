@@ -49,6 +49,7 @@ sudo docker run -d \
   --name codel-$NEW_PORT \
   -p $NEW_PORT:8080 \
   -v /var/log/app:/var/log/app \
+  -e TZ=UTC \
   -e SERVER_PORT=8080 \
   -e JAVA_OPTS="-XX:+UnlockExperimentalVMOptions -XX:-UseContainerSupport" \
   $IMAGE_NAME

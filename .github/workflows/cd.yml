@@ -56,7 +56,7 @@ jobs:
           spring:
             datasource:
               driver-class-name: com.mysql.cj.jdbc.Driver
-              url: jdbc:mysql://codel-db.cbu0ugiswpor.ap-northeast-2.rds.amazonaws.com:3306/codel?serverTimezone=Asia/Seoul&useUnicode=true&characterEncoding=UTF-8
+              url: jdbc:mysql://codel-db.cbu0ugiswpor.ap-northeast-2.rds.amazonaws.com:3306/codel?serverTimezone=UTC&/Seoul&useUnicode=true&characterEncoding=UTF-8
               username: ${{ secrets.DEV_RDS_USER_NAME }}
               password: ${{ secrets.DEV_RDS_USER_PASSWORD }}
             
@@ -76,7 +76,9 @@ jobs:
                   format_sql: true
                   use_sql_comments: true
                   jdbc:
-                    time_zone: Asia/Seoul
+                    time_zone: UTC
+            jackson:
+              time_zone: UTC
           
           discord:
             webhook:
@@ -100,8 +102,6 @@ jobs:
             table: flyway_schema_history
             clean-disabled: true  # 프로덕션에서는 반드시 true
           
-            jackson:
-              time-zone: Asia/Seoul
           springdoc:
             override-with-generic-response: false
           EOF
