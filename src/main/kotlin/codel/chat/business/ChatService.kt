@@ -197,24 +197,6 @@ class ChatService(
                 senderType = ChatSenderType.USER,
                 chatContentType = ChatContentType.TEXT
             ),
-            // 4. 발송자 질문
-            Chat(
-                chatRoom = chatRoom,
-                fromChatRoomMember = fromSender,
-                message = "${senderProfile.getCodeNameOrThrow()}님의 코드 질문\n💭 ${senderProfile.getRepresentativeQuestionOrThrow().content}",
-                sentAt = now,
-                senderType = ChatSenderType.SYSTEM,
-                chatContentType = ChatContentType.QUESTION
-            ),
-            // 5. 발송자 본인 대답 (발송자 질문에 대한)
-            Chat(
-                chatRoom = chatRoom,
-                fromChatRoomMember = fromSender,
-                message = senderProfile.getRepresentativeAnswerOrThrow(),
-                sentAt = now,
-                senderType = ChatSenderType.USER,
-                chatContentType = ChatContentType.TEXT
-            ),
 
             )
 
