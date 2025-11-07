@@ -97,7 +97,7 @@ class ChatService(
         val senderRepresentativeQuestion = managedSender.getProfileOrThrow().getRepresentativeQuestionOrThrow()
 
         questionService.markQuestionAsUsed(savedChatRoom.getIdOrThrow(), approverRepresentativeQuestion, managedSender)
-        questionService.markQuestionAsUsed(savedChatRoom.getIdOrThrow(), senderRepresentativeQuestion, managedApprover)
+//        questionService.markQuestionAsUsed(savedChatRoom.getIdOrThrow(), senderRepresentativeQuestion, managedApprover)
 
         // 5. 생성된 채팅방의 읽지 않은 메시지 수 계산 (각자 기준)
         val approverUnReadCount = chatRepository.getUnReadMessageCount(savedChatRoom, managedApprover)
