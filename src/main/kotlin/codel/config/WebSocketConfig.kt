@@ -27,6 +27,21 @@ class WebSocketConfig(
     override fun configureClientInboundChannel(registration: ChannelRegistration) {
         registration.interceptors(chatRoomSubscriptionInterceptor)
         registration.interceptors(jwtConnectInterceptor)
+        
+        registration.taskExecutor()
+            .corePoolSize(8)        // 기본 스레드 8개
+            .maxPoolSize(32)        // 최대 스레드 32개
+            .queueCapacity(10_000)  // 대기 큐 10,000개
+            .keepAliveSeconds(60)
+    }
+
+    
+    override fun configureClientOutboundChannel(registration: ChannelRegistration) {
+        registration.taskExecutor()
+            .corePoolSize(8)
+            .maxPoolSize(32)
+            .queueCapacity(10_000)
+            .keepAliveSeconds(60)
     }
 
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
