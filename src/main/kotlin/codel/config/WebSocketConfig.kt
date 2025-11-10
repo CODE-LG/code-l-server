@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolver
 import org.springframework.messaging.simp.config.ChannelRegistration
 import org.springframework.messaging.simp.config.MessageBrokerRegistry
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry
@@ -27,21 +28,31 @@ class WebSocketConfig(
     override fun configureClientInboundChannel(registration: ChannelRegistration) {
         registration.interceptors(chatRoomSubscriptionInterceptor)
         registration.interceptors(jwtConnectInterceptor)
-        
-        registration.taskExecutor()
-            .corePoolSize(8)        // 기본 스레드 8개
-            .maxPoolSize(32)        // 최대 스레드 32개
-            .queueCapacity(10_000)  // 대기 큐 10,000개
-            .keepAliveSeconds(60)
+        registration.taskExecutor(wsInboundExecutor())
     }
 
+    @Bean
+    fun wsInboundExecutor(): ThreadPoolTaskExecutor =
+        ThreadPoolTaskExecutor().apply {
+            corePoolSize = 8
+            maxPoolSize = 32
+            queueCapacity = 10_000
+            setThreadNamePrefix("ws-in-")
+            initialize()
+        }
+
+    @Bean
+    fun wsOutboundExecutor(): ThreadPoolTaskExecutor =
+        ThreadPoolTaskExecutor().apply {
+            corePoolSize = 8
+            maxPoolSize = 32
+            queueCapacity = 10_000
+            setThreadNamePrefix("ws-out-")
+            initialize()
+        }
     
     override fun configureClientOutboundChannel(registration: ChannelRegistration) {
-        registration.taskExecutor()
-            .corePoolSize(8)
-            .maxPoolSize(32)
-            .queueCapacity(10_000)
-            .keepAliveSeconds(60)
+        registration.taskExecutor(wsOutboundExecutor())
     }
 
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
