@@ -60,7 +60,6 @@ jobs:
               username: ${{ secrets.DEV_RDS_USER_NAME }}
               password: ${{ secrets.DEV_RDS_USER_PASSWORD }}
               hikari :
-                pool-name : codel-hikari
                 maximum-pool-size : 20
                 minimum-idle : 10
                 connection-timeout: 10000
