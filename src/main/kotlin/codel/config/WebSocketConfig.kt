@@ -35,8 +35,8 @@ class WebSocketConfig(
     fun wsInboundExecutor(): ThreadPoolTaskExecutor =
         ThreadPoolTaskExecutor().apply {
             corePoolSize = 8
-            maxPoolSize = 32
-            queueCapacity = 10_000
+            maxPoolSize = 16
+            queueCapacity = 5000
             setThreadNamePrefix("ws-in-")
             initialize()
         }
@@ -45,8 +45,8 @@ class WebSocketConfig(
     fun wsOutboundExecutor(): ThreadPoolTaskExecutor =
         ThreadPoolTaskExecutor().apply {
             corePoolSize = 8
-            maxPoolSize = 32
-            queueCapacity = 10_000
+            maxPoolSize = 16
+            queueCapacity = 5000
             setThreadNamePrefix("ws-out-")
             initialize()
         }
