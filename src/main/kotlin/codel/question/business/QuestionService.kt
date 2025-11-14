@@ -28,6 +28,13 @@ class QuestionService(
     }
     
     /**
+     * 회원가입용 활성 질문 조회 (IF, BALANCE_ONE 카테고리 제외)
+     */
+    fun findActiveQuestionsForSignup(): List<Question> {
+        return questionJpaRepository.findActiveQuestionsForSignup()
+    }
+    
+    /**
      * ID로 질문 조회
      */
     fun findQuestionById(questionId: Long): Question {

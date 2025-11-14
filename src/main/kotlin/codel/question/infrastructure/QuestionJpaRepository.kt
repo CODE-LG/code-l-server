@@ -18,6 +18,13 @@ interface QuestionJpaRepository : JpaRepository<Question, Long> {
     @Query("""
         SELECT q FROM Question q 
         WHERE q.isActive = true 
+        AND q.category NOT IN ('IF', 'BALANCE_ONE')
+    """)
+    fun findActiveQuestionsForSignup(): List<Question>
+    
+    @Query("""
+        SELECT q FROM Question q 
+        WHERE q.isActive = true 
         AND q.id NOT IN (
             SELECT crq.question.id FROM ChatRoomQuestion crq 
             WHERE crq.chatRoom.id = :chatRoomId AND crq.isUsed = true

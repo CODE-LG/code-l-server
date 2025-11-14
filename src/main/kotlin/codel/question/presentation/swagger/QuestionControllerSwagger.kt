@@ -17,18 +17,21 @@ import org.springframework.http.ResponseEntity
 interface QuestionControllerSwagger {
 
     @Operation(
-        summary = "활성화된 질문 목록 조회",
+        summary = "활성화된 질문 목록 조회 (회원가입용)",
         description = """
-            현재 활성화된 모든 질문을 카테고리별로 조회합니다.
+            회원가입 시 선택할 수 있는 활성화된 질문을 카테고리별로 조회합니다.
             
-            **카테고리 설명:**
+            **제외되는 카테고리:**
+            - IF: 만약에 (가상의 상황·선택 질문) - 회원가입 시 적합하지 않음
+            - BALANCE_ONE: 하나만 (가벼운 밸런스 게임) - 회원가입 시 적합하지 않음
+            
+            **포함되는 카테고리:**
             - VALUES: 가치관 관련 질문 (인생 가치관·성향)
             - FAVORITE: 취향 관련 질문 (취향·관심사·콘텐츠)
             - CURRENT_ME: 현재 상태 관련 질문 (최근 상태·몰입한 것)
             - DATE: 데이트/관계 관련 질문 (사람 대할 때 나의 방식)
             - MEMORY: 추억/경험 관련 질문 (감동·전환점·경험 공유)
             - WANT_TALK: 대화 주제 관련 질문 (나누고 싶은 진짜 이야기)
-            - BALANCE_ONE: 밸런스 게임 관련 질문 (가벼운 밸런스 게임)
             
             ※ Authorization 헤더에 JWT 토큰을 포함해야 합니다.
         """
