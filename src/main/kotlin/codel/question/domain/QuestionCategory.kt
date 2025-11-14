@@ -28,7 +28,10 @@ enum class QuestionCategory(
     WANT_TALK("이런 대화 해보고 싶어", "나누고 싶은 진짜 이야기"),
     
     @Schema(description = "밸런스 게임 관련 질문")
-    BALANCE_ONE("하나만", "가벼운 밸런스 게임");
+    BALANCE_ONE("하나만", "가벼운 밸런스 게임"),
+
+    @Schema(description = "가정 상황 관련 질문")
+    IF("만약에", "가상의 상황·선택 질문");
 
     companion object {
         fun fromString(category: String?): QuestionCategory? {
