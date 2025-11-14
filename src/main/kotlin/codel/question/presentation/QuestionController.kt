@@ -20,7 +20,7 @@ class QuestionController(
     override fun findActiveQuestion(
         @LoginMember member : Member
     ) : ResponseEntity<List<QuestionResponse>>{
-        val findActiveQuestions = questionService.findActiveQuestions()
+        val findActiveQuestions = questionService.findActiveQuestionsForSignup()
         return ResponseEntity.ok(findActiveQuestions.map { question -> QuestionResponse.from(question) })
     }
 }
