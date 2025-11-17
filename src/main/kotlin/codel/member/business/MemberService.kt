@@ -97,10 +97,13 @@ class MemberService(
         val member = memberJpaRepository.findMemberWithProfile(memberId)
             ?: throw MemberException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다: $memberId")
 
-        // 2단계: 이미지들을 강제로 초기화 (트랜잭션 범위 내에서)
+        // 2단계: 이미지들과 대표질문을 강제로 초기화 (트랜잭션 범위 내에서)
         member.profile?.let { profile ->
             profile.codeImages.size  // Lazy Loading 초기화
             profile.faceImages.size  // Lazy Loading 초기화
+            profile.representativeQuestion?.let { question ->
+                question.content  // Lazy Loading 초기화
+            }
         }
 
         return member

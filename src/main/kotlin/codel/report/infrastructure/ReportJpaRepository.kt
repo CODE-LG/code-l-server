@@ -88,11 +88,11 @@ interface ReportJpaRepository : JpaRepository<Report, Long> {
         LEFT JOIN reporter.profile reporterProfile
         LEFT JOIN reported.profile reportedProfile
         WHERE (:keyword IS NULL 
-            OR r.reason LIKE %:keyword%
-            OR reporter.email LIKE %:keyword%
-            OR reported.email LIKE %:keyword%
-            OR reporterProfile.codeName LIKE %:keyword%
-            OR reportedProfile.codeName LIKE %:keyword%)
+            OR r.reason LIKE CONCAT('%', :keyword, '%')
+            OR reporter.email LIKE CONCAT('%', :keyword, '%')
+            OR reported.email LIKE CONCAT('%', :keyword, '%')
+            OR reporterProfile.codeName LIKE CONCAT('%', :keyword, '%')
+            OR reportedProfile.codeName LIKE CONCAT('%', :keyword, '%'))
         AND (:status IS NULL OR r.status = :status)
         AND (:startDate IS NULL OR r.createdAt >= :startDate)
         AND (:endDate IS NULL OR r.createdAt <= :endDate)

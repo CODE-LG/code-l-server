@@ -127,10 +127,10 @@
                     <span class="profile-label">흡연</span>
                     <span class="profile-value" th:text="${member.profile.smoke ?: '미설정'}">안함</span>
                 </div>
-                <!-- 대표 질문: 엔티티가 아닌 경우 접근 문제 방지 위해 안전하게 처리하거나 숨김 -->
-                <div class="profile-item" th:if="${member.profile.representativeAnswer != null}">
+                <!-- 대표 질문 -->
+                <div class="profile-item" th:if="${repQuestionContent != null}">
                     <span class="profile-label">대표 질문</span>
-                    <span class="profile-value">응답 있음</span>
+                    <span class="profile-value" th:text="${repQuestionContent}">응답 있음</span>
                 </div>
             </div>
         </div>
