@@ -179,14 +179,9 @@ class AdminController(
         }
 
         val repQuestionContent = try {
-            val repQId = profile?.getRepresentativeQuestionOrThrow()?.getIdOrThrow()
-            if (repQId != null) {
-                adminService.findQuestionById(repQId).content
-            } else {
-                null
-            }
+            profile?.representativeQuestion?.content
         } catch (e: Exception) {
-            println("Error getting representative question: ${e.message}")
+            println("⚠️ Error getting representative question: ${e.message}")
             null
         }
 
