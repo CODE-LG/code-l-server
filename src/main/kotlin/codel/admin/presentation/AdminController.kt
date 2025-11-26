@@ -567,5 +567,32 @@ class AdminController(
         }
         return "redirect:/v1/admin/reports/$reportId"
     }
+
+    /**
+     * 회원의 거절 이력 조회 (API)
+     */
+    @GetMapping("/v1/admin/members/{memberId}/rejection-histories")
+    @ResponseBody
+    fun getRejectionHistories(
+        @PathVariable memberId: Long
+    ): ResponseEntity<Map<String, Any>> {
+        val member = adminService.findMember(memberId)
+        val histories = adminService.getRejectionHistories(memberId)
+        val maxRound = if (histories.isEmpty()) 0 else adminService.getMaxRejectionRound(memberId)
+
+        val historyResponses = histories.map { history ->
+            codel.admin.presentation.response.RejectionHistoryResponse.from(history)
+        }
+
+        val response = mapOf(
+            "memberId" to memberId,
+            "memberName" to (member.profile?.codeName ?: "이름 없음"),
+            "totalRejectionCount" to histories.size,
+            "maxRejectionRound" to maxRound,
+            "histories" to historyResponses
+        )
+
+        return ResponseEntity.ok(response)
+    }
 }
 

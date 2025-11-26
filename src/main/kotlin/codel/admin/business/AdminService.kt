@@ -6,6 +6,7 @@ import codel.auth.business.AuthService
 import codel.config.Loggable
 import codel.member.business.MemberService
 import codel.member.domain.Member
+import codel.member.domain.RejectionHistory
 import codel.notification.business.IAsyncNotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
@@ -429,4 +430,27 @@ class AdminService(
         val totalImages: Int,
         val hasIntroduce: Boolean
     )
+
+    // ========== 거절 이력 관리 ==========
+    
+    /**
+     * 특정 회원의 모든 거절 이력 조회
+     */
+    fun getRejectionHistories(memberId: Long): List<RejectionHistory> {
+        return memberService.getRejectionHistories(memberId)
+    }
+
+    /**
+     * 특정 회원의 특정 차수 거절 이력 조회
+     */
+    fun getRejectionHistoriesByRound(memberId: Long, rejectionRound: Int): List<RejectionHistory> {
+        return memberService.getRejectionHistoriesByRound(memberId, rejectionRound)
+    }
+
+    /**
+     * 특정 회원의 최대 거절 차수 조회
+     */
+    fun getMaxRejectionRound(memberId: Long): Int {
+        return memberService.getMaxRejectionRound(memberId)
+    }
 }

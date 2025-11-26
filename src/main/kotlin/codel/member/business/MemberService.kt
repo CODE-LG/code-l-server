@@ -16,6 +16,7 @@ import codel.member.infrastructure.MemberJpaRepository
 import codel.member.infrastructure.ProfileJpaRepository
 import codel.member.infrastructure.FaceImageRepository
 import codel.member.infrastructure.CodeImageRepository
+import codel.member.infrastructure.RejectionHistoryRepository
 import codel.member.presentation.response.FullProfileResponse
 import codel.member.presentation.response.MemberProfileDetailResponse
 import codel.member.presentation.response.UpdateCodeImagesResponse
@@ -57,6 +58,7 @@ class MemberService(
     private val blockMemberRelationJpaRepository: BlockMemberRelationJpaRepository,
     private val faceImageRepository: FaceImageRepository,
     private val codeImageRepository: CodeImageRepository,
+    private val rejectionHistoryRepository: RejectionHistoryRepository,
     private val questionJpaRepository: codel.question.infrastructure.QuestionJpaRepository,
 ) {
     fun loginMember(member: Member): Member {
@@ -747,6 +749,11 @@ class MemberService(
     /**
      * 이미지별 거절 처리 (신규)
      */
+    /**
+     * 이미지별 거절 처리 (신규)
+     * - 기존 로직 유지 (하위 호환성)
+     * - RejectionHistory에 이력 저장 추가
+     */
     fun rejectMemberWithImages(
         memberId: Long,
         faceImageRejections: List<ImageRejection>?,
@@ -754,6 +761,10 @@ class MemberService(
     ) : Member{
         val member = findMember(memberId)
         val profile = member.getProfileOrThrow()
+        
+        // 현재 거절 차수 조회 (최대값 + 1)
+        val currentRejectionRound = rejectionHistoryRepository.findMaxRejectionRoundByMemberId(memberId) + 1
+        val rejectedAt = LocalDateTime.now()
 
         // 얼굴 이미지 거절 처리
         faceImageRejections?.forEach { rejection ->
@@ -764,8 +775,22 @@ class MemberService(
                 throw MemberException(HttpStatus.BAD_REQUEST, "해당 프로필의 이미지가 아닙니다")
             }
 
+            // 기존 로직: 이미지에 거절 상태 기록 (하위 호환성)
             image.isApproved = false
             image.rejectionReason = rejection.reason
+            
+            // 신규 로직: 거절 이력 저장
+            val rejectionHistory = RejectionHistory(
+                member = member,
+                rejectionRound = currentRejectionRound,
+                imageType = ImageType.FACE_IMAGE,
+                imageId = image.id,
+                imageUrl = image.url,
+                imageOrder = image.orders,
+                reason = rejection.reason,
+                rejectedAt = rejectedAt
+            )
+            rejectionHistoryRepository.save(rejectionHistory)
         }
 
         // 코드 이미지 거절 처리
@@ -777,8 +802,22 @@ class MemberService(
                 throw MemberException(HttpStatus.BAD_REQUEST, "해당 프로필의 이미지가 아닙니다")
             }
 
+            // 기존 로직: 이미지에 거절 상태 기록 (하위 호환성)
             image.isApproved = false
             image.rejectionReason = rejection.reason
+            
+            // 신규 로직: 거절 이력 저장
+            val rejectionHistory = RejectionHistory(
+                member = member,
+                rejectionRound = currentRejectionRound,
+                imageType = ImageType.CODE_IMAGE,
+                imageId = image.id,
+                imageUrl = image.url,
+                imageOrder = image.orders,
+                reason = rejection.reason,
+                rejectedAt = rejectedAt
+            )
+            rejectionHistoryRepository.save(rejectionHistory)
         }
 
         // 회원 상태를 REJECT로 변경
@@ -918,5 +957,39 @@ class MemberService(
             representativeAnswer = answer,
             message = "대표 질문 및 답변이 수정되었습니다."
         )
+    }
+
+    // ========== 거절 이력 관리 ==========
+
+    /**
+     * 특정 회원의 모든 거절 이력 조회 (최신순)
+     */
+    @Transactional(readOnly = true)
+    fun getRejectionHistories(memberId: Long): List<RejectionHistory> {
+        return rejectionHistoryRepository.findByMemberIdOrderByRejectedAtDesc(memberId)
+    }
+
+    /**
+     * 특정 회원의 특정 차수 거절 이력 조회
+     */
+    @Transactional(readOnly = true)
+    fun getRejectionHistoriesByRound(memberId: Long, rejectionRound: Int): List<RejectionHistory> {
+        return rejectionHistoryRepository.findByMemberIdAndRejectionRound(memberId, rejectionRound)
+    }
+
+    /**
+     * 특정 회원의 최대 거절 차수 조회
+     */
+    @Transactional(readOnly = true)
+    fun getMaxRejectionRound(memberId: Long): Int {
+        return rejectionHistoryRepository.findMaxRejectionRoundByMemberId(memberId)
+    }
+
+    /**
+     * 특정 회원의 거절 이력 개수 조회
+     */
+    @Transactional(readOnly = true)
+    fun getRejectionHistoryCount(memberId: Long): Long {
+        return rejectionHistoryRepository.countByMemberId(memberId)
     }
 }
