@@ -152,30 +152,7 @@ class Member(
      */
     fun completeHiddenProfile() {
 //        validateCanProceedToHidden()
-        memberStatus = MemberStatus.VERIFICATION_IMAGE
-    }
-
-    /**
-     * Verification Image 등록이 가능한지 확인
-     */
-    fun canProceedToVerificationImage(): Boolean {
-        return memberStatus == MemberStatus.HIDDEN_COMPLETED
-    }
-
-    /**
-     * Verification Image 등록 가능 여부 검증
-     */
-    fun validateCanProceedToVerificationImage() {
-        require(memberStatus == MemberStatus.HIDDEN_COMPLETED) {
-            "인증 이미지 등록은 Hidden Profile 완료 후에만 가능합니다. 현재 상태: $memberStatus"
-        }
-    }
-
-    /**
-     * Verification Image 완료 상태로 변경 (최종 단계 - PENDING 상태로)
-     */
-    fun completeVerificationImage() {
-        memberStatus = MemberStatus.PENDING
+        memberStatus = MemberStatus.HIDDEN_COMPLETED
     }
 
     /**
@@ -187,8 +164,7 @@ class Member(
             MemberStatus.PHONE_VERIFIED -> MemberStatus.ESSENTIAL_COMPLETED
             MemberStatus.ESSENTIAL_COMPLETED -> MemberStatus.HIDDEN_COMPLETED
             MemberStatus.PERSONALITY_COMPLETED -> MemberStatus.HIDDEN_COMPLETED
-            MemberStatus.HIDDEN_COMPLETED -> MemberStatus.VERIFICATION_IMAGE
-            MemberStatus.VERIFICATION_IMAGE -> MemberStatus.PENDING
+            MemberStatus.HIDDEN_COMPLETED -> MemberStatus.PENDING // 인증 이미지 제출 후 PENDING
             MemberStatus.PENDING -> MemberStatus.PENDING
             MemberStatus.REJECT -> MemberStatus.REJECT
             else -> null

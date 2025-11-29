@@ -137,7 +137,7 @@ interface SignupControllerSwagger {
             표준 이미지를 참고하여 촬영한 본인 인증 이미지를 제출합니다.
 
             **요구사항:**
-            - 회원 상태가 VERIFICATION_IMAGE 또는 REJECT여야 함
+            - 회원 상태가 HIDDEN_COMPLETED 또는 REJECT여야 함
             - multipart/form-data로 전송
             - 이미지 파일 크기: 최대 10MB
             - 허용된 확장자: jpg, jpeg, png, gif, webp

@@ -214,10 +214,10 @@ class SignupService(
         standardImageId: Long,
         userImageFile: MultipartFile
     ): VerificationImageResponse {
-        // 1. 회원 상태 검증: VERIFICATION_IMAGE 또는 REJECT 상태여야 함
-        val validStatuses = listOf(MemberStatus.VERIFICATION_IMAGE, MemberStatus.REJECT)
+        // 1. 회원 상태 검증: HIDDEN_COMPLETED 또는 REJECT 상태여야 함
+        val validStatuses = listOf(MemberStatus.HIDDEN_COMPLETED, MemberStatus.REJECT)
         require(member.memberStatus in validStatuses) {
-            "인증 이미지 제출은 VERIFICATION_IMAGE 또는 REJECT 상태에서만 가능합니다. 현재 상태: ${member.memberStatus}"
+            "인증 이미지 제출은 HIDDEN_COMPLETED 또는 REJECT 상태에서만 가능합니다. 현재 상태: ${member.memberStatus}"
         }
 
         // 2. 표준 이미지 조회
@@ -237,7 +237,7 @@ class SignupService(
         verificationImageRepository.save(verificationImage)
 
         // 5. Member 상태를 PENDING으로 변경
-        member.completeVerificationImage()
+        member.memberStatus = MemberStatus.PENDING
 
         return VerificationImageResponse.from(
             memberId = member.getIdOrThrow(),
