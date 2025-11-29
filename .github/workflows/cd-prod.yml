@@ -1,13 +1,13 @@
-name: CD - Docker Hub Deploy to Dev
+name: CD - Deploy to Production Server
 
 on:
   push:
     branches:
-      - develop
+      - main
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: [self-hosted, prod-runner]
 
     steps:
       - name: Checkout code
@@ -56,7 +56,7 @@ jobs:
           spring:
             datasource:
               driver-class-name: com.mysql.cj.jdbc.Driver
-              url: ${{secrets.PROD_RDS_URL}}
+              url: ${{ secrets.PROD_RDS_URL }}
               username: ${{ secrets.DEV_RDS_USER_NAME }}
               password: ${{ secrets.DEV_RDS_USER_PASSWORD }}
               hikari :
@@ -64,12 +64,12 @@ jobs:
                 minimum-idle : 10
                 connection-timeout: 10000
                 max-lifetime: 180000
-            
+
             servlet:
               multipart:
                 max-file-size: 20MB
                 max-request-size: 40MB
-          
+
             jpa:
               open-in-view: false
               hibernate:
@@ -84,11 +84,11 @@ jobs:
                     time_zone: UTC
             jackson:
               time_zone: UTC
-          
+
           discord:
             webhook:
-              url: ${{ secrets.DEV_DISCORD_WEBHOOK_URL }}
-          
+              url: ${{ secrets.PROD_DISCORD_WEBHOOK_URL }}
+
           logging:
             level:
               root : INFO
@@ -99,7 +99,7 @@ jobs:
               # org.springframework.messaging: DEBUG
               # org.springframework.web.socket.messaging: DEBUG
           # Flyway 설정 (MySQL 환경에서 활성화)
-          
+
           flyway:
             enabled: true
             baseline-on-migrate: true
@@ -108,7 +108,7 @@ jobs:
             locations: classpath:db/migration
             table: flyway_schema_history
             clean-disabled: true  # 프로덕션에서는 반드시 true
-          
+
           springdoc:
             override-with-generic-response: false
           EOF
@@ -119,7 +119,7 @@ jobs:
           cat <<EOF > src/test/resources/application.yml
           server:
             port: ${SERVER_PORT:8080}
-          
+
           security:
             jwt:
               token:
@@ -127,7 +127,7 @@ jobs:
                 secret-key: dummy-secret-key-should-be-long-enough-123456
             admin:
               password: dummy-admin-password
-          
+
           cloud:
             aws:
               region:
@@ -137,7 +137,7 @@ jobs:
               credentials:
                 access-key: dummy-access-key
                 secret-key: dummy-secret-key
-          
+
           management:
             endpoints:
               web:
@@ -146,24 +146,24 @@ jobs:
             metrics:
               enable:
                 all: true
-          
+
           spring:
             datasource:
               driver-class-name: org.h2.Driver
               url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
               username: sa
               password:
-          
+
             jpa:
               open-in-view: false
               hibernate:
                 ddl-auto: create-drop
               show-sql: true
               database-platform: org.hibernate.dialect.H2Dialect
-          
+
           springdoc:
             override-with-generic-response: false
-          
+
           logging:
             level:
               org.hibernate.SQL: debug
@@ -179,20 +179,20 @@ jobs:
         run: ./gradlew clean build -x test
 
       - name: Build Docker image
-        run: sudo docker build -t ${{ secrets.DOCKER_USERNAME }}/codel-app:latest .
+        run: sudo docker build -t ${{ secrets.DOCKER_USERNAME }}/codel-app:prod .
 
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | sudo docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
       - name: Push image to Docker Hub
-        run: sudo docker push ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
+        run: sudo docker push ${{ secrets.DOCKER_USERNAME }}/codel-app:prod
 
       - name: Zero-downtime Blue-Green Deploy
         run: |
-          echo "📦 이미지 정보: ${{ secrets.DOCKER_USERNAME }}/codel-app:latest"
-          
+          echo "📦 이미지 정보: ${{ secrets.DOCKER_USERNAME }}/codel-app:prod"
+
           echo "🔑 배포 스크립트 실행 권한 부여"
           chmod +x ./scripts/blue-green-deploy.sh
-          
-          echo "🚀 무중단 배포 시작"
-          ./scripts/blue-green-deploy.sh ${{ secrets.DOCKER_USERNAME }}/codel-app:latest
+
+          echo "🚀 운영서버 무중단 배포 시작"
+          ./scripts/blue-green-deploy.sh ${{ secrets.DOCKER_USERNAME }}/codel-app:prod
