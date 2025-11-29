@@ -12,9 +12,4 @@ interface StandardVerificationImageJpaRepository : JpaRepository<StandardVerific
      * 랜덤으로 하나 선택하기 위해 모두 조회
      */
     fun findAllByIsActiveTrue(): List<StandardVerificationImage>
-
-    /**
-     * 모든 표준 이미지 조회 (관리자용)
-     */
-    fun findAll(): List<StandardVerificationImage>
 }

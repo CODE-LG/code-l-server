@@ -45,8 +45,13 @@ data class SignUpStatusResponse(
                     MemberStatus.PERSONALITY_COMPLETED
                 )
                 MemberStatus.HIDDEN_COMPLETED -> listOf(
-                    MemberStatus.PHONE_VERIFIED, MemberStatus.ESSENTIAL_COMPLETED, 
+                    MemberStatus.PHONE_VERIFIED, MemberStatus.ESSENTIAL_COMPLETED,
                     MemberStatus.PERSONALITY_COMPLETED, MemberStatus.HIDDEN_COMPLETED
+                )
+                MemberStatus.VERIFICATION_IMAGE -> listOf(
+                    MemberStatus.PHONE_VERIFIED, MemberStatus.ESSENTIAL_COMPLETED,
+                    MemberStatus.PERSONALITY_COMPLETED, MemberStatus.HIDDEN_COMPLETED,
+                    MemberStatus.HIDDEN_COMPLETED
                 )
                 MemberStatus.PENDING, MemberStatus.REJECT, MemberStatus.DONE -> 
                     MemberStatus.values().filter { it != MemberStatus.SIGNUP }
