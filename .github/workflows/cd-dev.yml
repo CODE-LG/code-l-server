@@ -187,12 +187,25 @@ jobs:
       - name: Push image to Docker Hub
         run: sudo docker push ${{ secrets.DOCKER_USERNAME }}/codel-app:dev
 
-      - name: Zero-downtime Blue-Green Deploy
+      - name: Deploy to Dev Server
         run: |
           echo "📦 이미지 정보: ${{ secrets.DOCKER_USERNAME }}/codel-app:dev"
 
-          echo "🔑 배포 스크립트 실행 권한 부여"
-          chmod +x ./scripts/blue-green-deploy.sh
+          echo "🛑 기존 컨테이너 중지 및 삭제"
+          sudo docker stop codel-app || true
+          sudo docker rm codel-app || true
 
-          echo "🚀 개발서버 무중단 배포 시작"
-          ./scripts/blue-green-deploy.sh ${{ secrets.DOCKER_USERNAME }}/codel-app:dev
+          echo "🔄 최신 이미지 pull"
+          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/codel-app:dev
+
+          echo "🚀 개발서버 배포 시작"
+          sudo docker run -d \
+            --name codel-app \
+            -p 8080:8080 \
+            --restart unless-stopped \
+            ${{ secrets.DOCKER_USERNAME }}/codel-app:dev
+
+          echo "✅ 개발서버 배포 완료"
+
+          echo "🔍 컨테이너 상태 확인"
+          sudo docker ps | grep codel-app
