@@ -12,10 +12,15 @@ import codel.member.presentation.request.EssentialProfileRequest
 import codel.member.presentation.request.HiddenProfileRequest
 import codel.member.presentation.request.PersonalityProfileRequest
 import codel.question.business.QuestionService
+import codel.verification.domain.VerificationImage
+import codel.verification.infrastructure.StandardVerificationImageJpaRepository
+import codel.verification.infrastructure.VerificationImageJpaRepository
+import codel.verification.presentation.response.VerificationImageResponse
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
+import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDate
 
 @Service
@@ -24,7 +29,9 @@ class SignupService(
     private val imageUploader: ImageUploader,
     private val questionService: QuestionService,
     private val memberJpaRepository: MemberJpaRepository,
-    private val profileJpaRepository: ProfileJpaRepository
+    private val profileJpaRepository: ProfileJpaRepository,
+    private val standardVerificationImageRepository: StandardVerificationImageJpaRepository,
+    private val verificationImageRepository: VerificationImageJpaRepository
 ) {
 
     /**
@@ -192,5 +199,50 @@ class SignupService(
         findMember.completeHiddenProfile()
 
         memberJpaRepository.save(findMember)
+    }
+
+    /**
+     * 사용자 인증 이미지 제출 (회원가입 절차의 일부)
+     *
+     * @param member 인증 이미지를 제출하는 회원
+     * @param standardImageId 참조한 표준 이미지 ID
+     * @param userImageFile 사용자가 촬영한 이미지 파일
+     * @return 제출 결과
+     */
+    fun submitVerificationImage(
+        member: Member,
+        standardImageId: Long,
+        userImageFile: MultipartFile
+    ): VerificationImageResponse {
+        // 1. 회원 상태 검증: VERIFICATION_IMAGE 또는 REJECT 상태여야 함
+        val validStatuses = listOf(MemberStatus.VERIFICATION_IMAGE, MemberStatus.REJECT)
+        require(member.memberStatus in validStatuses) {
+            "인증 이미지 제출은 VERIFICATION_IMAGE 또는 REJECT 상태에서만 가능합니다. 현재 상태: ${member.memberStatus}"
+        }
+
+        // 2. 표준 이미지 조회
+        val standardImage = standardVerificationImageRepository.findById(standardImageId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "표준 인증 이미지를 찾을 수 없습니다. ID: $standardImageId")
+        }
+
+        // 3. S3에 이미지 업로드
+        val userImageUrl = imageUploader.uploadFile(userImageFile)
+
+        // 4. VerificationImage 엔티티 생성 및 저장
+        val verificationImage = VerificationImage(
+            member = member,
+            standardVerificationImage = standardImage,
+            userImageUrl = userImageUrl
+        )
+        verificationImageRepository.save(verificationImage)
+
+        // 5. Member 상태를 PENDING으로 변경
+        member.completeVerificationImage()
+
+        return VerificationImageResponse.from(
+            memberId = member.getIdOrThrow(),
+            memberStatus = member.memberStatus,
+            verificationImage = verificationImage
+        )
     }
 }

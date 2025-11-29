@@ -12,6 +12,7 @@ import codel.member.presentation.swagger.SignupControllerSwagger
 import codel.notification.business.IAsyncNotificationService
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
+import codel.verification.presentation.response.VerificationImageResponse
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -94,5 +95,15 @@ class SignupController(
                 ),
         )
         return ResponseEntity.ok().build()
+    }
+
+    @PostMapping("/verification/image", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    override fun submitVerificationImage(
+        @LoginMember member: Member,
+        @RequestParam standardImageId: Long,
+        @RequestParam userImage: MultipartFile
+    ): ResponseEntity<VerificationImageResponse> {
+        val response = signupService.submitVerificationImage(member, standardImageId, userImage)
+        return ResponseEntity.ok(response)
     }
 }
