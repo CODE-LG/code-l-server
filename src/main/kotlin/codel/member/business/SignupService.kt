@@ -189,13 +189,20 @@ class SignupService(
             "Hidden Profile 정보를 먼저 등록해주세요"
         }
 
+        // 기존 얼굴 이미지가 있으면 컬렉션에서 제거 (orphanRemoval로 DB 삭제)
+        // 재제출 시 (REJECT 상태에서 다시 제출) 기존 이미지 삭제 처리
+        if (profile.faceImages.isNotEmpty()) {
+            profile.faceImages.clear()
+            // S3 삭제는 트랜잭션 커밋 후 비동기로 권장 (이벤트/리스너)
+        }
+
         // 기존 이미지 업로드 로직 재활용
         val faceImage = uploadFaceImage(images)
-        
+
         // Profile 이미지 업데이트 및 완료 처리
         profile.updateHiddenProfileImages(faceImage.urls)
-        
-        // Hidden Profile 완료 상태로 변경 (PENDING 상태로)
+
+        // Hidden Profile 완료 상태로 변경
         findMember.completeHiddenProfile()
 
         memberJpaRepository.save(findMember)
@@ -220,15 +227,19 @@ class SignupService(
             "인증 이미지 제출은 HIDDEN_COMPLETED 또는 REJECT 상태에서만 가능합니다. 현재 상태: ${member.memberStatus}"
         }
 
-        // 2. 표준 이미지 조회
+        // 2. 기존 인증 이미지가 있으면 소프트 딜리트 처리 (이력 유지)
+        val existingImage = verificationImageRepository.findFirstByMemberAndDeletedAtIsNullOrderByCreatedAtDesc(member)
+        existingImage?.softDelete()
+
+        // 3. 표준 이미지 조회
         val standardImage = standardVerificationImageRepository.findById(standardImageId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "표준 인증 이미지를 찾을 수 없습니다. ID: $standardImageId")
         }
 
-        // 3. S3에 이미지 업로드
+        // 4. S3에 이미지 업로드
         val userImageUrl = imageUploader.uploadFile(userImageFile)
 
-        // 4. VerificationImage 엔티티 생성 및 저장
+        // 5. VerificationImage 엔티티 생성 및 저장
         val verificationImage = VerificationImage(
             member = member,
             standardVerificationImage = standardImage,
@@ -236,7 +247,7 @@ class SignupService(
         )
         verificationImageRepository.save(verificationImage)
 
-        // 5. Member 상태를 PENDING으로 변경
+        // 6. Member 상태를 PENDING으로 변경
         member.memberStatus = MemberStatus.PENDING
 
         return VerificationImageResponse.from(

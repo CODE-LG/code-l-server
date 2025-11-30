@@ -84,6 +84,16 @@ class SignupController(
         @RequestPart images: List<MultipartFile>
     ): ResponseEntity<Unit> {
         signupService.registerHiddenImages(member, images)
+        return ResponseEntity.ok().build()
+    }
+
+    @PostMapping("/verification/image", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    override fun submitVerificationImage(
+        @LoginMember member: Member,
+        @RequestPart standardImageId: Long,
+        @RequestPart userImage: MultipartFile
+    ): ResponseEntity<VerificationImageResponse> {
+        val response = signupService.submitVerificationImage(member, standardImageId, userImage)
         // 비동기로 알림 전송
         asyncNotificationService.sendAsync(
             notification =
@@ -94,16 +104,6 @@ class SignupController(
                     body = "code:L 프로필 심사 요청이 왔습니다.",
                 ),
         )
-        return ResponseEntity.ok().build()
-    }
-
-    @PostMapping("/verification/image", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    override fun submitVerificationImage(
-        @LoginMember member: Member,
-        @RequestParam standardImageId: Long,
-        @RequestParam userImage: MultipartFile
-    ): ResponseEntity<VerificationImageResponse> {
-        val response = signupService.submitVerificationImage(member, standardImageId, userImage)
         return ResponseEntity.ok(response)
     }
 }
