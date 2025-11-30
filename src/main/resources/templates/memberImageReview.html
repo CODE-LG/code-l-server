@@ -262,6 +262,58 @@
             </div>
         </div>
 
+        <!-- 인증 이미지 섹션 (체크 기능 없이 참고용) -->
+        <div class="image-section" th:if="${verificationImage != null}">
+            <h4>
+                <i class="bi bi-shield-check me-2"></i>인증 이미지 (참고용)
+                <span class="badge bg-info ms-2">거절 불가 - 참고만</span>
+            </h4>
+            <div class="alert alert-info mb-3">
+                <i class="bi bi-info-circle me-2"></i>
+                인증 이미지는 거절 대상이 아닙니다. 표준 이미지와 사용자가 제출한 이미지를 비교하여 참고하세요.
+            </div>
+
+            <div class="row">
+                <!-- 표준 이미지 -->
+                <div class="col-md-3 mb-3">
+                    <h6 class="text-muted mb-2">
+                        <i class="bi bi-image me-1"></i>표준 이미지
+                    </h6>
+                    <div class="image-card" style="border: 2px solid #0dcaf0;">
+                        <img th:src="${standardImage.imageUrl}" alt="표준 인증 이미지" style="cursor: zoom-in;" onclick="window.open(this.src, '_blank')">
+                        <div class="image-info">
+                            <small class="text-muted" th:text="${standardImage.description}"></small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 사용자 제출 이미지 -->
+                <div class="col-md-3 mb-3">
+                    <h6 class="text-muted mb-2">
+                        <i class="bi bi-person-check me-1"></i>사용자 제출 이미지
+                    </h6>
+                    <div class="image-card" style="border: 2px solid #198754;">
+                        <img th:src="${verificationImage.userImageUrl}" alt="사용자 인증 이미지" style="cursor: zoom-in;" onclick="window.open(this.src, '_blank')">
+                        <div class="image-info">
+                            <small class="text-muted">
+                                제출일: <span th:text="${#temporals.format(verificationImage.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="image-section" th:unless="${verificationImage != null}">
+            <h4>
+                <i class="bi bi-shield-x me-2"></i>인증 이미지
+            </h4>
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                인증 이미지가 제출되지 않았습니다. 기존 회원은 인증 이미지를 제출하지 않았을 수 있습니다.
+            </div>
+        </div>
+
         <!-- 액션 버튼 -->
         <div class="action-buttons">
             <button type="button" class="btn btn-secondary" onclick="goBack()">

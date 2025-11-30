@@ -5,6 +5,7 @@ import codel.admin.presentation.request.ImageRejection
 import codel.auth.business.AuthService
 import codel.config.Loggable
 import codel.member.business.MemberService
+import codel.member.domain.ImageUploader
 import codel.member.domain.Member
 import codel.member.domain.RejectionHistory
 import codel.notification.business.IAsyncNotificationService
@@ -13,11 +14,18 @@ import codel.notification.domain.NotificationType
 import codel.question.business.QuestionService
 import codel.question.domain.Question
 import codel.question.domain.QuestionCategory
+import codel.verification.domain.StandardVerificationImage
+import codel.verification.domain.VerificationImage
+import codel.verification.infrastructure.StandardVerificationImageJpaRepository
+import codel.verification.infrastructure.VerificationImageJpaRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.multipart.MultipartFile
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 @Transactional(readOnly = true)
@@ -26,6 +34,9 @@ class AdminService(
     private val authService: AuthService,
     private val asyncNotificationService: IAsyncNotificationService,
     private val questionService: QuestionService,
+    private val standardVerificationImageRepository: StandardVerificationImageJpaRepository,
+    private val verificationImageRepository: VerificationImageJpaRepository,
+    private val imageUploader: ImageUploader,
     @Value("\${security.admin.password}")
     private val answerPassword: String,
 ) : Loggable{
@@ -452,5 +463,74 @@ class AdminService(
      */
     fun getMaxRejectionRound(memberId: Long): Int {
         return memberService.getMaxRejectionRound(memberId)
+    }
+
+    // ===== 표준 인증 이미지 관리 =====
+
+    /**
+     * 모든 표준 인증 이미지 조회 (관리자용)
+     */
+    fun getAllStandardVerificationImages(): List<StandardVerificationImage> {
+        return standardVerificationImageRepository.findAll().sortedByDescending { it.createdAt }
+    }
+
+    /**
+     * 활성화된 표준 인증 이미지 조회
+     */
+    fun getActiveStandardVerificationImages(): List<StandardVerificationImage> {
+        return standardVerificationImageRepository.findAllByIsActiveTrue().sortedByDescending { it.createdAt }
+    }
+
+    /**
+     * 표준 인증 이미지 생성
+     */
+    @Transactional
+    fun createStandardVerificationImage(
+        imageFile: MultipartFile,
+        description: String?
+    ): StandardVerificationImage {
+        // S3에 이미지 업로드
+        val imageUrl = imageUploader.uploadFile(imageFile)
+
+        // 표준 인증 이미지 엔티티 생성
+        val standardImage = StandardVerificationImage(
+            imageUrl = imageUrl,
+            description = description ?: "",
+            isActive = true
+        )
+
+        return standardVerificationImageRepository.save(standardImage)
+    }
+
+    /**
+     * 표준 인증 이미지 활성화/비활성화 토글
+     */
+    @Transactional
+    fun toggleStandardImageStatus(imageId: Long): StandardVerificationImage {
+        val image = standardVerificationImageRepository.findById(imageId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "표준 인증 이미지를 찾을 수 없습니다. ID: $imageId")
+        }
+        image.isActive = !image.isActive
+        return image
+    }
+
+    /**
+     * 표준 인증 이미지 삭제
+     */
+    @Transactional
+    fun deleteStandardVerificationImage(imageId: Long) {
+        val image = standardVerificationImageRepository.findById(imageId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "표준 인증 이미지를 찾을 수 없습니다. ID: $imageId")
+        }
+        standardVerificationImageRepository.delete(image)
+        // S3에서 이미지 삭제는 별도 처리 필요 (비동기 권장)
+    }
+
+    /**
+     * 회원의 최신 인증 이미지 조회 (있는 경우만)
+     * standardVerificationImage를 함께 fetch
+     */
+    fun getMemberVerificationImage(member: Member): VerificationImage? {
+        return verificationImageRepository.findFirstByMemberWithStandardImage(member)
     }
 }

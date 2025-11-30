@@ -16,6 +16,12 @@ interface VerificationImageJpaRepository : JpaRepository<VerificationImage, Long
     fun findFirstByMemberAndDeletedAtIsNullOrderByCreatedAtDesc(member: Member): VerificationImage?
 
     /**
+     * 회원의 최신 인증 이미지 조회 with 표준 이미지 (관리자용)
+     */
+    @Query("SELECT v FROM VerificationImage v JOIN FETCH v.standardVerificationImage WHERE v.member = :member AND v.deletedAt IS NULL ORDER BY v.createdAt DESC")
+    fun findFirstByMemberWithStandardImage(member: Member): VerificationImage?
+
+    /**
      * 회원의 모든 인증 이미지 이력 조회 (관리자용)
      * 삭제된 것 포함, 최신순
      */

@@ -249,6 +249,7 @@ class SignupService(
 
         // 6. Member 상태를 PENDING으로 변경
         member.memberStatus = MemberStatus.PENDING
+        memberJpaRepository.save(member)
 
         return VerificationImageResponse.from(
             memberId = member.getIdOrThrow(),

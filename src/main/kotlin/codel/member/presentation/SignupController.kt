@@ -90,7 +90,7 @@ class SignupController(
     @PostMapping("/verification/image", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     override fun submitVerificationImage(
         @LoginMember member: Member,
-        @RequestPart standardImageId: Long,
+        @RequestParam standardImageId: Long,
         @RequestPart userImage: MultipartFile
     ): ResponseEntity<VerificationImageResponse> {
         val response = signupService.submitVerificationImage(member, standardImageId, userImage)

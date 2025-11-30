@@ -185,10 +185,19 @@ class AdminController(
             null
         }
 
+        // 인증 이미지 조회 (없을 수도 있음)
+        val verificationImage = try {
+            adminService.getMemberVerificationImage(member)
+        } catch (e: Exception) {
+            println("⚠️ Error getting verification image: ${e.message}")
+            null
+        }
+
         // 모델에 모든 데이터 추가
         model.addAttribute("member", member)
         model.addAttribute("codeImages", codeImages)
         model.addAttribute("faceImages", faceImages)
+        model.addAttribute("verificationImage", verificationImage)
         model.addAttribute("activityHistory", activityHistory)
         model.addAttribute("statusHistory", statusHistory)
         model.addAttribute("loginHistory", loginHistory)
@@ -221,20 +230,32 @@ class AdminController(
         try {
             val member = adminService.findMemberWithImages(memberId)
             val profile = member.profile
-            
+
             // 이미지 리스트 가져오기
             val codeImages = profile?.codeImages?.sortedBy { it.orders }?.map {
                 mapOf("id" to it.id, "url" to it.url)
             } ?: emptyList()
-            
+
             val faceImages = profile?.faceImages?.sortedBy { it.orders }?.map {
                 mapOf("id" to it.id, "url" to it.url)
             } ?: emptyList()
-            
+
+            // 인증 이미지 조회 (없을 수도 있음)
+            val verificationImage = try {
+                adminService.getMemberVerificationImage(member)
+            } catch (e: Exception) {
+                null
+            }
+
+            // 표준 이미지 정보 (인증 이미지가 있는 경우)
+            val standardImage = verificationImage?.standardVerificationImage
+
             model.addAttribute("member", member)
             model.addAttribute("codeImages", codeImages)
             model.addAttribute("faceImages", faceImages)
-            
+            model.addAttribute("verificationImage", verificationImage)
+            model.addAttribute("standardImage", standardImage)
+
             return "memberImageReview"
         } catch (e: Exception) {
             e.printStackTrace()
@@ -593,6 +614,79 @@ class AdminController(
         )
 
         return ResponseEntity.ok(response)
+    }
+
+    // ========== 표준 인증 이미지 관리 ==========
+
+    /**
+     * 표준 인증 이미지 목록 페이지
+     */
+    @GetMapping("/v1/admin/verification-images")
+    fun standardImageList(model: Model): String {
+        val images = adminService.getAllStandardVerificationImages()
+        model.addAttribute("images", images)
+        return "verificationImageList"
+    }
+
+    /**
+     * 표준 인증 이미지 등록 페이지
+     */
+    @GetMapping("/v1/admin/verification-images/new")
+    fun standardImageForm(model: Model): String {
+        return "verificationImageForm"
+    }
+
+    /**
+     * 표준 인증 이미지 등록 처리
+     */
+    @PostMapping("/v1/admin/verification-images")
+    fun createStandardImage(
+        @RequestParam imageFile: org.springframework.web.multipart.MultipartFile,
+        @RequestParam(required = false) description: String?,
+        redirectAttributes: RedirectAttributes
+    ): String {
+        try {
+            adminService.createStandardVerificationImage(imageFile, description)
+            redirectAttributes.addFlashAttribute("success", "표준 인증 이미지가 성공적으로 등록되었습니다.")
+        } catch (e: Exception) {
+            redirectAttributes.addFlashAttribute("error", "이미지 등록에 실패했습니다: ${e.message}")
+        }
+        return "redirect:/v1/admin/verification-images"
+    }
+
+    /**
+     * 표준 인증 이미지 활성화/비활성화 토글
+     */
+    @PostMapping("/v1/admin/verification-images/{imageId}/toggle")
+    fun toggleStandardImageStatus(
+        @PathVariable imageId: Long,
+        redirectAttributes: RedirectAttributes
+    ): String {
+        try {
+            val image = adminService.toggleStandardImageStatus(imageId)
+            val status = if (image.isActive) "활성화" else "비활성화"
+            redirectAttributes.addFlashAttribute("success", "표준 인증 이미지가 성공적으로 ${status}되었습니다.")
+        } catch (e: Exception) {
+            redirectAttributes.addFlashAttribute("error", "상태 변경에 실패했습니다: ${e.message}")
+        }
+        return "redirect:/v1/admin/verification-images"
+    }
+
+    /**
+     * 표준 인증 이미지 삭제
+     */
+    @PostMapping("/v1/admin/verification-images/{imageId}/delete")
+    fun deleteStandardImage(
+        @PathVariable imageId: Long,
+        redirectAttributes: RedirectAttributes
+    ): String {
+        try {
+            adminService.deleteStandardVerificationImage(imageId)
+            redirectAttributes.addFlashAttribute("success", "표준 인증 이미지가 성공적으로 삭제되었습니다.")
+        } catch (e: Exception) {
+            redirectAttributes.addFlashAttribute("error", "이미지 삭제에 실패했습니다: ${e.message}")
+        }
+        return "redirect:/v1/admin/verification-images"
     }
 }
 
