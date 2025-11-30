@@ -12,10 +12,15 @@ import codel.member.presentation.request.EssentialProfileRequest
 import codel.member.presentation.request.HiddenProfileRequest
 import codel.member.presentation.request.PersonalityProfileRequest
 import codel.question.business.QuestionService
+import codel.verification.domain.VerificationImage
+import codel.verification.infrastructure.StandardVerificationImageJpaRepository
+import codel.verification.infrastructure.VerificationImageJpaRepository
+import codel.verification.presentation.response.VerificationImageResponse
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
+import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDate
 
 @Service
@@ -24,7 +29,9 @@ class SignupService(
     private val imageUploader: ImageUploader,
     private val questionService: QuestionService,
     private val memberJpaRepository: MemberJpaRepository,
-    private val profileJpaRepository: ProfileJpaRepository
+    private val profileJpaRepository: ProfileJpaRepository,
+    private val standardVerificationImageRepository: StandardVerificationImageJpaRepository,
+    private val verificationImageRepository: VerificationImageJpaRepository
 ) {
 
     /**
@@ -182,15 +189,72 @@ class SignupService(
             "Hidden Profile 정보를 먼저 등록해주세요"
         }
 
+        // 기존 얼굴 이미지가 있으면 컬렉션에서 제거 (orphanRemoval로 DB 삭제)
+        // 재제출 시 (REJECT 상태에서 다시 제출) 기존 이미지 삭제 처리
+        if (profile.faceImages.isNotEmpty()) {
+            profile.faceImages.clear()
+            // S3 삭제는 트랜잭션 커밋 후 비동기로 권장 (이벤트/리스너)
+        }
+
         // 기존 이미지 업로드 로직 재활용
         val faceImage = uploadFaceImage(images)
-        
+
         // Profile 이미지 업데이트 및 완료 처리
         profile.updateHiddenProfileImages(faceImage.urls)
-        
-        // Hidden Profile 완료 상태로 변경 (PENDING 상태로)
+
+        // Hidden Profile 완료 상태로 변경
         findMember.completeHiddenProfile()
 
         memberJpaRepository.save(findMember)
+    }
+
+    /**
+     * 사용자 인증 이미지 제출 (회원가입 절차의 일부)
+     *
+     * @param member 인증 이미지를 제출하는 회원
+     * @param standardImageId 참조한 표준 이미지 ID
+     * @param userImageFile 사용자가 촬영한 이미지 파일
+     * @return 제출 결과
+     */
+    fun submitVerificationImage(
+        member: Member,
+        standardImageId: Long,
+        userImageFile: MultipartFile
+    ): VerificationImageResponse {
+        // 1. 회원 상태 검증: HIDDEN_COMPLETED 또는 REJECT 상태여야 함
+        val validStatuses = listOf(MemberStatus.HIDDEN_COMPLETED, MemberStatus.REJECT)
+        require(member.memberStatus in validStatuses) {
+            "인증 이미지 제출은 HIDDEN_COMPLETED 또는 REJECT 상태에서만 가능합니다. 현재 상태: ${member.memberStatus}"
+        }
+
+        // 2. 기존 인증 이미지가 있으면 소프트 딜리트 처리 (이력 유지)
+        val existingImage = verificationImageRepository.findFirstByMemberAndDeletedAtIsNullOrderByCreatedAtDesc(member)
+        existingImage?.softDelete()
+
+        // 3. 표준 이미지 조회
+        val standardImage = standardVerificationImageRepository.findById(standardImageId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "표준 인증 이미지를 찾을 수 없습니다. ID: $standardImageId")
+        }
+
+        // 4. S3에 이미지 업로드
+        val userImageUrl = imageUploader.uploadFile(userImageFile)
+
+        // 5. VerificationImage 엔티티 생성 및 저장
+        val verificationImage = VerificationImage(
+            member = member,
+            standardVerificationImage = standardImage,
+            userImageUrl = userImageUrl
+        )
+        verificationImageRepository.save(verificationImage)
+
+        // 6. Member 상태를 PENDING으로 변경
+        member.memberStatus = MemberStatus.PENDING
+        memberJpaRepository.save(member)
+
+        return VerificationImageResponse.from(
+            memberId = member.getIdOrThrow(),
+            memberStatus = member.memberStatus,
+            verificationImage = verificationImage
+        )
     }
 }

@@ -42,33 +42,91 @@
                 </div>
             </div>
 
-            <!-- 페이스 이미지 -->
+            <!-- 오른쪽 컬럼 (페이스 이미지 + 인증 이미지) -->
             <div class="col-lg-6">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0 fw-bold text-primary">
-                        <i class="bi bi-person-square me-2"></i>페이스 이미지
-                    </h6>
-                    <span class="completion-badge" th:classappend="${member.profile.faceImage != null} ? 'completion-complete' : 'completion-incomplete'">
-                        <i class="bi" th:classappend="${member.profile.faceImage != null} ? 'bi-check-circle' : 'bi-x-circle'"></i>
-                        <span th:text="${member.profile.faceImage != null} ? '완료' : '미완료'">미완료</span>
-                    </span>
-                </div>
+                <!-- 페이스 이미지 -->
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0 fw-bold text-primary">
+                            <i class="bi bi-person-square me-2"></i>페이스 이미지
+                        </h6>
+                        <span class="completion-badge" th:classappend="${member.profile.faceImage != null} ? 'completion-complete' : 'completion-incomplete'">
+                            <i class="bi" th:classappend="${member.profile.faceImage != null} ? 'bi-check-circle' : 'bi-x-circle'"></i>
+                            <span th:text="${member.profile.faceImage != null} ? '완료' : '미완료'">미완료</span>
+                        </span>
+                    </div>
 
-                <!-- 리스트 기반으로 여러 장 표시 -->
-                <div class="image-gallery" th:if="${not #lists.isEmpty(faceImages)}">
-                    <div class="image-item"
-                         th:each="img, iterStat : ${faceImages}"
-                         th:attr="data-image-id=${img.id},data-src=${img.url},data-title=${'페이스 이미지 ' + iterStat.count}"
-                         onclick="showImageModal(this.dataset.src, this.dataset.title)">
-                        <img th:src="${img.url}" alt="페이스 이미지">
-                        <div class="image-overlay">
-                            <i class="bi bi-zoom-in text-white fs-3"></i>
+                    <!-- 리스트 기반으로 여러 장 표시 -->
+                    <div class="image-gallery" th:if="${not #lists.isEmpty(faceImages)}">
+                        <div class="image-item"
+                             th:each="img, iterStat : ${faceImages}"
+                             th:attr="data-image-id=${img.id},data-src=${img.url},data-title=${'페이스 이미지 ' + iterStat.count}"
+                             onclick="showImageModal(this.dataset.src, this.dataset.title)">
+                            <img th:src="${img.url}" alt="페이스 이미지">
+                            <div class="image-overlay">
+                                <i class="bi bi-zoom-in text-white fs-3"></i>
+                            </div>
                         </div>
                     </div>
+                    <div th:unless="${not #lists.isEmpty(faceImages)}" class="text-center py-4">
+                        <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">페이스 이미지가 없습니다.</p>
+                    </div>
                 </div>
-                <div th:unless="${not #lists.isEmpty(faceImages)}" class="text-center py-4">
-                    <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
-                    <p class="text-muted mt-2">페이스 이미지가 없습니다.</p>
+
+                <!-- 인증 이미지 -->
+                <div class="mt-4" th:if="${verificationImage != null}">
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0 fw-bold text-success">
+                            <i class="bi bi-shield-check me-2"></i>인증 이미지
+                        </h6>
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle"></i> 제출됨
+                        </span>
+                    </div>
+
+                    <!-- 표준 이미지와 사용자 제출 이미지를 한 줄로 표시 -->
+                    <div class="image-gallery">
+                        <!-- 표준 이미지 -->
+                        <div class="image-item"
+                             th:attr="data-src=${verificationImage.standardVerificationImage.imageUrl},data-title='표준 인증 이미지'"
+                             onclick="showImageModal(this.dataset.src, this.dataset.title)">
+                            <img th:src="${verificationImage.standardVerificationImage.imageUrl}" alt="표준 이미지">
+                            <div class="image-overlay">
+                                <i class="bi bi-zoom-in text-white fs-3"></i>
+                            </div>
+                        </div>
+
+                        <!-- 사용자 제출 이미지 -->
+                        <div class="image-item"
+                             th:attr="data-src=${verificationImage.userImageUrl},data-title='사용자 인증 이미지'"
+                             onclick="showImageModal(this.dataset.src, this.dataset.title)">
+                            <img th:src="${verificationImage.userImageUrl}" alt="사용자 인증 이미지">
+                            <div class="image-overlay">
+                                <i class="bi bi-zoom-in text-white fs-3"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 추가 정보 -->
+                    <div class="mt-2">
+                        <p class="text-muted small mb-1">
+                            <i class="bi bi-image me-1"></i>표준: <span th:text="${verificationImage.standardVerificationImage.description}"></span>
+                        </p>
+                        <p class="text-muted small mb-0">
+                            <i class="bi bi-person-check me-1"></i>제출일: <span th:text="${#temporals.format(verificationImage.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-4" th:unless="${verificationImage != null}">
+                    <hr>
+                    <div class="text-center py-3">
+                        <i class="bi bi-shield-x text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2 mb-0">인증 이미지가 제출되지 않았습니다.</p>
+                        <small class="text-muted">기존 회원은 인증 이미지를 제출하지 않았을 수 있습니다.</small>
+                    </div>
                 </div>
             </div>
         </div>

@@ -148,11 +148,11 @@ class Member(
     }
 
     /**
-     * Hidden Profile 완료 상태로 변경 (최종 단계 - PENDING 상태로)
+     * Hidden Profile 완료 상태로 변경
      */
     fun completeHiddenProfile() {
 //        validateCanProceedToHidden()
-        memberStatus = MemberStatus.PENDING
+        memberStatus = MemberStatus.HIDDEN_COMPLETED
     }
 
     /**
@@ -164,7 +164,7 @@ class Member(
             MemberStatus.PHONE_VERIFIED -> MemberStatus.ESSENTIAL_COMPLETED
             MemberStatus.ESSENTIAL_COMPLETED -> MemberStatus.HIDDEN_COMPLETED
             MemberStatus.PERSONALITY_COMPLETED -> MemberStatus.HIDDEN_COMPLETED
-            MemberStatus.HIDDEN_COMPLETED -> MemberStatus.PENDING
+            MemberStatus.HIDDEN_COMPLETED -> MemberStatus.PENDING // 인증 이미지 제출 후 PENDING
             MemberStatus.PENDING -> MemberStatus.PENDING
             MemberStatus.REJECT -> MemberStatus.REJECT
             else -> null

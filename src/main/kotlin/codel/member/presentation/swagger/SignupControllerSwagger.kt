@@ -6,8 +6,11 @@ import codel.member.presentation.request.EssentialProfileRequest
 import codel.member.presentation.request.HiddenProfileRequest
 import codel.member.presentation.request.PersonalityProfileRequest
 import codel.member.presentation.response.SignUpStatusResponse
+import codel.verification.presentation.response.VerificationImageResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -127,4 +130,66 @@ interface SignupControllerSwagger {
         @Parameter(hidden = true) @LoginMember member: Member,
         @Parameter(description = "얼굴 이미지 파일들 (3장)") images: List<MultipartFile>
     ): ResponseEntity<Unit>
+
+    @Operation(
+        summary = "사용자 인증 이미지 제출",
+        description = """
+            표준 이미지를 참고하여 촬영한 본인 인증 이미지를 제출합니다.
+
+            **요구사항:**
+            - 회원 상태가 HIDDEN_COMPLETED 또는 REJECT여야 함
+            - multipart/form-data로 전송
+            - 이미지 파일 크기: 최대 10MB
+            - 허용된 확장자: jpg, jpeg, png, gif, webp
+
+            **제출 과정:**
+            1. 표준 이미지 조회 (GET /v1/verification/standard-image)
+            2. 표준 이미지를 보고 동일한 자세로 촬영
+            3. 촬영한 이미지를 본 API로 제출
+            4. 회원 상태가 PENDING (심사 대기)으로 변경
+
+            **재제출:**
+            - 재제출 가능 (기존 이미지는 유지, 이력 관리)
+            - 거절 후 재제출 시에도 동일한 API 사용
+
+            ※ Authorization 헤더에 JWT 토큰을 포함해야 합니다.
+        """
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "인증 이미지 제출 성공",
+                content = [Content(
+                    mediaType = "application/json",
+                    schema = Schema(implementation = VerificationImageResponse::class)
+                )]
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "잘못된 요청 - 회원 상태가 올바르지 않거나 파일 검증 실패",
+                content = [Content()]
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "인증되지 않은 사용자 - JWT 토큰이 없거나 유효하지 않음",
+                content = [Content()]
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "표준 인증 이미지를 찾을 수 없음",
+                content = [Content()]
+            ),
+            ApiResponse(
+                responseCode = "500",
+                description = "서버 내부 오류 - S3 업로드 실패 등",
+                content = [Content()]
+            )
+        ]
+    )
+    fun submitVerificationImage(
+        @Parameter(hidden = true) @LoginMember member: Member,
+        @Parameter(description = "참조한 표준 이미지 ID") standardImageId: Long,
+        @Parameter(description = "사용자가 촬영한 인증 이미지 파일") userImage: MultipartFile
+    ): ResponseEntity<VerificationImageResponse>
 }

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>표준 인증 이미지 등록</title>
+    <link rel="icon" th:href="@{/image/favicon.png}" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #f4f6f9; }
+        .sidebar { min-height: 100vh; background: #343a40; }
+        .sidebar .nav-link { color: #fff; }
+        .sidebar .nav-link.active, .sidebar .nav-link:hover { background: #495057; }
+        .form-card { border: none; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07); }
+        .image-preview { max-width: 400px; max-height: 400px; margin-top: 1rem; }
+        .image-preview img { width: 100%; height: auto; border-radius: 0.5rem; }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-2 d-none d-md-block sidebar py-4">
+            <div class="position-sticky">
+                <a class="navbar-brand text-white mb-4 d-block fs-4" href="/v1/admin/home">
+                    <i class="fa-solid fa-user-shield"></i> code:L 관리자
+                </a>
+                <ul class="nav flex-column">
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/v1/admin/home">
+                            <i class="fa-solid fa-gauge"></i> 대시보드
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/v1/admin/members">
+                            <i class="fa-solid fa-users"></i> 회원 관리
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/v1/admin/questions">
+                            <i class="fa-solid fa-circle-question"></i> 질문 관리
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/v1/admin/reports">
+                            <i class="fa-solid fa-flag"></i> 신고 관리
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link active" href="/v1/admin/verification-images">
+                            <i class="fa-solid fa-image"></i> 표준 인증 이미지 관리
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main -->
+        <main class="col-md-10 ms-sm-auto px-md-5 py-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="fw-bold">표준 인증 이미지 등록</h1>
+                <a href="/v1/admin/verification-images" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-arrow-left"></i> 목록으로
+                </a>
+            </div>
+
+            <div class="card form-card">
+                <div class="card-body">
+                    <form action="/v1/admin/verification-images" method="post" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label for="imageFile" class="form-label fw-bold">이미지 파일 <span class="text-danger">*</span></label>
+                            <input type="file" class="form-control" id="imageFile" name="imageFile"
+                                   accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                   required onchange="previewImage(event)">
+                            <div class="form-text">JPG, PNG, GIF, WEBP 형식 지원 (최대 10MB)</div>
+                            <div id="imagePreview" class="image-preview" style="display: none;">
+                                <img id="previewImg" src="" alt="미리보기">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label fw-bold">포즈 설명 <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="description" name="description" rows="3"
+                                      placeholder="사용자가 따라할 포즈에 대한 설명을 입력하세요 (예: 정면을 보고 양손을 귀 옆에 올려주세요)"
+                                      required maxlength="500"></textarea>
+                            <div class="form-text">최대 500자까지 입력 가능합니다.</div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="/v1/admin/verification-images" class="btn btn-secondary">
+                                <i class="fa-solid fa-xmark"></i> 취소
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa-solid fa-check"></i> 등록
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function previewImage(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('imagePreview');
+                const previewImg = document.getElementById('previewImg');
+                previewImg.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+</script>
+</body>
+</html>
