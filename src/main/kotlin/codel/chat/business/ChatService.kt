@@ -270,6 +270,9 @@ class ChatService(
 
         val partner = chatRoomRepository.findPartner(chatRoomId, requester)
 
+        // FCM 푸시 알림 전송 (상대방에게)
+        sendChatNotification(partner, requester, chatSendRequest.message)
+
         val unlockInfoOfRequester = codeUnlockService.getUnlockInfo(chatRoom, requester)
         val unlockInfoOfPartner = codeUnlockService.getUnlockInfo(chatRoom, partner)
 
@@ -413,6 +416,36 @@ class ChatService(
                 }
         } ?: run {
             log.info { "ℹ️ FCM 토큰이 없어 코드 해제 요청 알림을 전송하지 않음 - 수신자: ${receiver.getIdOrThrow()}" }
+        }
+    }
+
+    /**
+     * 채팅 메시지 전송 알림
+     */
+    private fun sendChatNotification(receiver: Member, sender: Member, message: String) {
+        receiver.fcmToken?.let { token ->
+            val notification = Notification(
+                type = NotificationType.MOBILE,
+                targetId = token,
+                title = "${sender.getProfileOrThrow().getCodeNameOrThrow()}",
+                body = message
+            )
+
+            // 비동기 알림 전송
+            asyncNotificationService.sendAsync(notification)
+                .thenAccept { result ->
+                    if (result.success) {
+                        log.info { "✅ 채팅 메시지 알림 전송 성공 - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
+                    } else {
+                        log.warn { "❌ 채팅 메시지 알림 전송 실패 - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}, 사유: ${result.error}" }
+                    }
+                }
+                .exceptionally { e ->
+                    log.warn(e) { "❌ 채팅 메시지 알림 전송 예외 발생 - 수신자: ${receiver.getIdOrThrow()}, 발신자: ${sender.getIdOrThrow()}" }
+                    null
+                }
+        } ?: run {
+            log.debug { "ℹ️ FCM 토큰이 없어 채팅 메시지 알림을 전송하지 않음 - 수신자: ${receiver.getIdOrThrow()}" }
         }
     }
 
