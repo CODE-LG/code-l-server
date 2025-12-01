@@ -11,7 +11,17 @@
         currentImageSrc = src;
         document.getElementById('modalImage').src = src;
         document.getElementById('imageModalTitle').textContent = title;
-        new bootstrap.Modal(document.getElementById('imageModal')).show();
+
+        const imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+        imageModal.show();
+
+        // 모달이 열린 후 백드롭의 z-index 조정
+        document.getElementById('imageModal').addEventListener('shown.bs.modal', function() {
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length > 0) {
+                backdrops[backdrops.length - 1].style.zIndex = '1059';
+            }
+        }, { once: true });
     }
 
     // 이미지 다운로드
