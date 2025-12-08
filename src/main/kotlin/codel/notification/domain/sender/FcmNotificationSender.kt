@@ -13,17 +13,23 @@ class FcmNotificationSender : NotificationSender, Loggable {
     override fun supports(type: NotificationType): Boolean = type == NotificationType.MOBILE
 
     override fun send(notification: CodelNotification): String {
-        val message =
-            Message
-                .builder()
-                .setToken(notification.targetId)
-                .setNotification(
-                    Notification
-                        .builder()
-                        .setTitle(notification.title)
-                        .setBody(notification.body)
-                        .build(),
-                ).build()
+        val messageBuilder = Message
+            .builder()
+            .setToken(notification.targetId)
+            .setNotification(
+                Notification
+                    .builder()
+                    .setTitle(notification.title)
+                    .setBody(notification.body)
+                    .build(),
+            )
+
+        // data 필드가 있으면 추가
+        notification.data?.let { data ->
+            messageBuilder.putAllData(data)
+        }
+
+        val message = messageBuilder.build()
 
         return try {
             val response = FirebaseMessaging.getInstance().send(message)
@@ -43,9 +49,9 @@ class FcmNotificationSender : NotificationSender, Loggable {
      */
     fun sendBatch(notifications: List<CodelNotification>): BatchResponse {
         require(notifications.size <= 500) { "FCM 배치는 최대 500개까지만 가능합니다" }
-        
+
         val messages = notifications.map { notification ->
-            Message
+            val messageBuilder = Message
                 .builder()
                 .setToken(notification.targetId)
                 .setNotification(
@@ -54,7 +60,14 @@ class FcmNotificationSender : NotificationSender, Loggable {
                         .setTitle(notification.title)
                         .setBody(notification.body)
                         .build(),
-                ).build()
+                )
+
+            // data 필드가 있으면 추가
+            notification.data?.let { data ->
+                messageBuilder.putAllData(data)
+            }
+
+            messageBuilder.build()
         }
         
         return try {
