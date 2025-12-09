@@ -27,6 +27,7 @@ import codel.member.domain.MemberRepository
 import codel.member.infrastructure.MemberJpaRepository
 import codel.notification.business.IAsyncNotificationService
 import codel.notification.domain.Notification
+import codel.notification.domain.NotificationDataType
 import codel.notification.domain.NotificationType
 import codel.signal.infrastructure.SignalJpaRepository
 import codel.question.business.QuestionService
@@ -271,7 +272,7 @@ class ChatService(
         val partner = chatRoomRepository.findPartner(chatRoomId, requester)
 
         // FCM 푸시 알림 전송 (상대방에게)
-        sendChatNotification(partner, requester, chatSendRequest.message)
+        sendChatNotification(chatRoomId, partner, requester, savedChat, chatSendRequest.message)
 
         val unlockInfoOfRequester = codeUnlockService.getUnlockInfo(chatRoom, requester)
         val unlockInfoOfPartner = codeUnlockService.getUnlockInfo(chatRoom, partner)
@@ -422,13 +423,24 @@ class ChatService(
     /**
      * 채팅 메시지 전송 알림
      */
-    private fun sendChatNotification(receiver: Member, sender: Member, message: String) {
+    private fun sendChatNotification(
+        chatRoomId: Long,
+        receiver: Member,
+        sender: Member,
+        savedChat: Chat,
+        message: String
+    ) {
         receiver.fcmToken?.let { token ->
             val notification = Notification(
                 type = NotificationType.MOBILE,
                 targetId = token,
                 title = "${sender.getProfileOrThrow().getCodeNameOrThrow()}",
-                body = message
+                body = message,
+                data = mapOf(
+                    "type" to NotificationDataType.CHAT.value,
+                    "chatRoomId" to chatRoomId.toString(),
+                    "lastReadChatId" to savedChat.getIdOrThrow().toString()
+                )
             )
 
             // 비동기 알림 전송
