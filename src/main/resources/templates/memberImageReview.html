@@ -210,10 +210,11 @@
                     <div class="image-info">
                         <small class="text-muted">이미지 #<span th:text="${iterStat.count}">1</span></small>
                         <div class="rejection-reason">
-                            <input type="text" 
-                                   class="rejection-reason-input"
-                                   th:id="'face-reason-' + ${image.id}"
-                                   placeholder="거절 사유를 입력하세요">
+                            <textarea class="rejection-reason-input"
+                                    th:id="'code-reason-' + ${image.id}"
+                                    rows="15"
+                                    style="width: 100%; resize: vertical;"
+                                    placeholder="거절 사유를 입력하세요"></textarea>
                         </div>
                     </div>
                 </div>
@@ -247,10 +248,11 @@
                     <div class="image-info">
                         <small class="text-muted">이미지 #<span th:text="${iterStat.count}">1</span></small>
                         <div class="rejection-reason">
-                            <input type="text" 
-                                   class="rejection-reason-input"
-                                   th:id="'code-reason-' + ${image.id}"
-                                   placeholder="거절 사유를 입력하세요">
+                            <textarea class="rejection-reason-input"
+                                    th:id="'code-reason-' + ${image.id}"
+                                    rows="15"
+                                    style="width: 100%; resize: vertical;"
+                                    placeholder="거절 사유를 입력하세요"></textarea>
                         </div>
                     </div>
                 </div>

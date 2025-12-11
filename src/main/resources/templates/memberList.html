@@ -219,8 +219,8 @@
                         <small>거부됨</small>
                     </div>
                     <div class="col-md-2">
-                        <h4 th:text="${statusCounts.SIGNUP}">0</h4>
-                        <small>가입만 완료</small>
+                        <h4 th:text="${statusCounts.PHONE_VERIFIED}">0</h4>
+                        <small>핸드폰 인증 완료</small>
                     </div>
                     <div class="col-md-2">
                         <h4 th:text="${#numbers.formatDecimal((statusCounts.DONE * 100.0) / (statusCounts.DONE + statusCounts.REJECT), 1, 1) + '%'}">0%</h4>
@@ -245,7 +245,7 @@
                                 <option th:selected="${param.status == 'PENDING'}" value="PENDING">승인 대기</option>
                                 <option th:selected="${param.status == 'DONE'}" value="DONE">승인 완료</option>
                                 <option th:selected="${param.status == 'REJECT'}" value="REJECT">거부됨</option>
-                                <option th:selected="${param.status == 'SIGNUP'}" value="SIGNUP">가입만 완료</option>
+                                <option th:selected="${param.status == 'PHONE_VERIFIED'}" value="PHONE_VERIFIED">핸드폰 인증 완료</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -322,10 +322,10 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link d-flex align-items-center"
-                       th:classappend="${param.status == 'SIGNUP'} ? 'active'"
-                       th:href="@{/v1/admin/members(status='SIGNUP')}">
-                        <span>가입만 완료</span>
-                        <span class="badge badge-signup ms-2" th:text="${statusCounts.SIGNUP}">0</span>
+                       th:classappend="${param.status == 'PHONE_VERIFIED'} ? 'active'"
+                       th:href="@{/v1/admin/members(status='PHONE_VERIFIED')}">
+                        <span>핸드폰 인증 완료</span>
+                        <span class="badge badge-signup ms-2" th:text="${statusCounts.PHONE_VERIFIED}">0</span>
                     </a>
                 </li>
             </ul>
@@ -364,14 +364,14 @@
                     <strong th:text="${members.totalPages}">1</strong>
                     (총 <strong th:text="${members.totalElements}">0</strong>명)
                 </span>
-                <div>
-                    <button class="btn btn-outline-primary btn-sm" onclick="exportToCSV()">
-                        <i class="fa-solid fa-download me-1"></i>CSV 내보내기
-                    </button>
-                    <button class="btn btn-outline-info btn-sm" onclick="refreshPage()">
-                        <i class="fa-solid fa-refresh me-1"></i>새로고침
-                    </button>
-                </div>
+<!--                <div>-->
+<!--                    <button class="btn btn-outline-primary btn-sm" onclick="exportToCSV()">-->
+<!--                        <i class="fa-solid fa-download me-1"></i>CSV 내보내기-->
+<!--                    </button>-->
+<!--                    <button class="btn btn-outline-info btn-sm" onclick="refreshPage()">-->
+<!--                        <i class="fa-solid fa-refresh me-1"></i>새로고침-->
+<!--                    </button>-->
+<!--                </div>-->
             </div>
 
             <!-- 회원 목록 테이블 (완전 개선) -->
@@ -431,8 +431,8 @@
                                     <span class="badge badge-reject" th:case="'REJECT'">
                                         <i class="fa-solid fa-times me-1"></i>거부됨
                                     </span>
-                                    <span class="badge badge-signup" th:case="'SIGNUP'">
-                                        <i class="fa-solid fa-user-plus me-1"></i>가입만 완료
+                                    <span class="badge badge-signup" th:case="'PHONE_VERIFIED'">
+                                        <i class="fa-solid fa-user-plus me-1"></i>핸드폰 인증 완료
                                     </span>
                                     <span class="badge bg-light text-dark" th:case="*" th:text="${member.memberStatus}"></span>
                                 </span>
