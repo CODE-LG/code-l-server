@@ -233,10 +233,10 @@
                     <span class="badge bg-secondary" th:text="${member.oauthType}">KAKAO</span>
                 </span>
             </div>
-            <div class="profile-item">
-                <span class="profile-label">OAuth ID</span>
-                <span class="profile-value font-monospace" th:text="${member.oauthId}">123456789</span>
-            </div>
+<!--            <div class="profile-item">-->
+<!--                <span class="profile-label">OAuth ID</span>-->
+<!--                <span class="profile-value font-monospace" th:text="${member.oauthId}">123456789</span>-->
+<!--            </div>-->
             <div class="profile-item">
                 <span class="profile-label">가입일</span>
                 <span class="profile-value" th:text="${#temporals.format(member.createdAt, 'yyyy-MM-dd HH:mm')}">2024-01-01 10:00</span>

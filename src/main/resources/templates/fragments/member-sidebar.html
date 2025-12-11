@@ -85,49 +85,49 @@
             </div>
         </div>
 
-        <!-- 회원 상태 관리 섹션 -->
-        <div class="action-group mb-4">
-            <h6 class="action-group-title">
-                <i class="bi bi-person-gear me-2 text-success"></i>상태 관리
-            </h6>
-            <div class="d-grid gap-2">
-                <th:block th:if="${member.memberStatus.name()} == 'PENDING'">
-                    <button class="btn btn-success btn-sm" onclick="approveMember()">
-                        <i class="bi bi-check-circle me-2"></i>회원 승인
-                    </button>
-                </th:block>
+<!--        &lt;!&ndash; 회원 상태 관리 섹션 &ndash;&gt;-->
+<!--        <div class="action-group mb-4">-->
+<!--            <h6 class="action-group-title">-->
+<!--                <i class="bi bi-person-gear me-2 text-success"></i>상태 관리-->
+<!--            </h6>-->
+<!--            <div class="d-grid gap-2">-->
+<!--                <th:block th:if="${member.memberStatus.name()} == 'PENDING'">-->
+<!--                    <button class="btn btn-success btn-sm" onclick="approveMember()">-->
+<!--                        <i class="bi bi-check-circle me-2"></i>회원 승인-->
+<!--                    </button>-->
+<!--                </th:block>-->
 
-                <th:block th:if="${member.memberStatus.name()} != 'BANNED'">
-                    <button class="btn btn-warning btn-sm" onclick="banMember()">
-                        <i class="bi bi-ban me-2"></i>회원 정지
-                    </button>
-                </th:block>
+<!--                <th:block th:if="${member.memberStatus.name()} != 'BANNED'">-->
+<!--                    <button class="btn btn-warning btn-sm" onclick="banMember()">-->
+<!--                        <i class="bi bi-ban me-2"></i>회원 정지-->
+<!--                    </button>-->
+<!--                </th:block>-->
 
-                <th:block th:if="${member.memberStatus.name()} == 'BANNED'">
-                    <button class="btn btn-info btn-sm" onclick="unbanMember()">
-                        <i class="bi bi-check-circle me-2"></i>정지 해제
-                    </button>
-                </th:block>
-            </div>
-        </div>
+<!--                <th:block th:if="${member.memberStatus.name()} == 'BANNED'">-->
+<!--                    <button class="btn btn-info btn-sm" onclick="unbanMember()">-->
+<!--                        <i class="bi bi-check-circle me-2"></i>정지 해제-->
+<!--                    </button>-->
+<!--                </th:block>-->
+<!--            </div>-->
+<!--        </div>-->
 
         <!-- 기타 작업 섹션 -->
-        <div class="action-group">
-            <h6 class="action-group-title">
-                <i class="bi bi-tools me-2 text-secondary"></i>기타 작업
-            </h6>
-            <div class="d-grid gap-2">
-                <button class="btn btn-outline-primary btn-sm" onclick="sendMessage()">
-                    <i class="bi bi-envelope me-2"></i>메시지 발송
-                </button>
-                <button class="btn btn-outline-secondary btn-sm" onclick="exportMemberData()">
-                    <i class="bi bi-download me-2"></i>데이터 내보내기
-                </button>
-                <button class="btn btn-outline-danger btn-sm" onclick="deleteMember()">
-                    <i class="bi bi-trash me-2"></i>회원 삭제
-                </button>
-            </div>
-        </div>
+<!--        <div class="action-group">-->
+<!--            <h6 class="action-group-title">-->
+<!--                <i class="bi bi-tools me-2 text-secondary"></i>기타 작업-->
+<!--            </h6>-->
+<!--            <div class="d-grid gap-2">-->
+<!--                <button class="btn btn-outline-primary btn-sm" onclick="sendMessage()">-->
+<!--                    <i class="bi bi-envelope me-2"></i>메시지 발송-->
+<!--                </button>-->
+<!--                <button class="btn btn-outline-secondary btn-sm" onclick="exportMemberData()">-->
+<!--                    <i class="bi bi-download me-2"></i>데이터 내보내기-->
+<!--                </button>-->
+<!--                <button class="btn btn-outline-danger btn-sm" onclick="deleteMember()">-->
+<!--                    <i class="bi bi-trash me-2"></i>회원 삭제-->
+<!--                </button>-->
+<!--            </div>-->
+<!--        </div>-->
     </div>
 </div>
 

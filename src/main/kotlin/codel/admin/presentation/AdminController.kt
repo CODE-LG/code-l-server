@@ -320,7 +320,7 @@ class AdminController(
             "PENDING" to adminService.countMembersByStatus("PENDING"),
             "DONE" to adminService.countMembersByStatus("DONE"),
             "REJECT" to adminService.countMembersByStatus("REJECT"),
-            "SIGNUP" to adminService.countMembersByStatus("SIGNUP")
+            "PHONE_VERIFIED" to adminService.countMembersByStatus("PHONE_VERIFIED")
         )
 
         model.addAttribute("members", members)
