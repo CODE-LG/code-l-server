@@ -1,6 +1,7 @@
 package codel.notification.domain.sender
 
 import codel.config.Loggable
+import codel.notification.domain.NotificationDataType
 import codel.notification.domain.NotificationType
 import codel.notification.exception.NotificationException
 import com.google.firebase.messaging.*
@@ -24,10 +25,10 @@ class FcmNotificationSender : NotificationSender, Loggable {
                     .build(),
             )
 
-        // data 필드가 있으면 추가
-        notification.data?.let { data ->
-            messageBuilder.putAllData(data)
-        }
+        // 기본값으로 NOTICE 타입 설정 후, 요청 data로 덮어쓰기
+        val defaultData = mapOf("type" to NotificationDataType.NOTICE.value)
+        val dataToSend = defaultData + (notification.data ?: emptyMap())
+        messageBuilder.putAllData(dataToSend)
 
         val message = messageBuilder.build()
 
@@ -62,10 +63,10 @@ class FcmNotificationSender : NotificationSender, Loggable {
                         .build(),
                 )
 
-            // data 필드가 있으면 추가
-            notification.data?.let { data ->
-                messageBuilder.putAllData(data)
-            }
+            // 기본값으로 NOTICE 타입 설정 후, 요청 data로 덮어쓰기
+            val defaultData = mapOf("type" to NotificationDataType.NOTICE.value)
+            val dataToSend = defaultData + (notification.data ?: emptyMap())
+            messageBuilder.putAllData(dataToSend)
 
             messageBuilder.build()
         }
