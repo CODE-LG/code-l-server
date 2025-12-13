@@ -203,7 +203,7 @@ class SignupService(
         profile.updateHiddenProfileImages(faceImage.urls)
 
         // Hidden Profile 완료 상태로 변경
-        findMember.completeHiddenProfile()
+//        findMember.completeHiddenProfile()
 
         memberJpaRepository.save(findMember)
     }
