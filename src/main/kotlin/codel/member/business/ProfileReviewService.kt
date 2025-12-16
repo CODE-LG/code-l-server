@@ -376,7 +376,7 @@ class ProfileReviewService(
         messages += "본인 인증 이미지 제출 완료"
 
         // 5. Member 상태를 HIDDEN_COMPLETED으로 변경
-        findMember.memberStatus = MemberStatus.HIDDEN_COMPLETED
+        findMember.memberStatus = MemberStatus.PENDING
         messages += "심사 대기 상태로 변경되었습니다"
 
         return ResubmitProfileResponse(
