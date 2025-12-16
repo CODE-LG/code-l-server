@@ -222,9 +222,9 @@ class SignupService(
         userImageFile: MultipartFile
     ): VerificationImageResponse {
         // 1. 회원 상태 검증: HIDDEN_COMPLETED 또는 REJECT 상태여야 함
-        val validStatuses = listOf(MemberStatus.HIDDEN_COMPLETED, MemberStatus.REJECT)
+        val validStatuses = listOf(MemberStatus.PERSONALITY_COMPLETED)
         require(member.memberStatus in validStatuses) {
-            "인증 이미지 제출은 HIDDEN_COMPLETED 또는 REJECT 상태에서만 가능합니다. 현재 상태: ${member.memberStatus}"
+            "인증 이미지 제출은 PERSONALITY_COMPLETED 상태에서만 가능합니다. 현재 상태: ${member.memberStatus}"
         }
 
         // 2. 기존 인증 이미지가 있으면 소프트 딜리트 처리 (이력 유지)
