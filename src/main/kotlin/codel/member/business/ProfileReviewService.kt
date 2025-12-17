@@ -236,7 +236,7 @@ class ProfileReviewService(
 
         // 변경이 있었으면 재심사(정책에 맞게 조정)
         if (changed) {
-            findMember.memberStatus = MemberStatus.HIDDEN_COMPLETED
+            findMember.memberStatus = MemberStatus.PENDING
             messages += "심사가 다시 진행됩니다"
         } else {
             messages += "변경된 이미지가 없습니다"
