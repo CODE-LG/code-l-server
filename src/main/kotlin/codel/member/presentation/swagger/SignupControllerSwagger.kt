@@ -117,19 +117,32 @@ interface SignupControllerSwagger {
 
     @Operation(
         summary = "Hidden Profile 이미지 등록",
-        description = "히든 프로필 이미지를 등록하고 Hidden Profile을 완료합니다. 회원가입이 완료되어 PENDING 상태로 변경됩니다."
+        description = """
+            히든 프로필 이미지를 등록합니다. 앱 버전과 회원 상태에 따라 다르게 동작합니다.
+
+            **정상 가입 (PERSONALITY_COMPLETED):**
+            - 히든 프로필 이미지를 등록하고 다음 단계로 진행합니다.
+
+            **재심사 (REJECT):**
+            - 구버전 앱(1.2.0 미만): 히든 이미지를 등록하고 PENDING 상태로 변경 (하위호환)
+            - 신규 앱(1.2.0 이상): 새로운 재심사 API(/v1/profile/review/resubmit)를 사용하도록 안내
+
+            **X-App-Version 헤더:**
+            - 앱 버전을 명시하지 않으면 구버전으로 간주되어 하위호환 로직이 적용됩니다.
+        """
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "등록 완료 (PENDING 상태로 변경)"),
-            ApiResponse(responseCode = "400", description = "잘못된 이미지 파일 또는 단계 오류"),
+            ApiResponse(responseCode = "200", description = "등록 완료"),
+            ApiResponse(responseCode = "400", description = "잘못된 이미지 파일, 단계 오류, 또는 신규 앱에서 재심사 시도"),
             ApiResponse(responseCode = "401", description = "인증 실패")
         ]
     )
     fun registerHiddenImages(
         @Parameter(hidden = true) @LoginMember member: Member,
-        @Parameter(description = "얼굴 이미지 파일들 (3장)") images: List<MultipartFile>
-    ): ResponseEntity<Unit>
+        @Parameter(description = "얼굴 이미지 파일들 (3장)") images: List<MultipartFile>,
+        @Parameter(description = "앱 버전 (예: 1.2.0)") appVersion: String?
+    ): ResponseEntity<Any>
 
     @Operation(
         summary = "사용자 인증 이미지 제출",
