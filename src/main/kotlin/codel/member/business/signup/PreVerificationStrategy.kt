@@ -6,6 +6,9 @@ import codel.member.domain.Member
 import codel.member.domain.MemberStatus
 import codel.member.exception.MemberException
 import codel.member.infrastructure.MemberJpaRepository
+import codel.notification.business.IAsyncNotificationService
+import codel.notification.domain.Notification
+import codel.notification.domain.NotificationType
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
@@ -22,7 +25,8 @@ import org.springframework.web.multipart.MultipartFile
 @Component
 class PreVerificationStrategy(
     private val signupService: SignupService,
-    private val memberJpaRepository: MemberJpaRepository
+    private val memberJpaRepository: MemberJpaRepository,
+    private val asyncNotificationService: IAsyncNotificationService
 ) : SignupStrategy, Loggable {
 
     @Transactional
@@ -44,6 +48,16 @@ class PreVerificationStrategy(
             "정상 가입 플로우 완료 - userId: ${member.getIdOrThrow()}, " +
             "status: HIDDEN_COMPLETED"
         }
+
+        asyncNotificationService.sendAsync(
+            notification =
+                Notification(
+                    type = NotificationType.DISCORD,
+                    targetId = member.getIdOrThrow().toString(),
+                    title = "${member.getProfileOrThrow().getCodeNameOrThrow()}님이 심사를 요청하였습니다.",
+                    body = "code:L 프로필 심사 요청이 왔습니다.",
+                ),
+        )
 
         return ResponseEntity.ok().build()
     }
