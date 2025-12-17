@@ -74,7 +74,7 @@ jobs:
               open-in-view: false
               hibernate:
                 ddl-auto: validate
-              show-sql: true
+              show-sql: false
               database-platform: org.hibernate.dialect.MySQL8Dialect
               properties:
                 hibernate:
@@ -92,8 +92,9 @@ jobs:
           logging:
             level:
               root : INFO
-              org.hibernate.SQL: WARN
               org.springframework : INFO
+              org.hibernate.SQL: OFF
+              org.hibernate.jdbc.bind : OFF
               # org.hibernate.type.descriptor.sql: trace
               # org.springframework.web.socket: DEBUG
               # org.springframework.messaging: DEBUG
