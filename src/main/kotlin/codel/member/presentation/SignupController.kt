@@ -3,6 +3,7 @@ package codel.member.presentation
 import codel.config.argumentresolver.LoginMember
 import codel.member.business.MemberService
 import codel.member.business.SignupService
+import codel.member.business.signup.SignupStrategyResolver
 import codel.member.domain.Member
 import codel.member.presentation.request.EssentialProfileRequest
 import codel.member.presentation.request.HiddenProfileRequest
@@ -23,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile
 class SignupController(
     private val memberService: MemberService,
     private val signupService: SignupService,
+    private val signupStrategyResolver: SignupStrategyResolver,
     private val asyncNotificationService: IAsyncNotificationService
 ) : SignupControllerSwagger {
 
@@ -81,10 +83,12 @@ class SignupController(
     @PostMapping("/hidden/images", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     override fun registerHiddenImages(
         @LoginMember member: Member,
-        @RequestPart images: List<MultipartFile>
-    ): ResponseEntity<Unit> {
-        signupService.registerHiddenImages(member, images)
-        return ResponseEntity.ok().build()
+        @RequestPart images: List<MultipartFile>,
+        @RequestHeader("X-App-Version", required = false) appVersion: String?
+    ): ResponseEntity<Any> {
+        // 앱 버전에 따라 적절한 전략을 선택하여 처리
+        val strategy = signupStrategyResolver.resolveStrategy(appVersion)
+        return strategy.handleHiddenImages(member, images)
     }
 
     @PostMapping("/verification/image", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
