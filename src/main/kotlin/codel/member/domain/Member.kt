@@ -152,7 +152,7 @@ class Member(
      */
     fun completeHiddenProfile() {
 //        validateCanProceedToHidden()
-        memberStatus = MemberStatus.HIDDEN_COMPLETED
+        memberStatus = MemberStatus.PENDING
     }
 
     /**
@@ -164,7 +164,7 @@ class Member(
             MemberStatus.PHONE_VERIFIED -> MemberStatus.ESSENTIAL_COMPLETED
             MemberStatus.ESSENTIAL_COMPLETED -> MemberStatus.HIDDEN_COMPLETED
             MemberStatus.PERSONALITY_COMPLETED -> MemberStatus.HIDDEN_COMPLETED
-            MemberStatus.HIDDEN_COMPLETED -> MemberStatus.HIDDEN_COMPLETED // 인증 이미지 제출 후 PENDING
+            MemberStatus.HIDDEN_COMPLETED -> MemberStatus.PENDING // 인증 이미지 제출 후 PENDING
             MemberStatus.PENDING -> MemberStatus.PENDING
             MemberStatus.REJECT -> MemberStatus.REJECT
             else -> null
