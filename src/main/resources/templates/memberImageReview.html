@@ -211,7 +211,7 @@
                         <small class="text-muted">이미지 #<span th:text="${iterStat.count}">1</span></small>
                         <div class="rejection-reason">
                             <textarea class="rejection-reason-input"
-                                    th:id="'code-reason-' + ${image.id}"
+                                    th:id="'face-reason-' + ${image.id}"
                                     rows="15"
                                     style="width: 100%; resize: vertical;"
                                     placeholder="거절 사유를 입력하세요"></textarea>
@@ -232,13 +232,13 @@
                 <i class="bi bi-code-slash me-2"></i>코드 이미지
                 <span class="selected-count" id="codeSelectedCount" style="display: none;">0</span>
             </h4>
-            
+
             <div class="image-grid" th:if="${not #lists.isEmpty(codeImages)}">
-                <div class="image-card" 
+                <div class="image-card"
                      th:each="image, iterStat : ${codeImages}"
                      th:data-image-id="${image.id}"
                      th:data-type="code">
-                    <input type="checkbox" 
+                    <input type="checkbox"
                            class="image-checkbox code-checkbox"
                            th:id="'code-' + ${image.id}"
                            th:data-image-id="${image.id}">
