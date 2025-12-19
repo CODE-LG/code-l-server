@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{layouts/admin-layout :: layout('회원 상세 정보 - code:L 관리자', ~{::content})}">
+
+<div th:fragment="content">
+    <!-- Header Section -->
+    <div class="container-fluid py-4">
+        <div th:replace="~{fragments/member-sidebar :: member-header}"></div>
+
+        <!-- Main Content -->
+        <div class="row">
+            <!-- Left Column -->
+            <div class="col-lg-8">
+                <!-- Profile Images Section -->
+                <div th:replace="~{fragments/member-profile-images :: profile-images-section}"></div>
+
+                <!-- Tabbed Profile Content -->
+                <div class="info-card">
+                    <!-- Tab Navigation -->
+                    <div th:replace="~{fragments/member-profile-tabs :: profile-tab-navigation}"></div>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="profileTabContent">
+                        <!-- Essential Profile Tab -->
+                        <div th:replace="~{fragments/member-profile-tabs :: essential-profile-tab}"></div>
+
+                        <!-- Personality Profile Tab -->
+                        <div th:replace="~{fragments/member-profile-tabs :: personality-profile-tab}"></div>
+
+                        <!-- Hidden Profile Tab -->
+                        <div th:replace="~{fragments/member-profile-tabs :: hidden-profile-tab}"></div>
+
+                        <!-- Activity Profile Tab -->
+                        <div th:replace="~{fragments/member-profile-tabs :: activity-profile-tab}"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="col-lg-4">
+                <!-- Quick Actions -->
+                <div th:replace="~{fragments/member-sidebar :: quick-actions-sidebar}"></div>
+
+                <!-- Profile Statistics -->
+                <div th:replace="~{fragments/member-sidebar :: profile-statistics-sidebar}"></div>
+
+                <!-- Navigation -->
+                <div th:replace="~{fragments/member-sidebar :: navigation-sidebar}"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Buttons -->
+    <div th:replace="~{fragments/member-sidebar :: floating-actions}"></div>
+
+    <!-- Modals -->
+    <!-- Image Modal -->
+    <div th:replace="~{fragments/member-modals :: image-modal}"></div>
+
+    <!-- Approve Modal -->
+    <div th:replace="~{fragments/member-modals :: approve-modal}"></div>
+
+    <!-- Reject Modal -->
+    <div th:replace="~{fragments/member-modals :: reject-modal}"></div>
+
+    <!-- Rejection History Modal -->
+    <div th:replace="~{fragments/member-modals :: rejection-history-modal}"></div>
+
+    <!-- Scripts -->
+    <div th:replace="~{fragments/member-scripts :: member-detail-scripts}"></div>
+</div>
+
+</html>

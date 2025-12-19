@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>질문 수정</title>
+    <link rel="icon" th:href="@{/image/favicon.png}" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f4f6f9;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background: #343a40;
+        }
+
+        .sidebar .nav-link {
+            color: #fff;
+        }
+
+        .sidebar .nav-link.active, .sidebar .nav-link:hover {
+            background: #495057;
+        }
+
+        .form-card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-2 d-none d-md-block sidebar py-4">
+            <div class="position-sticky">
+                <a class="navbar-brand text-white mb-4 d-block fs-4" href="/v1/admin/home">
+                    <i class="fa-solid fa-user-shield"></i> code:L 관리자
+                </a>
+                <ul class="nav flex-column">
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/v1/admin/home">
+                            <i class="fa-solid fa-gauge"></i> 대시보드
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/v1/admin/members">
+                            <i class="fa-solid fa-users"></i> 회원 관리
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link active" href="/v1/admin/questions">
+                            <i class="fa-solid fa-circle-question"></i> 질문 관리
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main -->
+        <main class="col-md-10 ms-sm-auto px-md-5 py-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="fw-bold">질문 수정</h1>
+                <a href="/v1/admin/questions" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-arrow-left"></i> 목록으로
+                </a>
+            </div>
+
+            <div class="card form-card">
+                <div class="card-body">
+                    <form th:action="@{/v1/admin/questions/{id}(id=${question.id})}" method="post">
+                        <div class="mb-4">
+                            <label for="content" class="form-label fw-bold">질문 내용 <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="content" name="content" rows="3" 
+                                      placeholder="질문 내용을 입력하세요" required maxlength="500"
+                                      th:text="${question.content}"></textarea>
+                            <div class="form-text">최대 500자까지 입력 가능합니다.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="category" class="form-label fw-bold">카테고리 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">카테고리를 선택하세요</option>
+                                <option th:each="cat : ${categories}" 
+                                        th:value="${cat.name}" 
+                                        th:text="${cat.displayName + ' - ' + cat.description}"
+                                        th:selected="${cat.name == question.category.name}"></option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label fw-bold">질문 설명</label>
+                            <textarea class="form-control" id="description" name="description" rows="2" 
+                                      placeholder="질문에 대한 부가 설명을 입력하세요 (선택사항)" maxlength="1000"
+                                      th:text="${question.description}"></textarea>
+                            <div class="form-text">최대 1000자까지 입력 가능합니다.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isActive" name="isActive" value="true"
+                                       th:checked="${question.isActive}">
+                                <label class="form-check-label fw-bold" for="isActive">
+                                    활성 상태
+                                </label>
+                                <div class="form-text">체크 해제 시 비활성 상태로 등록됩니다.</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa-solid fa-save"></i> 수정
+                            </button>
+                            <a href="/v1/admin/questions" class="btn btn-outline-secondary">
+                                <i class="fa-solid fa-times"></i> 취소
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

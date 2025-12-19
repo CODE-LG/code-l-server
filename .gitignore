@@ -3,7 +3,10 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
-gradle/
+src/main/resources/*.yml
+src/main/resources/*.json
+src/main/resources/data.sql
+/opt/
 
 ### STS ###
 .apt_generated
@@ -35,3 +38,5 @@ out/
 
 ### VS Code ###
 .vscode/
+.history/
+docs/

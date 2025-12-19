@@ -1,0 +1,199 @@
+name: CD - Deploy to Production Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, prod-runner]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Grant permission to gradlew
+        run: chmod +x ./gradlew
+
+      - name: Generate application.yml
+        run: |
+          mkdir -p src/main/resources
+          cat <<EOF > src/main/resources/application.yml
+          server:
+            port: ${SERVER_PORT:8080}
+          security:
+            jwt:
+              token:
+                expire-length: ${{ secrets.JWT_EXPIRE_LENGTH }}
+                secret-key: ${{ secrets.JWT_SECRET_KEY }}
+            admin:
+              password: ${{ secrets.ADMIN_PASSWORD }}
+          cloud:
+            aws:
+              region:
+                static: ap-northeast-2
+              s3:
+                bucket: code-l-bucket
+              credentials:
+                access-key: ${{ secrets.DEV_S3_ACCESS_KEY }}
+                secret-key: ${{ secrets.DEV_S3_SECRET_KEY }}
+          management:
+            endpoints:
+              web:
+                exposure:
+                  include: health, metrics, prometheus
+            metrics:
+              enable:
+                all: true
+                processor : false
+          spring:
+            datasource:
+              driver-class-name: com.mysql.cj.jdbc.Driver
+              url: ${{ secrets.PROD_RDS_URL }}
+              username: ${{ secrets.DEV_RDS_USER_NAME }}
+              password: ${{ secrets.DEV_RDS_USER_PASSWORD }}
+              hikari :
+                maximum-pool-size : 20
+                minimum-idle : 10
+                connection-timeout: 10000
+                max-lifetime: 180000
+
+            servlet:
+              multipart:
+                max-file-size: 20MB
+                max-request-size: 40MB
+
+            jpa:
+              open-in-view: false
+              hibernate:
+                ddl-auto: validate
+              show-sql: false
+              database-platform: org.hibernate.dialect.MySQL8Dialect
+              properties:
+                hibernate:
+                  format_sql: true
+                  use_sql_comments: true
+                  jdbc:
+                    time_zone: UTC
+            jackson:
+              time_zone: UTC
+
+          discord:
+            webhook:
+              url: ${{ secrets.PROD_DISCORD_WEBHOOK_URL }}
+
+          logging:
+            level:
+              root : INFO
+              org.springframework : INFO
+              org.hibernate.SQL: OFF
+              org.hibernate.jdbc.bind : OFF
+              # org.hibernate.type.descriptor.sql: trace
+              # org.springframework.web.socket: DEBUG
+              # org.springframework.messaging: DEBUG
+              # org.springframework.web.socket.messaging: DEBUG
+          # Flyway 설정 (MySQL 환경에서 활성화)
+
+          flyway:
+            enabled: true
+            baseline-on-migrate: true
+            # baseline-version 제거: Flyway가 자동으로 현재 상태를 baseline으로 설정
+            validate-on-migrate: true  # 스키마 검증 활성화
+            locations: classpath:db/migration
+            table: flyway_schema_history
+            clean-disabled: true  # 프로덕션에서는 반드시 true
+
+          springdoc:
+            override-with-generic-response: false
+          EOF
+
+      - name: Generate application.yml for test
+        run: |
+          mkdir -p src/test/resources
+          cat <<EOF > src/test/resources/application.yml
+          server:
+            port: ${SERVER_PORT:8080}
+
+          security:
+            jwt:
+              token:
+                expire-length: 3600000
+                secret-key: dummy-secret-key-should-be-long-enough-123456
+            admin:
+              password: dummy-admin-password
+
+          cloud:
+            aws:
+              region:
+                static: ap-northeast-2
+              s3:
+                bucket: dummy-code-l-bucket
+              credentials:
+                access-key: dummy-access-key
+                secret-key: dummy-secret-key
+
+          management:
+            endpoints:
+              web:
+                exposure:
+                  include: health, metrics, prometheus
+            metrics:
+              enable:
+                all: true
+
+          spring:
+            datasource:
+              driver-class-name: org.h2.Driver
+              url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+              username: sa
+              password:
+
+            jpa:
+              open-in-view: false
+              hibernate:
+                ddl-auto: create-drop
+              show-sql: true
+              database-platform: org.hibernate.dialect.H2Dialect
+
+          springdoc:
+            override-with-generic-response: false
+
+          logging:
+            level:
+              org.hibernate.SQL: debug
+              org.hibernate.type.descriptor.sql.BasicBinder: trace
+
+      - name: Restore firebase-adminsdk.json
+        run: |
+          echo "$FIREBASE_CONFIG_JSON" > ./src/main/resources/code-l-b109b-firebase-adminsdk-fbsvc-8c4eb2e6f2.json
+        env:
+          FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
+
+      - name: Build jar
+        run: ./gradlew clean build -x test
+
+      - name: Build Docker image
+        run: sudo docker build -t ${{ secrets.DOCKER_USERNAME }}/codel-app:prod .
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | sudo docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: Push image to Docker Hub
+        run: sudo docker push ${{ secrets.DOCKER_USERNAME }}/codel-app:prod
+
+      - name: Zero-downtime Blue-Green Deploy
+        run: |
+          echo "📦 이미지 정보: ${{ secrets.DOCKER_USERNAME }}/codel-app:prod"
+
+          echo "🔑 배포 스크립트 실행 권한 부여"
+          chmod +x ./scripts/blue-green-deploy.sh
+
+          echo "🚀 운영서버 무중단 배포 시작"
+          ./scripts/blue-green-deploy.sh ${{ secrets.DOCKER_USERNAME }}/codel-app:prod
