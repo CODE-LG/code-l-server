@@ -42,19 +42,23 @@ class PreVerificationStrategy(
         // 히든 이미지 등록 (기존 SignupService 로직 재활용)
         signupService.registerHiddenImages(member, images)
 
-        member.completeHiddenProfile()
-        memberJpaRepository.save(member)
+        // 재조회해서 영속 상태의 member 사용
+        val findMember = memberJpaRepository.findByMemberId(member.getIdOrThrow())
+            ?: throw MemberException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다.")
+
+        findMember.completeHiddenProfile()
+
         log.info {
-            "정상 가입 플로우 완료 - userId: ${member.getIdOrThrow()}, " +
-            "status: HIDDEN_COMPLETED"
+            "정상 가입 플로우 완료 - userId: ${findMember.getIdOrThrow()}, " +
+            "status: ${findMember.memberStatus}"
         }
 
         asyncNotificationService.sendAsync(
             notification =
                 Notification(
                     type = NotificationType.DISCORD,
-                    targetId = member.getIdOrThrow().toString(),
-                    title = "${member.getProfileOrThrow().getCodeNameOrThrow()}님이 심사를 요청하였습니다.",
+                    targetId = findMember.getIdOrThrow().toString(),
+                    title = "${findMember.getProfileOrThrow().getCodeNameOrThrow()}님이 심사를 요청하였습니다.",
                     body = "code:L 프로필 심사 요청이 왔습니다.",
                 ),
         )
