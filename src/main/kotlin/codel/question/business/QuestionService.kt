@@ -62,14 +62,26 @@ class QuestionService(
     
     /**
      * 질문을 사용된 것으로 표시
+     *
+     * @param isInitial true면 초기 질문(KPI 제외), false면 질문하기 버튼 클릭(KPI 집계 대상)
      */
     @Transactional
-    fun markQuestionAsUsed(chatRoomId: Long, question: Question, requestedBy: Member) {
+    fun markQuestionAsUsed(
+        chatRoomId: Long,
+        question: Question,
+        requestedBy: Member,
+        isInitial: Boolean = false
+    ) {
         val chatRoom = chatRoomJpaRepository.findById(chatRoomId).orElseThrow {
             IllegalArgumentException("채팅방을 찾을 수 없습니다.")
         }
-        
-        val chatRoomQuestion = ChatRoomQuestion.create(chatRoom, question, requestedBy)
+
+        val chatRoomQuestion = if (isInitial) {
+            ChatRoomQuestion.createInitial(chatRoom, question, requestedBy)
+        } else {
+            ChatRoomQuestion.create(chatRoom, question, requestedBy)
+        }
+
         chatRoomQuestionJpaRepository.save(chatRoomQuestion)
     }
 
