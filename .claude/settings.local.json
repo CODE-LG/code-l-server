@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git reset:*)",
+      "Bash(src/main/resources/templates/home.html )",
+      "Bash(src/main/resources/templates/kpi-dashboard.html )",
+      "Bash(src/main/resources/templates/memberList.html )",
+      "Bash(src/main/resources/templates/questionEditForm.html )",
+      "Bash(src/main/resources/templates/questionForm.html )",
+      "Bash(src/main/resources/templates/questionList.html )",
+      "Bash(src/main/resources/templates/reportDetail.html )",
+      "Bash(src/main/resources/templates/reportList.html )",
+      "Bash(src/main/resources/templates/verificationImageForm.html )",
+      "Bash(src/main/resources/templates/verificationImageList.html)",
+      "Bash(git checkout:*)",
+      "Bash(src/main/kotlin/codel/chat/domain/ChatRoomQuestion.kt )",
+      "Bash(src/main/kotlin/codel/chat/infrastructure/ChatRoomQuestionJpaRepository.kt )",
+      "Bash(src/main/kotlin/codel/kpi/business/KpiBatchService.kt )",
+      "Bash(src/main/kotlin/codel/question/business/QuestionService.kt)",
+      "Bash(GIT_SEQUENCE_EDITOR=: git rebase:*)",
+      "Bash(./gradlew clean build:*)"
+    ]
+  }
+}

@@ -3,8 +3,10 @@ package codel.kpi.batch
 import codel.common.util.DateTimeFormatter
 import codel.config.Loggable
 import codel.kpi.business.KpiBatchService
+import jakarta.annotation.PostConstruct
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import java.time.LocalDate
 
 /**
  * KPI 집계 스케줄러
@@ -15,6 +17,28 @@ import org.springframework.stereotype.Component
 class KpiScheduler(
     private val kpiBatchService: KpiBatchService
 ) : Loggable {
+
+    /**
+     * 애플리케이션 시작 시 최근 7일치 KPI 집계 실행 (테스트용)
+     */
+    @PostConstruct
+    fun aggregateRecentKpisOnStartup() {
+        log.info { "========== 애플리케이션 시작 시 KPI 초기 집계 시작 ==========" }
+
+        try {
+            val today = DateTimeFormatter.getToday("ko")
+            // 최근 7일치 KPI 집계
+            for (i in 1..7) {
+                val targetDate = today.minusDays(i.toLong())
+                log.info { "집계 대상 날짜 (KST): $targetDate" }
+                kpiBatchService.aggregateDailyKpi(targetDate)
+            }
+
+            log.info { "========== 애플리케이션 시작 시 KPI 초기 집계 완료 ==========" }
+        } catch (e: Exception) {
+            log.error(e) { "========== 애플리케이션 시작 시 KPI 초기 집계 실패 ==========" }
+        }
+    }
 
     /**
      * 매일 한국 시간 01:00에 전날 KPI 집계 실행

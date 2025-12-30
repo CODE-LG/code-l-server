@@ -1,5 +1,6 @@
 package codel.kpi.presentation
 
+import codel.kpi.business.KpiBatchService
 import codel.kpi.business.KpiService
 import codel.kpi.presentation.response.DailyKpiResponse
 import codel.kpi.presentation.response.KpiSummaryResponse
@@ -16,7 +17,8 @@ import java.time.LocalDate
 @RequestMapping("/v1/admin/kpi")
 @Tag(name = "KPI Dashboard", description = "KPI 대시보드 API")
 class KpiController(
-    private val kpiService: KpiService
+    private val kpiService: KpiService,
+    private val kpiBatchService: KpiBatchService
 ) {
 
     @GetMapping
@@ -55,5 +57,29 @@ class KpiController(
     fun getAllDailyKpis(): ResponseEntity<List<DailyKpiResponse>> {
         val kpis = kpiService.getAllDailyKpis()
         return ResponseEntity.ok(kpis)
+    }
+
+    @PostMapping("/aggregate")
+    @ResponseBody
+    @Operation(summary = "KPI 수동 집계", description = "특정 날짜의 KPI를 수동으로 집계합니다. 날짜를 지정하지 않으면 어제 날짜로 집계합니다.")
+    fun aggregateKpi(
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate?
+    ): ResponseEntity<Map<String, Any>> {
+        val targetDate = date ?: LocalDate.now().minusDays(1)
+
+        return try {
+            kpiBatchService.aggregateDailyKpi(targetDate)
+            ResponseEntity.ok(mapOf(
+                "success" to true,
+                "message" to "KPI 집계가 완료되었습니다.",
+                "date" to targetDate.toString()
+            ))
+        } catch (e: Exception) {
+            ResponseEntity.badRequest().body(mapOf(
+                "success" to false,
+                "message" to "KPI 집계 중 오류가 발생했습니다: ${e.message}",
+                "date" to targetDate.toString()
+            ))
+        }
     }
 }
