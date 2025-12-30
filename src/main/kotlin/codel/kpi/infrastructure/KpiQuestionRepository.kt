@@ -61,4 +61,18 @@ interface KpiQuestionRepository : JpaRepository<ChatRoomQuestion, Long> {
         @Param("start") start: LocalDateTime,
         @Param("end") end: LocalDateTime
     ): List<Long>
+
+    /**
+     * 특정 채팅방 목록 중 초기 질문이 아닌 질문을 사용한 채팅방 ID 목록
+     * (날짜 무관, 해당 채팅방에 질문이 있는지만 확인)
+     */
+    @Query("""
+        SELECT DISTINCT crq.chatRoom.id
+        FROM ChatRoomQuestion crq
+        WHERE crq.chatRoom.id IN :chatRoomIds
+        AND crq.isInitial = false
+    """)
+    fun findChatRoomIdsWithQuestionsFromList(
+        @Param("chatRoomIds") chatRoomIds: List<Long>
+    ): List<Long>
 }

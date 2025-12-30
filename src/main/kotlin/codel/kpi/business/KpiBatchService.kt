@@ -225,10 +225,17 @@ class KpiBatchService(
             return
         }
 
-        // 질문을 사용한 채팅방 ID 목록 조회
-        val questionUsedChatRoomIds = kpiQuestionRepository
-            .findDistinctChatRoomIdsByCreatedAtBetweenExcludingInitial(utcStart, utcEnd)
-            .toSet()
+        // 해당 날짜에 생성된 채팅방 ID 목록
+        val createdChatRoomIds = createdChatRooms.mapNotNull { it.id }
+
+        // 이 채팅방들 중에서 (언제든) 질문을 사용한 채팅방 ID 조회
+        val questionUsedChatRoomIds = if (createdChatRoomIds.isNotEmpty()) {
+            kpiQuestionRepository
+                .findChatRoomIdsWithQuestionsFromList(createdChatRoomIds)
+                .toSet()
+        } else {
+            emptySet<Long>()
+        }
 
         // 질문 사용 채팅방과 미사용 채팅방 분리
         val (questionUsedRooms, questionNotUsedRooms) = createdChatRooms.partition {
@@ -249,7 +256,9 @@ class KpiBatchService(
 
         log.debug {
             "질문 KPI: 사용 채팅방=${dailyKpi.questionUsedChatroomsCount}, " +
-            "클릭 수=${dailyKpi.questionClickCount}, " +
+            "클릭 수=${dailyKpi.questionClickCount} | " +
+            "비교 메트릭 - 전체=${createdChatRooms.size}, " +
+            "질문 사용=${questionUsedRooms.size}, 미사용=${questionNotUsedRooms.size} | " +
             "사용 평균메시지=${dailyKpi.questionUsedAvgMessageCount}, " +
             "미사용 평균메시지=${dailyKpi.questionNotUsedAvgMessageCount}"
         }
