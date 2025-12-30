@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KPI 대시보드 - CODE-L 관리자</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f5f5f5; 
+        }
+
+        /* 사이드바 */
+        .sidebar { 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            width: 250px; 
+            height: 100vh; 
+            background: #343a40; 
+            padding: 20px; 
+            overflow-y: auto; 
+            z-index: 1000;
+        }
+        .sidebar .brand { 
+            color: white; 
+            font-size: 20px; 
+            font-weight: bold; 
+            margin-bottom: 30px; 
+            display: block; 
+            text-decoration: none; 
+        }
+        .sidebar .nav-item { margin-bottom: 10px; }
+        .sidebar .nav-link { 
+            display: block; 
+            padding: 12px 15px; 
+            color: #fff; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            transition: all 0.3s; 
+        }
+        .sidebar .nav-link:hover { background: #495057; }
+        .sidebar .nav-link.active { background: #495057; font-weight: 600; }
+        .sidebar .nav-link i { margin-right: 10px; width: 20px; }
+
+        /* 메인 컨텐츠 */
+        .main-content { 
+            margin-left: 250px; 
+            padding: 30px; 
+        }
+        .container { 
+            max-width: 1600px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        h1 { 
+            color: #333; 
+            margin-bottom: 10px; 
+            font-size: 28px;
+        }
+        .page-subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* 0️⃣ 날짜 컨트롤 영역 */
+        .date-control-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            color: white;
+        }
+        .date-control-section h2 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            opacity: 0.95;
+        }
+        .date-control-form {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .date-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .date-input-group input {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+        .date-input-group span {
+            font-weight: 600;
+        }
+        .quick-date-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .quick-date-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .quick-date-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .quick-date-btn.active {
+            background: white;
+            color: #667eea;
+            font-weight: 600;
+        }
+        .apply-btn {
+            padding: 10px 30px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .apply-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* 섹션 타이틀 */
+        .section-title {
+            font-size: 20px;
+            color: #333;
+            margin: 40px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            font-weight: 600;
+        }
+
+        /* KPI 카드 공통 */
+        .kpi-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .kpi-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+        .kpi-card h3 {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+        .kpi-card .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .kpi-card .subtitle {
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* 차트 섹션 */
+        .chart-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        .chart-section h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chart-section h2 i {
+            color: #667eea;
+        }
+        .chart-container {
+            position: relative;
+            height: 350px;
+        }
+        .chart-container.small {
+            height: 280px;
+        }
+
+        /* 2. 시그널 KPI */
+        .kpi-card.signal-sent { border-left-color: #fa7c91; }
+        .kpi-card.signal-accepted { border-left-color: #4facfe; }
+        .kpi-card.signal-rate { border-left-color: #f093fb; }
+
+        /* 3. 채팅 KPI */
+        .kpi-card.chat { border-left-color: #667eea; }
+        .kpi-card.chat-metric { border-left-color: #43e97b; }
+
+        /* 채팅 퍼널 */
+        .chat-funnel {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .funnel-title {
+            text-align: center;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+        .funnel-step {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+        .funnel-step:last-child {
+            margin-bottom: 0;
+        }
+        .funnel-step .step-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 15px;
+        }
+        .funnel-step .step-value {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .funnel-step .step-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .funnel-step .step-percent {
+            font-size: 14px;
+            color: #666;
+        }
+        .funnel-arrow {
+            text-align: center;
+            color: #999;
+            font-size: 16px;
+            margin: 5px 0;
+            font-weight: 600;
+        }
+
+        /* 평균 메시지 수 비교 */
+        .message-comparison {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        .comparison-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .comparison-item:last-child {
+            margin-bottom: 0;
+        }
+        .comparison-label {
+            width: 220px;
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+        .comparison-bar-container {
+            flex: 1;
+            margin-right: 15px;
+        }
+        .comparison-bar {
+            height: 30px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .comparison-bar.question-used {
+            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+        }
+        .comparison-bar.question-not-used {
+            background: linear-gradient(90deg, #fa7c91 0%, #f5576c 100%);
+        }
+        .comparison-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            min-width: 60px;
+        }
+
+        /* 4. 질문추천 기능 KPI */
+        .kpi-card.question { border-left-color: #43e97b; }
+
+        .question-comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .question-comparison-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-top: 4px solid #43e97b;
+        }
+        .question-comparison-card.not-used {
+            border-top-color: #fa7c91;
+        }
+        .question-comparison-card h3 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .comparison-metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .comparison-metric:last-child {
+            border-bottom: none;
+        }
+        .metric-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .metric-value {
+            color: #333;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* 5. 코드해제 KPI */
+        .kpi-card.code { border-left-color: #f093fb; }
+
+        /* 6. 종료된 채팅방 KPI */
+        .kpi-card.closed { border-left-color: #ffc107; }
+
+        /* 7. 질문 콘텐츠 인사이트 */
+        .insight-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .insight-description {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #43e97b;
+        }
+        .insight-description p {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .insight-description p:last-child {
+            margin-bottom: 0;
+        }
+        .insight-description strong {
+            color: #333;
+        }
+
+        /* 질문 콘텐츠 그리드 */
+        .question-content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* 질문 인기 테이블 */
+        .question-rank-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .question-rank-table h3 {
+            background: #f8f9fa;
+            padding: 15px;
+            font-size: 16px;
+            color: #333;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .question-rank-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .question-rank-table th {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            color: #333;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .question-rank-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+            color: #333;
+        }
+        .question-rank-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        .rank-badge {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .rank-badge.top1 {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #333;
+        }
+        .rank-badge.top2 {
+            background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+            color: #333;
+        }
+        .rank-badge.top3 {
+            background: linear-gradient(135deg, #cd7f32 0%, #e6a055 100%);
+            color: white;
+        }
+        .rank-badge.other {
+            background: #f0f0f0;
+            color: #666;
+        }
+        .selection-count {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        /* 질문 카테고리 분포 */
+        .question-category-chart {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 20px;
+        }
+        .question-category-chart h3 {
+            font-size: 16px;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        /* 8. 날짜별 통합 KPI 테이블 */
+        .kpi-table-section {
+            margin-top: 40px;
+        }
+        .kpi-table-section h2 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .kpi-table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .kpi-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1400px;
+        }
+        .kpi-table thead {
+            background: #f8f9fa;
+        }
+        .kpi-table th {
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            color: #333;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
+        }
+        .kpi-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 13px;
+            color: #333;
+        }
+        .kpi-table tbody tr {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .kpi-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        .kpi-table tbody tr.highlighted {
+            background-color: #e7f3ff;
+        }
+        .kpi-table .date-cell {
+            font-weight: 600;
+            color: #667eea;
+        }
+        .kpi-table .positive {
+            color: #28a745;
+            font-weight: 600;
+        }
+        .kpi-table .negative {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        /* 반응형 */
+        @media (max-width: 1200px) {
+            .question-content-grid {
+                grid-template-columns: 1fr;
+            }
+            .question-comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .date-control-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .kpi-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- 사이드바 -->
+<nav class="sidebar">
+    <a href="/v1/admin/home" class="brand">
+        <i class="fa-solid fa-user-shield"></i> code:L 관리자
+    </a>
+    <ul style="list-style: none; padding: 0;">
+        <li class="nav-item">
+            <a class="nav-link" href="/v1/admin/home">
+                <i class="fa-solid fa-gauge"></i> 대시보드
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/v1/admin/members">
+                <i class="fa-solid fa-users"></i> 회원 관리
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/v1/admin/questions">
+                <i class="fa-solid fa-circle-question"></i> 질문 관리
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/v1/admin/reports">
+                <i class="fa-solid fa-flag"></i> 신고 관리
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="/v1/admin/kpi">
+                <i class="fa-solid fa-chart-line"></i> KPI 대시보드
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<!-- 메인 컨텐츠 -->
+<div class="main-content">
+    <div class="container">
+        <h1>📊 KPI 대시보드</h1>
+        <p class="page-subtitle">
+            • 모든 KPI는 날짜별 원본 데이터 기준<br>
+            • 기간 선택은 조회용 필터<br>
+            • 모든 카드·그래프·테이블은 기간 필터와 연동
+        </p>
+
+        <!-- 1. 상단 기간 컨트롤 -->
+        <div class="date-control-section">
+            <h2>📌 기간 선택</h2>
+            <div class="date-control-form">
+                <div class="date-input-group">
+                    <input type="date" id="startDate" value="2025-01-01">
+                    <span>~</span>
+                    <input type="date" id="endDate" value="2025-01-07">
+                </div>
+                <div class="quick-date-buttons">
+                    <button class="quick-date-btn" data-days="0">오늘</button>
+                    <button class="quick-date-btn active" data-days="7">최근 7일</button>
+                    <button class="quick-date-btn" data-days="30">최근 30일</button>
+                    <button class="quick-date-btn" data-days="custom">기간 선택</button>
+                </div>
+                <button class="apply-btn" onclick="applyDateFilter()">
+                    <i class="fa-solid fa-check"></i> 적용
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. 시그널 KPI -->
+        <h2 class="section-title">2️⃣ 시그널 KPI</h2>
+        
+        <div class="kpi-summary">
+            <div class="kpi-card signal-sent">
+                <h3>시그널 보낸 수</h3>
+                <div class="number" id="signalSentSum">2,920</div>
+                <div class="subtitle">선택 기간 합계</div>
+            </div>
+            <div class="kpi-card signal-accepted">
+                <h3>시그널 수락 수</h3>
+                <div class="number" id="signalAcceptedSum">960</div>
+                <div class="subtitle">선택 기간 합계</div>
+            </div>
+            <div class="kpi-card signal-rate">
+                <h3>시그널 수락률</h3>
+                <div class="number" id="signalAcceptanceRate">33%</div>
+                <div class="subtitle">수락 수 / 보낸 수</div>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <h2>
+                <i class="fa-solid fa-paper-plane"></i>
+                시그널 날짜별 추이
+            </h2>
+            <div class="chart-container">
+                <canvas id="signalChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 3. 채팅 KPI -->
+        <h2 class="section-title">3️⃣ ⭐ 채팅 KPI (핵심)</h2>
+        <p class="page-subtitle">
+            <strong>열린 채팅방:</strong> 종료되지 않은 모든 채팅방<br>
+            <strong>활성 채팅방:</strong> 종료되지 않고 최근 7일 내 메시지 활동이 있는 채팅방 (유령 채팅방 제외)
+        </p>
+        
+        <!-- 3-1. KPI 요약 -->
+        <div class="kpi-summary">
+            <div class="kpi-card chat">
+                <h3>열린 채팅방 수</h3>
+                <div class="number" id="openChatroomsSum">1,456</div>
+                <div class="subtitle">종료되지 않은 모든 채팅방</div>
+            </div>
+            <div class="kpi-card chat" style="border-left-color: #43e97b;">
+                <h3>활성 채팅방 수</h3>
+                <div class="number" id="activeChatroomsSum">892</div>
+                <div class="subtitle">최근 7일 내 활동 있는 채팅방</div>
+            </div>
+            <div class="kpi-card chat-metric">
+                <h3>FMR (첫메시지율)</h3>
+                <div class="number" id="avgFMR">62%</div>
+                <div class="subtitle">선택 기간 평균</div>
+            </div>
+            <div class="kpi-card chat-metric">
+                <h3>3턴 이상 대화 비율</h3>
+                <div class="number" id="avgThreeTurn">41%</div>
+                <div class="subtitle">선택 기간 평균</div>
+            </div>
+            <div class="kpi-card chat-metric">
+                <h3>CRR (24h 재방문)</h3>
+                <div class="number" id="avgCRR">39%</div>
+                <div class="subtitle">선택 기간 평균</div>
+            </div>
+        </div>
+
+        <!-- 3-2. 채팅 퍼널 -->
+        <div class="chat-funnel">
+            <div class="funnel-title">📊 채팅 퍼널 (선택 기간 요약 · 활성 채팅방 기준)</div>
+            <div class="funnel-step">
+                <div class="step-name">활성 채팅방</div>
+                <div class="step-value">
+                    <div class="step-number" id="funnelActiveChatrooms">892</div>
+                    <div class="step-percent">100%</div>
+                </div>
+            </div>
+            <div class="funnel-arrow">↓</div>
+            <div class="funnel-step">
+                <div class="step-name">첫 메시지 전송</div>
+                <div class="step-value">
+                    <div class="step-number" id="funnelFirstMessage">553</div>
+                    <div class="step-percent" id="funnelFirstMessagePercent">62%</div>
+                </div>
+            </div>
+            <div class="funnel-arrow">↓</div>
+            <div class="funnel-step">
+                <div class="step-name">3턴 이상 대화</div>
+                <div class="step-value">
+                    <div class="step-number" id="funnelThreeTurn">366</div>
+                    <div class="step-percent" id="funnelThreeTurnPercent">41%</div>
+                </div>
+            </div>
+            <div class="funnel-arrow">↓</div>
+            <div class="funnel-step">
+                <div class="step-name">24시간 내 재방문</div>
+                <div class="step-value">
+                    <div class="step-number" id="funnelRevisit">348</div>
+                    <div class="step-percent" id="funnelRevisitPercent">39%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3-2-1. 활성 채팅방 비율 표시 -->
+        <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3 style="font-size: 16px; color: #333; margin-bottom: 8px;">💡 채팅방 활성률</h3>
+                    <p style="font-size: 13px; color: #666;">전체 열린 채팅방 중 실제로 활동하는 비율</p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 32px; font-weight: bold; color: #43e97b;" id="chatActivityRate">61%</div>
+                    <div style="font-size: 13px; color: #999;">활성 채팅방 / 열린 채팅방</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3-3. 채팅 전환율 날짜별 추이 -->
+        <div class="chart-section">
+            <h2>
+                <i class="fa-solid fa-chart-line"></i>
+                열린 채팅방 vs 활성 채팅방 추이
+            </h2>
+            <div class="chart-container">
+                <canvas id="chatroomActivityChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 3-4. 채팅 전환율 날짜별 추이 -->
+        <div class="chart-section">
+            <h2>
+                <i class="fa-solid fa-comments"></i>
+                채팅 전환율 날짜별 추이
+            </h2>
+            <div class="chart-container">
+                <canvas id="chatConversionChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 3-5. 평균 메시지 수 -->
+        <div class="message-comparison">
+            <h2 style="font-size: 18px; color: #333; margin-bottom: 25px;">
+                <i class="fa-solid fa-chart-bar" style="color: #667eea;"></i>
+                평균 메시지 수
+            </h2>
+            <div class="comparison-item">
+                <div class="comparison-label">전체 채팅 평균</div>
+                <div class="comparison-bar-container">
+                    <div class="comparison-bar" style="width: 42%"></div>
+                </div>
+                <div class="comparison-value">4.2</div>
+            </div>
+            <div class="comparison-item">
+                <div class="comparison-label">질문추천 사용 채팅</div>
+                <div class="comparison-bar-container">
+                    <div class="comparison-bar question-used" style="width: 63%"></div>
+                </div>
+                <div class="comparison-value">6.3</div>
+            </div>
+            <div class="comparison-item">
+                <div class="comparison-label">질문추천 미사용 채팅</div>
+                <div class="comparison-bar-container">
+                    <div class="comparison-bar question-not-used" style="width: 31%"></div>
+                </div>
+                <div class="comparison-value">3.1</div>
+            </div>
+        </div>
+
+        <!-- 4. 질문추천 기능 KPI -->
+        <h2 class="section-title">4️⃣ 질문추천 기능 KPI (채팅방 내 기능)</h2>
+        <p class="page-subtitle">
+            질문 내용 자체는 측정하지 않음. 기능 사용 여부와 효과만 측정
+        </p>
+
+        <!-- 4-1. KPI 요약 -->
+        <div class="kpi-summary">
+            <div class="kpi-card question">
+                <h3>질문추천 버튼 클릭 수</h3>
+                <div class="number" id="questionClickSum">764</div>
+                <div class="subtitle">선택 기간 합계</div>
+            </div>
+            <div class="kpi-card question">
+                <h3>질문추천 사용 채팅방 수</h3>
+                <div class="number" id="questionUsedChatrooms">801</div>
+                <div class="subtitle">선택 기간 합계</div>
+            </div>
+        </div>
+
+        <!-- 4-2. 날짜별 질문추천 버튼 클릭 추이 -->
+        <div class="chart-section">
+            <h2>
+                <i class="fa-solid fa-hand-pointer"></i>
+                질문추천 버튼 클릭 날짜별 추이
+            </h2>
+            <div class="chart-container">
+                <canvas id="questionClickChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 4-3. 질문추천 사용 여부별 대화 성과 비교 -->
+        <h3 style="font-size: 18px; color: #333; margin: 30px 0 20px 0;">
+            질문추천 사용 여부별 대화 성과
+        </h3>
+        <div class="question-comparison-grid">
+            <div class="question-comparison-card">
+                <h3>✅ 질문추천 사용 채팅</h3>
+                <div class="comparison-metric">
+                    <div class="metric-label">평균 메시지 수</div>
+                    <div class="metric-value" id="questionUsedAvgMsg">6.3</div>
+                </div>
+                <div class="comparison-metric">
+                    <div class="metric-label">3턴 이상 대화 비율</div>
+                    <div class="metric-value" id="questionUsedThreeTurn">68%</div>
+                </div>
+                <div class="comparison-metric">
+                    <div class="metric-label">CRR (24h 재방문률)</div>
+                    <div class="metric-value" id="questionUsedCRR">46%</div>
+                </div>
+            </div>
+            <div class="question-comparison-card not-used">
+                <h3>❌ 질문추천 미사용 채팅</h3>
+                <div class="comparison-metric">
+                    <div class="metric-label">평균 메시지 수</div>
+                    <div class="metric-value" id="questionNotUsedAvgMsg">3.1</div>
+                </div>
+                <div class="comparison-metric">
+                    <div class="metric-label">3턴 이상 대화 비율</div>
+                    <div class="metric-value" id="questionNotUsedThreeTurn">29%</div>
+                </div>
+                <div class="comparison-metric">
+                    <div class="metric-label">CRR (24h 재방문률)</div>
+                    <div class="metric-value" id="questionNotUsedCRR">28%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. 코드해제 KPI -->
+        <h2 class="section-title">5️⃣ 코드해제 KPI</h2>
+
+        <div class="kpi-summary">
+            <div class="kpi-card code">
+                <h3>코드해제 요청 수</h3>
+                <div class="number" id="codeRequestSum">123</div>
+                <div class="subtitle">선택 기간 합계</div>
+            </div>
+            <div class="kpi-card code">
+                <h3>코드해제 승인 수</h3>
+                <div class="number" id="codeApprovedSum">27</div>
+                <div class="subtitle">선택 기간 합계</div>
+            </div>
+            <div class="kpi-card code">
+                <h3>코드해제 승인률</h3>
+                <div class="number" id="codeApprovalRate">22%</div>
+                <div class="subtitle">승인 수 / 요청 수</div>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <h2>
+                <i class="fa-solid fa-key"></i>
+                코드해제 날짜별 추이
+            </h2>
+            <div class="chart-container">
+                <canvas id="codeReleaseChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 6. 종료된 채팅방 KPI -->
+        <h2 class="section-title">6️⃣ 종료된 채팅방 KPI (보조)</h2>
+
+        <div class="kpi-summary">
+            <div class="kpi-card closed">
+                <h3>종료된 채팅방 수</h3>
+                <div class="number" id="closedChatroomsSum">84</div>
+                <div class="subtitle">선택 기간 합계</div>
+            </div>
+            <div class="kpi-card closed">
+                <h3>평균 채팅 유지 기간</h3>
+                <div class="number" id="avgChatDuration">12.4일</div>
+                <div class="subtitle">선택 기간 평균</div>
+            </div>
+        </div>
+
+        <!-- 7. 질문 콘텐츠 인사이트 -->
+        <h2 class="section-title">7️⃣ ⭐ 질문 콘텐츠 인사이트 (프로필 코드 질문)</h2>
+        
+        <div class="insight-section">
+            <div class="insight-description">
+                <p><strong>※ 질문추천 기능과 무관</strong></p>
+                <p>• 프로필 코드 질문 선택 횟수 기준</p>
+                <p>• 질문별 선택 순위 및 카테고리별 선택 비중</p>
+                <p>• 회원가입 시 / 프로필 수정 시 유저가 직접 선택한 질문 데이터</p>
+            </div>
+
+            <div class="question-content-grid">
+                <!-- 질문 인기 TOP 리스트 -->
+                <div class="question-rank-table">
+                    <h3>
+                        <i class="fa-solid fa-trophy"></i>
+                        인기 질문 TOP 10
+                    </h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">순위</th>
+                                <th>질문 내용</th>
+                                <th style="width: 100px; text-align: right;">선택 횟수</th>
+                            </tr>
+                        </thead>
+                        <tbody id="questionRankTableBody">
+                            <!-- JavaScript로 동적 생성 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 질문 카테고리 분포 -->
+                <div class="question-category-chart">
+                    <h3>
+                        <i class="fa-solid fa-chart-pie"></i>
+                        질문 카테고리 분포
+                    </h3>
+                    <div class="chart-container small">
+                        <canvas id="questionCategoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. 날짜별 통합 KPI 테이블 -->
+        <div class="kpi-table-section">
+            <h2>
+                <i class="fa-solid fa-table"></i>
+                날짜별 통합 KPI 로그 (원본 데이터)
+            </h2>
+            <div class="kpi-table-container">
+                <table class="kpi-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">날짜</th>
+                            <th colspan="2">시그널</th>
+                            <th colspan="5">채팅</th>
+                            <th rowspan="2">평균<br>메시지</th>
+                            <th rowspan="2">질문<br>클릭</th>
+                            <th colspan="2">코드해제</th>
+                            <th rowspan="2">종료<br>채팅</th>
+                        </tr>
+                        <tr>
+                            <th>보냄</th>
+                            <th>수락</th>
+                            <th>열린<br>채팅</th>
+                            <th>활성<br>채팅</th>
+                            <th>FMR</th>
+                            <th>3턴<br>이상</th>
+                            <th>CRR</th>
+                            <th>요청</th>
+                            <th>승인</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kpiTableBody">
+                        <!-- JavaScript로 동적 생성 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+    /*
+     * ========== API 연동 가이드 ==========
+     *
+     * 실제 KPI 데이터 조회 API:
+     * - GET /v1/admin/kpi/summary?startDate=2025-01-01&endDate=2025-01-07
+     * - GET /v1/admin/kpi/daily/{date}
+     * - GET /v1/admin/kpi/all
+     *
+     * 샘플 데이터 대신 위 API를 호출하여 실제 데이터를 사용하세요.
+     *
+     * Response 구조:
+     * {
+     *   periodStart: "2025-01-01",
+     *   periodEnd: "2025-01-07",
+     *   signalSentSum: 2920,
+     *   signalAcceptedSum: 960,
+     *   ...
+     *   dailyKpis: [ { targetDate: "2025-01-01", signalSentCount: 420, ... }, ... ]
+     * }
+     * ====================================
+     */
+
+    // 샘플 데이터 (개발용)
+    const sampleData = {
+        '2025-01-01': { signalSent: 420, signalAccepted: 138, openChatrooms: 210, activeChatrooms: 128, fmr: 63, threeTurn: 41, crr: 40, avgMessage: 4.3, questionClick: 112, codeRequest: 18, codeApproved: 4, closedChatrooms: 12 },
+        '2025-01-02': { signalSent: 398, signalAccepted: 120, openChatrooms: 198, activeChatrooms: 118, fmr: 61, threeTurn: 39, crr: 39, avgMessage: 4.1, questionClick: 98, codeRequest: 16, codeApproved: 3, closedChatrooms: 10 },
+        '2025-01-03': { signalSent: 445, signalAccepted: 152, openChatrooms: 225, activeChatrooms: 142, fmr: 64, threeTurn: 42, crr: 41, avgMessage: 4.5, questionClick: 128, codeRequest: 20, codeApproved: 5, closedChatrooms: 14 },
+        '2025-01-04': { signalSent: 412, signalAccepted: 135, openChatrooms: 205, activeChatrooms: 122, fmr: 62, threeTurn: 40, crr: 38, avgMessage: 4.2, questionClick: 108, codeRequest: 17, codeApproved: 4, closedChatrooms: 11 },
+        '2025-01-05': { signalSent: 428, signalAccepted: 145, openChatrooms: 215, activeChatrooms: 135, fmr: 63, threeTurn: 41, crr: 40, avgMessage: 4.4, questionClick: 118, codeRequest: 19, codeApproved: 4, closedChatrooms: 13 },
+        '2025-01-06': { signalSent: 402, signalAccepted: 128, openChatrooms: 195, activeChatrooms: 115, fmr: 60, threeTurn: 38, crr: 37, avgMessage: 4.0, questionClick: 95, codeRequest: 15, codeApproved: 3, closedChatrooms: 9 },
+        '2025-01-07': { signalSent: 415, signalAccepted: 142, openChatrooms: 208, activeChatrooms: 132, fmr: 62, threeTurn: 40, crr: 39, avgMessage: 4.2, questionClick: 105, codeRequest: 18, codeApproved: 4, closedChatrooms: 15 }
+    };
+
+    // 질문 콘텐츠 샘플 데이터
+    const questionRankData = [
+        { rank: 1, question: '사랑에 빠졌을 때 나오는 말·행동은?', count: 342, category: '데이트' },
+        { rank: 2, question: '가장 좋아하는 향은?', count: 318, category: 'favorite' },
+        { rank: 3, question: '관계에서 꼭 지켜졌으면 하는 나만의 기준선이 있다면?', count: 295, category: '가치관' },
+        { rank: 4, question: '사랑하는 연애 vs 사랑받는 연애', count: 276, category: '하나만' },
+        { rank: 5, question: '애인이 내 휴대폰을 본다면?', count: 258, category: '만약에' },
+        { rank: 6, question: '지금도 종종 떠오르는 말이나 행동은?', count: 241, category: '추억' },
+        { rank: 7, question: '내가 꼭 나눠보고싶은 대화 주제는 이거야', count: 229, category: '이런 대화 해보고 싶어' },
+        { rank: 8, question: '삶에서 가장 가치 있는 건?', count: 215, category: '가치관' },
+        { rank: 9, question: '데이트할 때 꼭 해보고 싶은 건?', count: 203, category: '데이트' },
+        { rank: 10, question: '최애 음식은?', count: 192, category: 'favorite' }
+    ];
+
+    // 카테고리별 집계
+    const categoryData = {
+        '가치관': 856,
+        'favorite': 743,
+        '만약에': 612,
+        '데이트': 689,
+        '추억': 524,
+        '하나만': 498,
+        '이런 대화 해보고 싶어': 412
+    };
+
+    let charts = {};
+
+    function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+    }
+
+    function getDateRange(start, end) {
+        const dates = [];
+        const current = new Date(start);
+        const endDate = new Date(end);
+        
+        while (current <= endDate) {
+            dates.push(current.toISOString().split('T')[0]);
+            current.setDate(current.getDate() + 1);
+        }
+        return dates;
+    }
+
+    // 빠른 날짜 버튼
+    document.querySelectorAll('.quick-date-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.quick-date-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const days = this.getAttribute('data-days');
+            const endDate = new Date('2025-01-07');
+            let startDate = new Date('2025-01-07');
+            
+            if (days === 'custom') {
+                return; // 사용자가 직접 날짜 선택
+            } else if (days === '0') {
+                startDate = endDate;
+            } else {
+                startDate.setDate(endDate.getDate() - parseInt(days) + 1);
+            }
+            
+            document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+            document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+        });
+    });
+
+    function applyDateFilter() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        updateDashboard(startDate, endDate);
+    }
+
+    function updateDashboard(startDate, endDate) {
+        const dateRange = getDateRange(startDate, endDate);
+        
+        // 데이터 집계
+        let totals = {
+            signalSent: 0, signalAccepted: 0, openChatrooms: 0, activeChatrooms: 0,
+            fmr: 0, threeTurn: 0, crr: 0, avgMessage: 0,
+            questionClick: 0, codeRequest: 0, codeApproved: 0,
+            closedChatrooms: 0, count: 0
+        };
+        
+        dateRange.forEach(date => {
+            if (sampleData[date]) {
+                Object.keys(totals).forEach(key => {
+                    if (key !== 'count') {
+                        totals[key] += sampleData[date][key] || 0;
+                    }
+                });
+                totals.count++;
+            }
+        });
+
+        // 2. 시그널 KPI
+        document.getElementById('signalSentSum').textContent = totals.signalSent.toLocaleString();
+        document.getElementById('signalAcceptedSum').textContent = totals.signalAccepted.toLocaleString();
+        document.getElementById('signalAcceptanceRate').textContent = 
+            Math.round((totals.signalAccepted / totals.signalSent) * 100) + '%';
+
+        // 3. 채팅 KPI
+        const avgFmr = Math.round(totals.fmr / totals.count);
+        const avgThreeTurn = Math.round(totals.threeTurn / totals.count);
+        const avgCrr = Math.round(totals.crr / totals.count);
+        
+        document.getElementById('openChatroomsSum').textContent = totals.openChatrooms.toLocaleString();
+        document.getElementById('activeChatroomsSum').textContent = totals.activeChatrooms.toLocaleString();
+        document.getElementById('avgFMR').textContent = avgFmr + '%';
+        document.getElementById('avgThreeTurn').textContent = avgThreeTurn + '%';
+        document.getElementById('avgCRR').textContent = avgCrr + '%';
+        
+        // 채팅방 활성률
+        const activityRate = Math.round((totals.activeChatrooms / totals.openChatrooms) * 100);
+        document.getElementById('chatActivityRate').textContent = activityRate + '%';
+        
+        // 퍼널 (활성 채팅방 기준)
+        const firstMessage = Math.round(totals.activeChatrooms * (avgFmr / 100));
+        const threeTurn = Math.round(totals.activeChatrooms * (avgThreeTurn / 100));
+        const revisit = Math.round(totals.activeChatrooms * (avgCrr / 100));
+        
+        document.getElementById('funnelActiveChatrooms').textContent = totals.activeChatrooms.toLocaleString();
+        document.getElementById('funnelFirstMessage').textContent = firstMessage.toLocaleString();
+        document.getElementById('funnelFirstMessagePercent').textContent = avgFmr + '%';
+        document.getElementById('funnelThreeTurn').textContent = threeTurn.toLocaleString();
+        document.getElementById('funnelThreeTurnPercent').textContent = avgThreeTurn + '%';
+        document.getElementById('funnelRevisit').textContent = revisit.toLocaleString();
+        document.getElementById('funnelRevisitPercent').textContent = avgCrr + '%';
+
+        // 4. 질문추천 기능 KPI
+        document.getElementById('questionClickSum').textContent = totals.questionClick.toLocaleString();
+        document.getElementById('questionUsedChatrooms').textContent = 
+            Math.round(totals.openChatrooms * 0.55).toLocaleString();
+
+        // 5. 코드해제 KPI
+        document.getElementById('codeRequestSum').textContent = totals.codeRequest;
+        document.getElementById('codeApprovedSum').textContent = totals.codeApproved;
+        document.getElementById('codeApprovalRate').textContent = 
+            Math.round((totals.codeApproved / totals.codeRequest) * 100) + '%';
+
+        // 6. 종료된 채팅방 KPI
+        document.getElementById('closedChatroomsSum').textContent = totals.closedChatrooms;
+        
+        updateCharts(dateRange);
+        updateTable(dateRange);
+        updateQuestionRankTable();
+        updateQuestionCategoryChart();
+    }
+
+    function updateCharts(dateRange) {
+        const labels = dateRange.map(formatDate);
+        
+        // 2. 시그널 차트
+        const signalData = {
+            labels: labels,
+            datasets: [
+                {
+                    label: '시그널 보낸 수',
+                    data: dateRange.map(date => sampleData[date]?.signalSent || 0),
+                    borderColor: '#fa7c91',
+                    backgroundColor: 'rgba(250, 124, 145, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: '시그널 수락 수',
+                    data: dateRange.map(date => sampleData[date]?.signalAccepted || 0),
+                    borderColor: '#4facfe',
+                    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        };
+        
+        if (charts.signalChart) {
+            charts.signalChart.data = signalData;
+            charts.signalChart.update();
+        } else {
+            charts.signalChart = new Chart(document.getElementById('signalChart'), {
+                type: 'line',
+                data: signalData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // 3-3. 열린 채팅방 vs 활성 채팅방 차트
+        const chatroomActivityData = {
+            labels: labels,
+            datasets: [
+                {
+                    label: '열린 채팅방',
+                    data: dateRange.map(date => sampleData[date]?.openChatrooms || 0),
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: '활성 채팅방 (최근 7일 내 활동)',
+                    data: dateRange.map(date => sampleData[date]?.activeChatrooms || 0),
+                    borderColor: '#43e97b',
+                    backgroundColor: 'rgba(67, 233, 123, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        };
+        
+        if (charts.chatroomActivityChart) {
+            charts.chatroomActivityChart.data = chatroomActivityData;
+            charts.chatroomActivityChart.update();
+        } else {
+            charts.chatroomActivityChart = new Chart(document.getElementById('chatroomActivityChart'), {
+                type: 'line',
+                data: chatroomActivityData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                afterBody: function(context) {
+                                    const index = context[0].dataIndex;
+                                    const date = dateRange[index];
+                                    const data = sampleData[date];
+                                    if (data) {
+                                        const activityRate = Math.round((data.activeChatrooms / data.openChatrooms) * 100);
+                                        return `활성률: ${activityRate}%`;
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // 3-4. 채팅 전환율 차트
+        const chatConversionData = {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'FMR (첫메시지율)',
+                    data: dateRange.map(date => sampleData[date]?.fmr || 0),
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: '3턴 이상 대화 비율',
+                    data: dateRange.map(date => sampleData[date]?.threeTurn || 0),
+                    borderColor: '#43e97b',
+                    backgroundColor: 'rgba(67, 233, 123, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'CRR (24h 재방문)',
+                    data: dateRange.map(date => sampleData[date]?.crr || 0),
+                    borderColor: '#764ba2',
+                    backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        };
+        
+        if (charts.chatConversionChart) {
+            charts.chatConversionChart.data = chatConversionData;
+            charts.chatConversionChart.update();
+        } else {
+            charts.chatConversionChart = new Chart(document.getElementById('chatConversionChart'), {
+                type: 'line',
+                data: chatConversionData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { callback: value => value + '%' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 4. 질문추천 클릭 차트
+        const questionData = {
+            labels: labels,
+            datasets: [{
+                label: '질문추천 버튼 클릭 수',
+                data: dateRange.map(date => sampleData[date]?.questionClick || 0),
+                backgroundColor: '#43e97b',
+                borderColor: '#43e97b',
+                borderWidth: 2
+            }]
+        };
+        
+        if (charts.questionClickChart) {
+            charts.questionClickChart.data = questionData;
+            charts.questionClickChart.update();
+        } else {
+            charts.questionClickChart = new Chart(document.getElementById('questionClickChart'), {
+                type: 'bar',
+                data: questionData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // 5. 코드해제 차트
+        const codeReleaseData = {
+            labels: labels,
+            datasets: [
+                {
+                    label: '코드해제 요청 수',
+                    data: dateRange.map(date => sampleData[date]?.codeRequest || 0),
+                    borderColor: '#f093fb',
+                    backgroundColor: 'rgba(240, 147, 251, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: '코드해제 승인 수',
+                    data: dateRange.map(date => sampleData[date]?.codeApproved || 0),
+                    borderColor: '#f5576c',
+                    backgroundColor: 'rgba(245, 87, 108, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        };
+        
+        if (charts.codeReleaseChart) {
+            charts.codeReleaseChart.data = codeReleaseData;
+            charts.codeReleaseChart.update();
+        } else {
+            charts.codeReleaseChart = new Chart(document.getElementById('codeReleaseChart'), {
+                type: 'line',
+                data: codeReleaseData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+    }
+
+    function updateTable(dateRange) {
+        const tbody = document.getElementById('kpiTableBody');
+        tbody.innerHTML = '';
+        
+        dateRange.reverse().forEach(date => {
+            const data = sampleData[date];
+            if (!data) return;
+            
+            const activityRate = Math.round((data.activeChatrooms / data.openChatrooms) * 100);
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="date-cell">${date}</td>
+                <td>${data.signalSent}</td>
+                <td>${data.signalAccepted}</td>
+                <td>${data.openChatrooms}</td>
+                <td class="${activityRate >= 60 ? 'positive' : 'negative'}">${data.activeChatrooms}</td>
+                <td class="${data.fmr >= 62 ? 'positive' : 'negative'}">${data.fmr}%</td>
+                <td class="${data.threeTurn >= 40 ? 'positive' : 'negative'}">${data.threeTurn}%</td>
+                <td class="${data.crr >= 39 ? 'positive' : 'negative'}">${data.crr}%</td>
+                <td>${data.avgMessage}</td>
+                <td>${data.questionClick}</td>
+                <td>${data.codeRequest}</td>
+                <td>${data.codeApproved}</td>
+                <td>${data.closedChatrooms}</td>
+            `;
+            
+            row.addEventListener('click', function() {
+                document.querySelectorAll('.kpi-table tbody tr').forEach(r => r.classList.remove('highlighted'));
+                this.classList.add('highlighted');
+            });
+            
+            tbody.appendChild(row);
+        });
+    }
+
+    function updateQuestionRankTable() {
+        const tbody = document.getElementById('questionRankTableBody');
+        tbody.innerHTML = '';
+        
+        questionRankData.forEach(item => {
+            const row = document.createElement('tr');
+            let rankBadgeClass = 'other';
+            if (item.rank === 1) rankBadgeClass = 'top1';
+            else if (item.rank === 2) rankBadgeClass = 'top2';
+            else if (item.rank === 3) rankBadgeClass = 'top3';
+            
+            row.innerHTML = `
+                <td><span class="rank-badge ${rankBadgeClass}">${item.rank}</span></td>
+                <td>${item.question}</td>
+                <td style="text-align: right;"><span class="selection-count">${item.count}</span></td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function updateQuestionCategoryChart() {
+        const categoryLabels = Object.keys(categoryData);
+        const categoryValues = Object.values(categoryData);
+        
+        const data = {
+            labels: categoryLabels,
+            datasets: [{
+                data: categoryValues,
+                backgroundColor: [
+                    '#667eea', // 가치관
+                    '#43e97b', // favorite
+                    '#fa7c91', // 만약에
+                    '#f093fb', // 데이트
+                    '#4facfe', // 추억
+                    '#ffc107', // 하나만
+                    '#764ba2'  // 이런 대화 해보고 싶어
+                ]
+            }]
+        };
+        
+        if (charts.questionCategoryChart) {
+            charts.questionCategoryChart.data = data;
+            charts.questionCategoryChart.update();
+        } else {
+            charts.questionCategoryChart = new Chart(document.getElementById('questionCategoryChart'), {
+                type: 'doughnut',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+    }
+
+    // 초기 로드
+    document.addEventListener('DOMContentLoaded', function() {
+        const endDate = new Date('2025-01-07');
+        const startDate = new Date('2025-01-01');
+        
+        document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+        document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+        
+        updateDashboard(startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]);
+    });
+</script>
+</body>
+</html>
