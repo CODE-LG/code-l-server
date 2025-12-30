@@ -990,69 +990,12 @@
 <!-- Chart.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 <script>
-    /*
-     * ========== API 연동 가이드 ==========
-     *
-     * 실제 KPI 데이터 조회 API:
-     * - GET /v1/admin/kpi/summary?startDate=2025-01-01&endDate=2025-01-07
-     * - GET /v1/admin/kpi/daily/{date}
-     * - GET /v1/admin/kpi/all
-     *
-     * 샘플 데이터 대신 위 API를 호출하여 실제 데이터를 사용하세요.
-     *
-     * Response 구조:
-     * {
-     *   periodStart: "2025-01-01",
-     *   periodEnd: "2025-01-07",
-     *   signalSentSum: 2920,
-     *   signalAcceptedSum: 960,
-     *   ...
-     *   dailyKpis: [ { targetDate: "2025-01-01", signalSentCount: 420, ... }, ... ]
-     * }
-     * ====================================
-     */
-
-    // 샘플 데이터 (개발용)
-    const sampleData = {
-        '2025-01-01': { signalSent: 420, signalAccepted: 138, openChatrooms: 210, activeChatrooms: 128, fmr: 63, threeTurn: 41, crr: 40, avgMessage: 4.3, questionClick: 112, codeRequest: 18, codeApproved: 4, closedChatrooms: 12 },
-        '2025-01-02': { signalSent: 398, signalAccepted: 120, openChatrooms: 198, activeChatrooms: 118, fmr: 61, threeTurn: 39, crr: 39, avgMessage: 4.1, questionClick: 98, codeRequest: 16, codeApproved: 3, closedChatrooms: 10 },
-        '2025-01-03': { signalSent: 445, signalAccepted: 152, openChatrooms: 225, activeChatrooms: 142, fmr: 64, threeTurn: 42, crr: 41, avgMessage: 4.5, questionClick: 128, codeRequest: 20, codeApproved: 5, closedChatrooms: 14 },
-        '2025-01-04': { signalSent: 412, signalAccepted: 135, openChatrooms: 205, activeChatrooms: 122, fmr: 62, threeTurn: 40, crr: 38, avgMessage: 4.2, questionClick: 108, codeRequest: 17, codeApproved: 4, closedChatrooms: 11 },
-        '2025-01-05': { signalSent: 428, signalAccepted: 145, openChatrooms: 215, activeChatrooms: 135, fmr: 63, threeTurn: 41, crr: 40, avgMessage: 4.4, questionClick: 118, codeRequest: 19, codeApproved: 4, closedChatrooms: 13 },
-        '2025-01-06': { signalSent: 402, signalAccepted: 128, openChatrooms: 195, activeChatrooms: 115, fmr: 60, threeTurn: 38, crr: 37, avgMessage: 4.0, questionClick: 95, codeRequest: 15, codeApproved: 3, closedChatrooms: 9 },
-        '2025-01-07': { signalSent: 415, signalAccepted: 142, openChatrooms: 208, activeChatrooms: 132, fmr: 62, threeTurn: 40, crr: 39, avgMessage: 4.2, questionClick: 105, codeRequest: 18, codeApproved: 4, closedChatrooms: 15 }
-    };
-
-    // 질문 콘텐츠 샘플 데이터
-    const questionRankData = [
-        { rank: 1, question: '사랑에 빠졌을 때 나오는 말·행동은?', count: 342, category: '데이트' },
-        { rank: 2, question: '가장 좋아하는 향은?', count: 318, category: 'favorite' },
-        { rank: 3, question: '관계에서 꼭 지켜졌으면 하는 나만의 기준선이 있다면?', count: 295, category: '가치관' },
-        { rank: 4, question: '사랑하는 연애 vs 사랑받는 연애', count: 276, category: '하나만' },
-        { rank: 5, question: '애인이 내 휴대폰을 본다면?', count: 258, category: '만약에' },
-        { rank: 6, question: '지금도 종종 떠오르는 말이나 행동은?', count: 241, category: '추억' },
-        { rank: 7, question: '내가 꼭 나눠보고싶은 대화 주제는 이거야', count: 229, category: '이런 대화 해보고 싶어' },
-        { rank: 8, question: '삶에서 가장 가치 있는 건?', count: 215, category: '가치관' },
-        { rank: 9, question: '데이트할 때 꼭 해보고 싶은 건?', count: 203, category: '데이트' },
-        { rank: 10, question: '최애 음식은?', count: 192, category: 'favorite' }
-    ];
-
-    // 카테고리별 집계
-    const categoryData = {
-        '가치관': 856,
-        'favorite': 743,
-        '만약에': 612,
-        '데이트': 689,
-        '추억': 524,
-        '하나만': 498,
-        '이런 대화 해보고 싶어': 412
-    };
-
     let charts = {};
+    let kpiData = null;
 
     function formatDate(dateStr) {
         const date = new Date(dateStr);
-        return `${date.getMonth() + 1}/${date.getDate()}`;
+        return (date.getMonth() + 1) + '/' + date.getDate();
     }
 
     function getDateRange(start, end) {
@@ -1074,21 +1017,36 @@
             this.classList.add('active');
             
             const days = this.getAttribute('data-days');
-            const endDate = new Date('2025-01-07');
-            let startDate = new Date('2025-01-07');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let startDate = new Date(today);
             
             if (days === 'custom') {
-                return; // 사용자가 직접 날짜 선택
+                return;
             } else if (days === '0') {
-                startDate = endDate;
+                startDate = today;
             } else {
-                startDate.setDate(endDate.getDate() - parseInt(days) + 1);
+                startDate.setDate(today.getDate() - parseInt(days) + 1);
             }
             
             document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
-            document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
         });
     });
+
+    async function fetchKpiData(startDate, endDate) {
+        try {
+            const response = await fetch('/v1/admin/kpi/summary?startDate=' + startDate + '&endDate=' + endDate);
+            if (!response.ok) {
+                throw new Error('KPI 데이터 조회 실패');
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching KPI data:', error);
+            alert('KPI 데이터를 불러오는데 실패했습니다.');
+            return null;
+        }
+    }
 
     function applyDateFilter() {
         const startDate = document.getElementById('startDate').value;
@@ -1096,403 +1054,215 @@
         updateDashboard(startDate, endDate);
     }
 
-    function updateDashboard(startDate, endDate) {
-        const dateRange = getDateRange(startDate, endDate);
-        
-        // 데이터 집계
-        let totals = {
-            signalSent: 0, signalAccepted: 0, openChatrooms: 0, activeChatrooms: 0,
-            fmr: 0, threeTurn: 0, crr: 0, avgMessage: 0,
-            questionClick: 0, codeRequest: 0, codeApproved: 0,
-            closedChatrooms: 0, count: 0
-        };
-        
-        dateRange.forEach(date => {
-            if (sampleData[date]) {
-                Object.keys(totals).forEach(key => {
-                    if (key !== 'count') {
-                        totals[key] += sampleData[date][key] || 0;
+    async function updateDashboard(startDate, endDate) {
+        kpiData = await fetchKpiData(startDate, endDate);
+        if (!kpiData) return;
+
+        // 2. 시그널 KPI
+        document.getElementById('signalSentSum').textContent = kpiData.signalSentSum.toLocaleString();
+        document.getElementById('signalAcceptedSum').textContent = kpiData.signalAcceptedSum.toLocaleString();
+        document.getElementById('signalAcceptanceRate').textContent = kpiData.signalAcceptanceRateAvg.toFixed(1) + '%';
+
+        // 3. 채팅 KPI
+        document.getElementById('openChatroomsSum').textContent = kpiData.openChatroomsSum.toLocaleString();
+        document.getElementById('activeChatroomsSum').textContent = kpiData.activeChatroomsSum.toLocaleString();
+        document.getElementById('avgFMR').textContent = kpiData.firstMessageRateAvg.toFixed(1) + '%';
+        document.getElementById('avgThreeTurn').textContent = kpiData.threeTurnRateAvg.toFixed(1) + '%';
+        document.getElementById('avgCRR').textContent = kpiData.chatReturnRateAvg.toFixed(1) + '%';
+        document.getElementById('chatActivityRate').textContent = kpiData.chatActivityRateAvg.toFixed(1) + '%';
+        document.getElementById('avgMessageCount').textContent = kpiData.avgMessageCountAvg.toFixed(1);
+
+        // 4. 질문 KPI
+        document.getElementById('questionClickSum').textContent = kpiData.questionClickSum.toLocaleString();
+        document.getElementById('questionUsedChatroomsSum').textContent = kpiData.questionUsedChatroomsSum.toLocaleString();
+
+        // 5. 코드해제 KPI
+        document.getElementById('codeUnlockRequestSum').textContent = kpiData.codeUnlockRequestSum.toLocaleString();
+        document.getElementById('codeUnlockApprovedSum').textContent = kpiData.codeUnlockApprovedSum.toLocaleString();
+        document.getElementById('codeUnlockApprovalRate').textContent = kpiData.codeUnlockApprovalRateAvg.toFixed(1) + '%';
+
+        // 6. 종료된 채팅 KPI
+        document.getElementById('closedChatroomsSum').textContent = kpiData.closedChatroomsSum.toLocaleString();
+        document.getElementById('avgChatDurationDays').textContent = kpiData.avgChatDurationDaysAvg.toFixed(1) + '일';
+
+        // 차트 업데이트
+        updateCharts();
+    }
+
+    function updateCharts() {
+        if (!kpiData || !kpiData.dailyKpis) return;
+
+        const dailyKpis = kpiData.dailyKpis;
+        const labels = dailyKpis.map(d => formatDate(d.targetDate));
+
+        // 시그널 차트
+        updateOrCreateChart('signalChart', {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '시그널 보냄',
+                        data: dailyKpis.map(d => d.signalSentCount),
+                        borderColor: '#6c63ff',
+                        backgroundColor: 'rgba(108, 99, 255, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: '시그널 수락',
+                        data: dailyKpis.map(d => d.signalAcceptedCount),
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4,
+                        fill: true
                     }
-                });
-                totals.count++;
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { beginAtZero: true } }
             }
         });
 
-        // 2. 시그널 KPI
-        document.getElementById('signalSentSum').textContent = totals.signalSent.toLocaleString();
-        document.getElementById('signalAcceptedSum').textContent = totals.signalAccepted.toLocaleString();
-        document.getElementById('signalAcceptanceRate').textContent = 
-            Math.round((totals.signalAccepted / totals.signalSent) * 100) + '%';
-
-        // 3. 채팅 KPI
-        const avgFmr = Math.round(totals.fmr / totals.count);
-        const avgThreeTurn = Math.round(totals.threeTurn / totals.count);
-        const avgCrr = Math.round(totals.crr / totals.count);
-        
-        document.getElementById('openChatroomsSum').textContent = totals.openChatrooms.toLocaleString();
-        document.getElementById('activeChatroomsSum').textContent = totals.activeChatrooms.toLocaleString();
-        document.getElementById('avgFMR').textContent = avgFmr + '%';
-        document.getElementById('avgThreeTurn').textContent = avgThreeTurn + '%';
-        document.getElementById('avgCRR').textContent = avgCrr + '%';
-        
-        // 채팅방 활성률
-        const activityRate = Math.round((totals.activeChatrooms / totals.openChatrooms) * 100);
-        document.getElementById('chatActivityRate').textContent = activityRate + '%';
-        
-        // 퍼널 (활성 채팅방 기준)
-        const firstMessage = Math.round(totals.activeChatrooms * (avgFmr / 100));
-        const threeTurn = Math.round(totals.activeChatrooms * (avgThreeTurn / 100));
-        const revisit = Math.round(totals.activeChatrooms * (avgCrr / 100));
-        
-        document.getElementById('funnelActiveChatrooms').textContent = totals.activeChatrooms.toLocaleString();
-        document.getElementById('funnelFirstMessage').textContent = firstMessage.toLocaleString();
-        document.getElementById('funnelFirstMessagePercent').textContent = avgFmr + '%';
-        document.getElementById('funnelThreeTurn').textContent = threeTurn.toLocaleString();
-        document.getElementById('funnelThreeTurnPercent').textContent = avgThreeTurn + '%';
-        document.getElementById('funnelRevisit').textContent = revisit.toLocaleString();
-        document.getElementById('funnelRevisitPercent').textContent = avgCrr + '%';
-
-        // 4. 질문추천 기능 KPI
-        document.getElementById('questionClickSum').textContent = totals.questionClick.toLocaleString();
-        document.getElementById('questionUsedChatrooms').textContent = 
-            Math.round(totals.openChatrooms * 0.55).toLocaleString();
-
-        // 5. 코드해제 KPI
-        document.getElementById('codeRequestSum').textContent = totals.codeRequest;
-        document.getElementById('codeApprovedSum').textContent = totals.codeApproved;
-        document.getElementById('codeApprovalRate').textContent = 
-            Math.round((totals.codeApproved / totals.codeRequest) * 100) + '%';
-
-        // 6. 종료된 채팅방 KPI
-        document.getElementById('closedChatroomsSum').textContent = totals.closedChatrooms;
-        
-        updateCharts(dateRange);
-        updateTable(dateRange);
-        updateQuestionRankTable();
-        updateQuestionCategoryChart();
-    }
-
-    function updateCharts(dateRange) {
-        const labels = dateRange.map(formatDate);
-        
-        // 2. 시그널 차트
-        const signalData = {
-            labels: labels,
-            datasets: [
-                {
-                    label: '시그널 보낸 수',
-                    data: dateRange.map(date => sampleData[date]?.signalSent || 0),
-                    borderColor: '#fa7c91',
-                    backgroundColor: 'rgba(250, 124, 145, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                },
-                {
-                    label: '시그널 수락 수',
-                    data: dateRange.map(date => sampleData[date]?.signalAccepted || 0),
-                    borderColor: '#4facfe',
-                    backgroundColor: 'rgba(79, 172, 254, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }
-            ]
-        };
-        
-        if (charts.signalChart) {
-            charts.signalChart.data = signalData;
-            charts.signalChart.update();
-        } else {
-            charts.signalChart = new Chart(document.getElementById('signalChart'), {
-                type: 'line',
-                data: signalData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'top' } },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        }
-
-        // 3-3. 열린 채팅방 vs 활성 채팅방 차트
-        const chatroomActivityData = {
-            labels: labels,
-            datasets: [
-                {
-                    label: '열린 채팅방',
-                    data: dateRange.map(date => sampleData[date]?.openChatrooms || 0),
-                    borderColor: '#667eea',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                },
-                {
-                    label: '활성 채팅방 (최근 7일 내 활동)',
-                    data: dateRange.map(date => sampleData[date]?.activeChatrooms || 0),
-                    borderColor: '#43e97b',
-                    backgroundColor: 'rgba(67, 233, 123, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }
-            ]
-        };
-        
-        if (charts.chatroomActivityChart) {
-            charts.chatroomActivityChart.data = chatroomActivityData;
-            charts.chatroomActivityChart.update();
-        } else {
-            charts.chatroomActivityChart = new Chart(document.getElementById('chatroomActivityChart'), {
-                type: 'line',
-                data: chatroomActivityData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { position: 'top' },
-                        tooltip: {
-                            callbacks: {
-                                afterBody: function(context) {
-                                    const index = context[0].dataIndex;
-                                    const date = dateRange[index];
-                                    const data = sampleData[date];
-                                    if (data) {
-                                        const activityRate = Math.round((data.activeChatrooms / data.openChatrooms) * 100);
-                                        return `활성률: ${activityRate}%`;
-                                    }
-                                    return '';
-                                }
-                            }
-                        }
+        // 채팅방 차트
+        updateOrCreateChart('chatroomChart', {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '열린 채팅방',
+                        data: dailyKpis.map(d => d.openChatroomsCount),
+                        backgroundColor: '#667eea',
+                        borderRadius: 8
                     },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        }
-
-        // 3-4. 채팅 전환율 차트
-        const chatConversionData = {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'FMR (첫메시지율)',
-                    data: dateRange.map(date => sampleData[date]?.fmr || 0),
-                    borderColor: '#667eea',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                },
-                {
-                    label: '3턴 이상 대화 비율',
-                    data: dateRange.map(date => sampleData[date]?.threeTurn || 0),
-                    borderColor: '#43e97b',
-                    backgroundColor: 'rgba(67, 233, 123, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                },
-                {
-                    label: 'CRR (24h 재방문)',
-                    data: dateRange.map(date => sampleData[date]?.crr || 0),
-                    borderColor: '#764ba2',
-                    backgroundColor: 'rgba(118, 75, 162, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }
-            ]
-        };
-        
-        if (charts.chatConversionChart) {
-            charts.chatConversionChart.data = chatConversionData;
-            charts.chatConversionChart.update();
-        } else {
-            charts.chatConversionChart = new Chart(document.getElementById('chatConversionChart'), {
-                type: 'line',
-                data: chatConversionData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'top' } },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: { callback: value => value + '%' }
-                        }
+                    {
+                        label: '활성 채팅방',
+                        data: dailyKpis.map(d => d.activeChatroomsCount),
+                        backgroundColor: '#764ba2',
+                        borderRadius: 8
                     }
-                }
-            });
-        }
-
-        // 4. 질문추천 클릭 차트
-        const questionData = {
-            labels: labels,
-            datasets: [{
-                label: '질문추천 버튼 클릭 수',
-                data: dateRange.map(date => sampleData[date]?.questionClick || 0),
-                backgroundColor: '#43e97b',
-                borderColor: '#43e97b',
-                borderWidth: 2
-            }]
-        };
-        
-        if (charts.questionClickChart) {
-            charts.questionClickChart.data = questionData;
-            charts.questionClickChart.update();
-        } else {
-            charts.questionClickChart = new Chart(document.getElementById('questionClickChart'), {
-                type: 'bar',
-                data: questionData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        }
-
-        // 5. 코드해제 차트
-        const codeReleaseData = {
-            labels: labels,
-            datasets: [
-                {
-                    label: '코드해제 요청 수',
-                    data: dateRange.map(date => sampleData[date]?.codeRequest || 0),
-                    borderColor: '#f093fb',
-                    backgroundColor: 'rgba(240, 147, 251, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                },
-                {
-                    label: '코드해제 승인 수',
-                    data: dateRange.map(date => sampleData[date]?.codeApproved || 0),
-                    borderColor: '#f5576c',
-                    backgroundColor: 'rgba(245, 87, 108, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }
-            ]
-        };
-        
-        if (charts.codeReleaseChart) {
-            charts.codeReleaseChart.data = codeReleaseData;
-            charts.codeReleaseChart.update();
-        } else {
-            charts.codeReleaseChart = new Chart(document.getElementById('codeReleaseChart'), {
-                type: 'line',
-                data: codeReleaseData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'top' } },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        }
-    }
-
-    function updateTable(dateRange) {
-        const tbody = document.getElementById('kpiTableBody');
-        tbody.innerHTML = '';
-        
-        dateRange.reverse().forEach(date => {
-            const data = sampleData[date];
-            if (!data) return;
-            
-            const activityRate = Math.round((data.activeChatrooms / data.openChatrooms) * 100);
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="date-cell">${date}</td>
-                <td>${data.signalSent}</td>
-                <td>${data.signalAccepted}</td>
-                <td>${data.openChatrooms}</td>
-                <td class="${activityRate >= 60 ? 'positive' : 'negative'}">${data.activeChatrooms}</td>
-                <td class="${data.fmr >= 62 ? 'positive' : 'negative'}">${data.fmr}%</td>
-                <td class="${data.threeTurn >= 40 ? 'positive' : 'negative'}">${data.threeTurn}%</td>
-                <td class="${data.crr >= 39 ? 'positive' : 'negative'}">${data.crr}%</td>
-                <td>${data.avgMessage}</td>
-                <td>${data.questionClick}</td>
-                <td>${data.codeRequest}</td>
-                <td>${data.codeApproved}</td>
-                <td>${data.closedChatrooms}</td>
-            `;
-            
-            row.addEventListener('click', function() {
-                document.querySelectorAll('.kpi-table tbody tr').forEach(r => r.classList.remove('highlighted'));
-                this.classList.add('highlighted');
-            });
-            
-            tbody.appendChild(row);
-        });
-    }
-
-    function updateQuestionRankTable() {
-        const tbody = document.getElementById('questionRankTableBody');
-        tbody.innerHTML = '';
-        
-        questionRankData.forEach(item => {
-            const row = document.createElement('tr');
-            let rankBadgeClass = 'other';
-            if (item.rank === 1) rankBadgeClass = 'top1';
-            else if (item.rank === 2) rankBadgeClass = 'top2';
-            else if (item.rank === 3) rankBadgeClass = 'top3';
-            
-            row.innerHTML = `
-                <td><span class="rank-badge ${rankBadgeClass}">${item.rank}</span></td>
-                <td>${item.question}</td>
-                <td style="text-align: right;"><span class="selection-count">${item.count}</span></td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
-
-    function updateQuestionCategoryChart() {
-        const categoryLabels = Object.keys(categoryData);
-        const categoryValues = Object.values(categoryData);
-        
-        const data = {
-            labels: categoryLabels,
-            datasets: [{
-                data: categoryValues,
-                backgroundColor: [
-                    '#667eea', // 가치관
-                    '#43e97b', // favorite
-                    '#fa7c91', // 만약에
-                    '#f093fb', // 데이트
-                    '#4facfe', // 추억
-                    '#ffc107', // 하나만
-                    '#764ba2'  // 이런 대화 해보고 싶어
                 ]
-            }]
-        };
-        
-        if (charts.questionCategoryChart) {
-            charts.questionCategoryChart.data = data;
-            charts.questionCategoryChart.update();
-        } else {
-            charts.questionCategoryChart = new Chart(document.getElementById('questionCategoryChart'), {
-                type: 'doughnut',
-                data: data,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom' }
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // 채팅 비율 차트
+        updateOrCreateChart('chatRateChart', {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'FMR (%)',
+                        data: dailyKpis.map(d => d.firstMessageRate),
+                        borderColor: '#f093fb',
+                        tension: 0.4
+                    },
+                    {
+                        label: '3턴 비율 (%)',
+                        data: dailyKpis.map(d => d.threeTurnRate),
+                        borderColor: '#4facfe',
+                        tension: 0.4
+                    },
+                    {
+                        label: 'CRR (%)',
+                        data: dailyKpis.map(d => d.chatReturnRate),
+                        borderColor: '#43e97b',
+                        tension: 0.4
                     }
-                }
-            });
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { beginAtZero: true, max: 100 } }
+            }
+        });
+
+        // 질문 차트
+        updateOrCreateChart('questionChart', {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '질문 클릭 수',
+                    data: dailyKpis.map(d => d.questionClickCount),
+                    backgroundColor: '#f5576c',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // 코드해제 차트
+        updateOrCreateChart('codeUnlockChart', {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '요청',
+                        data: dailyKpis.map(d => d.codeUnlockRequestCount),
+                        borderColor: '#ffc107',
+                        tension: 0.4
+                    },
+                    {
+                        label: '승인',
+                        data: dailyKpis.map(d => d.codeUnlockApprovedCount),
+                        borderColor: '#28a745',
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    function updateOrCreateChart(canvasId, config) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+
+        if (charts[canvasId]) {
+            charts[canvasId].destroy();
         }
+        charts[canvasId] = new Chart(ctx, config);
     }
 
     // 초기 로드
     document.addEventListener('DOMContentLoaded', function() {
-        const endDate = new Date('2025-01-07');
-        const startDate = new Date('2025-01-01');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 6);
         
-        document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
-        document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+        document.getElementById('startDate').value = sevenDaysAgo.toISOString().split('T')[0];
+        document.getElementById('endDate').value = today.toISOString().split('T')[0];
         
-        updateDashboard(startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]);
+        // 7일 버튼 활성화
+        const sevenDayBtn = document.querySelector('[data-days="7"]');
+        if (sevenDayBtn) sevenDayBtn.classList.add('active');
+        
+        updateDashboard(sevenDaysAgo.toISOString().split('T')[0], today.toISOString().split('T')[0]);
     });
 </script>
 </body>
