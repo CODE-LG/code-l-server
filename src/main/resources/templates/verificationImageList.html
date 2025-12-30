@@ -23,45 +23,7 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <nav class="col-md-2 d-none d-md-block sidebar py-4">
-            <div class="position-sticky">
-                <a class="navbar-brand text-white mb-4 d-block fs-4" href="/v1/admin/home">
-                    <i class="fa-solid fa-user-shield"></i> code:L 관리자
-                </a>
-                <ul class="nav flex-column">
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="/v1/admin/home">
-                            <i class="fa-solid fa-gauge"></i> 대시보드
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="/v1/admin/members">
-                            <i class="fa-solid fa-users"></i> 회원 관리
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="/v1/admin/questions">
-                            <i class="fa-solid fa-circle-question"></i> 질문 관리
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="/v1/admin/reports">
-                            <i class="fa-solid fa-flag"></i> 신고 관리
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link active" href="/v1/admin/verification-images">
-                            <i class="fa-solid fa-image"></i> 표준 인증 이미지 관리
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="/v1/admin/kpi">
-                            <i class="fa-solid fa-chart-bar"></i> KPI 대시보드
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </nav>
+        <div th:replace="~{fragments/sidebar :: sidebar('verification-images')}"></div>
 
         <!-- Main -->
         <main class="col-md-10 ms-sm-auto px-md-5 py-5">
