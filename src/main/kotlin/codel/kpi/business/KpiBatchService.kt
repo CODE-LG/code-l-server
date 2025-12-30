@@ -217,11 +217,95 @@ class KpiBatchService(
         dailyKpi.questionClickCount = kpiQuestionRepository
             .countQuestionClicksByCreatedAtBetweenExcludingInitial(utcStart, utcEnd)
 
+        // 해당 날짜에 생성된 채팅방 조회하여 질문 사용 여부별 성과 비교
+        val createdChatRooms = kpiChatRepository.findByCreatedAtBetween(utcStart, utcEnd)
+
+        if (createdChatRooms.isEmpty()) {
+            log.debug { "질문 KPI: 생성된 채팅방 없음 - 비교 데이터 없음" }
+            return
+        }
+
+        // 질문을 사용한 채팅방 ID 목록 조회
+        val questionUsedChatRoomIds = kpiQuestionRepository
+            .findDistinctChatRoomIdsByCreatedAtBetweenExcludingInitial(utcStart, utcEnd)
+            .toSet()
+
+        // 질문 사용 채팅방과 미사용 채팅방 분리
+        val (questionUsedRooms, questionNotUsedRooms) = createdChatRooms.partition {
+            it.id in questionUsedChatRoomIds
+        }
+
+        // 질문 사용 채팅방 메트릭 계산
+        val usedMetrics = calculateChatMetrics(questionUsedRooms)
+        dailyKpi.questionUsedAvgMessageCount = usedMetrics.avgMessageCount
+        dailyKpi.questionUsedThreeTurnRate = usedMetrics.threeTurnRate
+        dailyKpi.questionUsedChatReturnRate = usedMetrics.chatReturnRate
+
+        // 질문 미사용 채팅방 메트릭 계산
+        val notUsedMetrics = calculateChatMetrics(questionNotUsedRooms)
+        dailyKpi.questionNotUsedAvgMessageCount = notUsedMetrics.avgMessageCount
+        dailyKpi.questionNotUsedThreeTurnRate = notUsedMetrics.threeTurnRate
+        dailyKpi.questionNotUsedChatReturnRate = notUsedMetrics.chatReturnRate
+
         log.debug {
             "질문 KPI: 사용 채팅방=${dailyKpi.questionUsedChatroomsCount}, " +
-            "클릭 수=${dailyKpi.questionClickCount}"
+            "클릭 수=${dailyKpi.questionClickCount}, " +
+            "사용 평균메시지=${dailyKpi.questionUsedAvgMessageCount}, " +
+            "미사용 평균메시지=${dailyKpi.questionNotUsedAvgMessageCount}"
         }
     }
+
+    /**
+     * 채팅방 그룹의 메트릭 계산 (평균 메시지, 3턴 비율, CRR)
+     */
+    private fun calculateChatMetrics(chatRooms: List<ChatRoom>): ChatMetrics {
+        if (chatRooms.isEmpty()) {
+            return ChatMetrics(
+                avgMessageCount = BigDecimal.ZERO,
+                threeTurnRate = BigDecimal.ZERO,
+                chatReturnRate = BigDecimal.ZERO
+            )
+        }
+
+        var threeTurnCount = 0
+        var returnWithin24hCount = 0
+        var totalMessageCount = 0L
+
+        chatRooms.forEach { chatRoom ->
+            val messages = kpiChatMessageRepository.findByChatRoomOrderBySentAtAsc(chatRoom)
+
+            // 템플릿 메시지 6개 이후 실제 메시지가 있는지 확인
+            if (messages.size > 6) {
+                totalMessageCount += messages.size
+
+                if (hasThreeTurnOrMore(messages)) {
+                    threeTurnCount++
+                }
+
+                if (hasReturnWithin24Hours(messages)) {
+                    returnWithin24hCount++
+                }
+            }
+        }
+
+        val totalChatRooms = chatRooms.size
+        return ChatMetrics(
+            avgMessageCount = if (totalChatRooms > 0) {
+                BigDecimal(totalMessageCount).divide(BigDecimal(totalChatRooms), 2, RoundingMode.HALF_UP)
+            } else BigDecimal.ZERO,
+            threeTurnRate = calculateRate(threeTurnCount, totalChatRooms),
+            chatReturnRate = calculateRate(returnWithin24hCount, totalChatRooms)
+        )
+    }
+
+    /**
+     * 채팅 메트릭 데이터 클래스
+     */
+    private data class ChatMetrics(
+        val avgMessageCount: BigDecimal,
+        val threeTurnRate: BigDecimal,
+        val chatReturnRate: BigDecimal
+    )
 
     /**
      * 4. 코드해제 KPI 집계

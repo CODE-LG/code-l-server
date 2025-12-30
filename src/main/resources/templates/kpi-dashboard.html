@@ -768,23 +768,23 @@
             <div class="comparison-item">
                 <div class="comparison-label">전체 채팅 평균</div>
                 <div class="comparison-bar-container">
-                    <div class="comparison-bar" style="width: 42%"></div>
+                    <div class="comparison-bar" id="avgMsgBar" style="width: 42%"></div>
                 </div>
-                <div class="comparison-value">4.2</div>
+                <div class="comparison-value" id="avgMsgValue">4.2</div>
             </div>
             <div class="comparison-item">
                 <div class="comparison-label">질문추천 사용 채팅</div>
                 <div class="comparison-bar-container">
-                    <div class="comparison-bar question-used" style="width: 63%"></div>
+                    <div class="comparison-bar question-used" id="questionUsedMsgBar" style="width: 63%"></div>
                 </div>
-                <div class="comparison-value">6.3</div>
+                <div class="comparison-value" id="questionUsedMsgValue">6.3</div>
             </div>
             <div class="comparison-item">
                 <div class="comparison-label">질문추천 미사용 채팅</div>
                 <div class="comparison-bar-container">
-                    <div class="comparison-bar question-not-used" style="width: 31%"></div>
+                    <div class="comparison-bar question-not-used" id="questionNotUsedMsgBar" style="width: 31%"></div>
                 </div>
-                <div class="comparison-value">3.1</div>
+                <div class="comparison-value" id="questionNotUsedMsgValue">3.1</div>
             </div>
         </div>
 
@@ -803,7 +803,7 @@
             </div>
             <div class="kpi-card question">
                 <h3>질문추천 사용 채팅방 수</h3>
-                <div class="number" id="questionUsedChatrooms">801</div>
+                <div class="number" id="questionUsedChatroomsSum">801</div>
                 <div class="subtitle">선택 기간 합계</div>
             </div>
         </div>
@@ -862,17 +862,17 @@
         <div class="kpi-summary">
             <div class="kpi-card code">
                 <h3>코드해제 요청 수</h3>
-                <div class="number" id="codeRequestSum">123</div>
+                <div class="number" id="codeUnlockRequestSum">123</div>
                 <div class="subtitle">선택 기간 합계</div>
             </div>
             <div class="kpi-card code">
                 <h3>코드해제 승인 수</h3>
-                <div class="number" id="codeApprovedSum">27</div>
+                <div class="number" id="codeUnlockApprovedSum">27</div>
                 <div class="subtitle">선택 기간 합계</div>
             </div>
             <div class="kpi-card code">
                 <h3>코드해제 승인률</h3>
-                <div class="number" id="codeApprovalRate">22%</div>
+                <div class="number" id="codeUnlockApprovalRate">22%</div>
                 <div class="subtitle">승인 수 / 요청 수</div>
             </div>
         </div>
@@ -898,7 +898,7 @@
             </div>
             <div class="kpi-card closed">
                 <h3>평균 채팅 유지 기간</h3>
-                <div class="number" id="avgChatDuration">12.4일</div>
+                <div class="number" id="avgChatDurationDays">12.4일</div>
                 <div class="subtitle">선택 기간 평균</div>
             </div>
         </div>
@@ -1070,11 +1070,48 @@
         document.getElementById('avgThreeTurn').textContent = kpiData.threeTurnRateAvg.toFixed(1) + '%';
         document.getElementById('avgCRR').textContent = kpiData.chatReturnRateAvg.toFixed(1) + '%';
         document.getElementById('chatActivityRate').textContent = kpiData.chatActivityRateAvg.toFixed(1) + '%';
-        document.getElementById('avgMessageCount').textContent = kpiData.avgMessageCountAvg.toFixed(1);
+
+        // 3-2. 채팅 퍼널 데이터
+        const activeChatrooms = kpiData.activeChatroomsSum;
+        const firstMessageCount = Math.round(activeChatrooms * kpiData.firstMessageRateAvg / 100);
+        const threeTurnCount = Math.round(activeChatrooms * kpiData.threeTurnRateAvg / 100);
+        const revisitCount = Math.round(activeChatrooms * kpiData.chatReturnRateAvg / 100);
+
+        document.getElementById('funnelActiveChatrooms').textContent = activeChatrooms.toLocaleString();
+        document.getElementById('funnelFirstMessage').textContent = firstMessageCount.toLocaleString();
+        document.getElementById('funnelFirstMessagePercent').textContent = kpiData.firstMessageRateAvg.toFixed(0) + '%';
+        document.getElementById('funnelThreeTurn').textContent = threeTurnCount.toLocaleString();
+        document.getElementById('funnelThreeTurnPercent').textContent = kpiData.threeTurnRateAvg.toFixed(0) + '%';
+        document.getElementById('funnelRevisit').textContent = revisitCount.toLocaleString();
+        document.getElementById('funnelRevisitPercent').textContent = kpiData.chatReturnRateAvg.toFixed(0) + '%';
+
+        // 3-5. 평균 메시지 수 바 업데이트
+        const avgMsg = kpiData.avgMessageCountAvg;
+        const questionUsedMsg = kpiData.questionUsedAvgMessageCountAvg;
+        const questionNotUsedMsg = kpiData.questionNotUsedAvgMessageCountAvg;
+        const maxMsg = Math.max(avgMsg, questionUsedMsg, questionNotUsedMsg, 1);
+
+        document.getElementById('avgMsgValue').textContent = avgMsg.toFixed(1);
+        document.getElementById('avgMsgBar').style.width = ((avgMsg / maxMsg) * 100) + '%';
+
+        document.getElementById('questionUsedMsgValue').textContent = questionUsedMsg.toFixed(1);
+        document.getElementById('questionUsedMsgBar').style.width = ((questionUsedMsg / maxMsg) * 100) + '%';
+
+        document.getElementById('questionNotUsedMsgValue').textContent = questionNotUsedMsg.toFixed(1);
+        document.getElementById('questionNotUsedMsgBar').style.width = ((questionNotUsedMsg / maxMsg) * 100) + '%';
 
         // 4. 질문 KPI
         document.getElementById('questionClickSum').textContent = kpiData.questionClickSum.toLocaleString();
         document.getElementById('questionUsedChatroomsSum').textContent = kpiData.questionUsedChatroomsSum.toLocaleString();
+
+        // 4-3. 질문 사용 여부별 대화 성과 비교
+        document.getElementById('questionUsedAvgMsg').textContent = kpiData.questionUsedAvgMessageCountAvg.toFixed(1);
+        document.getElementById('questionUsedThreeTurn').textContent = kpiData.questionUsedThreeTurnRateAvg.toFixed(0) + '%';
+        document.getElementById('questionUsedCRR').textContent = kpiData.questionUsedChatReturnRateAvg.toFixed(0) + '%';
+
+        document.getElementById('questionNotUsedAvgMsg').textContent = kpiData.questionNotUsedAvgMessageCountAvg.toFixed(1);
+        document.getElementById('questionNotUsedThreeTurn').textContent = kpiData.questionNotUsedThreeTurnRateAvg.toFixed(0) + '%';
+        document.getElementById('questionNotUsedCRR').textContent = kpiData.questionNotUsedChatReturnRateAvg.toFixed(0) + '%';
 
         // 5. 코드해제 KPI
         document.getElementById('codeUnlockRequestSum').textContent = kpiData.codeUnlockRequestSum.toLocaleString();
@@ -1087,6 +1124,9 @@
 
         // 차트 업데이트
         updateCharts();
+
+        // KPI 테이블 업데이트
+        updateKpiTable();
     }
 
     function updateCharts() {
@@ -1127,8 +1167,8 @@
             }
         });
 
-        // 채팅방 차트
-        updateOrCreateChart('chatroomChart', {
+        // 채팅방 활동 차트
+        updateOrCreateChart('chatroomActivityChart', {
             type: 'bar',
             data: {
                 labels: labels,
@@ -1155,8 +1195,8 @@
             }
         });
 
-        // 채팅 비율 차트
-        updateOrCreateChart('chatRateChart', {
+        // 채팅 전환율 차트
+        updateOrCreateChart('chatConversionChart', {
             type: 'line',
             data: {
                 labels: labels,
@@ -1189,8 +1229,8 @@
             }
         });
 
-        // 질문 차트
-        updateOrCreateChart('questionChart', {
+        // 질문 클릭 차트
+        updateOrCreateChart('questionClickChart', {
             type: 'bar',
             data: {
                 labels: labels,
@@ -1210,7 +1250,7 @@
         });
 
         // 코드해제 차트
-        updateOrCreateChart('codeUnlockChart', {
+        updateOrCreateChart('codeReleaseChart', {
             type: 'line',
             data: {
                 labels: labels,
@@ -1248,6 +1288,93 @@
         charts[canvasId] = new Chart(ctx, config);
     }
 
+    // KPI 테이블 업데이트
+    function updateKpiTable() {
+        if (!kpiData || !kpiData.dailyKpis) return;
+
+        const tbody = document.getElementById('kpiTableBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+
+        kpiData.dailyKpis.forEach(daily => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="date-cell">${formatDate(daily.targetDate)}</td>
+                <td>${daily.signalSentCount}</td>
+                <td>${daily.signalAcceptedCount}</td>
+                <td>${daily.openChatroomsCount}</td>
+                <td>${daily.activeChatroomsCount}</td>
+                <td>${daily.firstMessageRate.toFixed(1)}%</td>
+                <td>${daily.threeTurnRate.toFixed(1)}%</td>
+                <td>${daily.chatReturnRate.toFixed(1)}%</td>
+                <td>${daily.avgMessageCount.toFixed(1)}</td>
+                <td>${daily.questionClickCount}</td>
+                <td>${daily.codeUnlockRequestCount}</td>
+                <td>${daily.codeUnlockApprovedCount}</td>
+                <td>${daily.closedChatroomsCount}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // 질문 콘텐츠 인사이트 로드
+    async function loadQuestionInsights() {
+        try {
+            const response = await fetch('/v1/admin/kpi/question-insights');
+            if (!response.ok) {
+                throw new Error('질문 인사이트 조회 실패');
+            }
+            const data = await response.json();
+
+            // TOP 10 질문 테이블 렌더링
+            const tbody = document.getElementById('questionRankTableBody');
+            if (tbody && data.topQuestions) {
+                tbody.innerHTML = '';
+                data.topQuestions.forEach((q, index) => {
+                    const rank = index + 1;
+                    const badgeClass = rank === 1 ? 'top1' : rank === 2 ? 'top2' : rank === 3 ? 'top3' : 'other';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><span class="rank-badge ${badgeClass}">${rank}</span></td>
+                        <td>${q.content}</td>
+                        <td class="selection-count" style="text-align: right;">${q.selectionCount}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            // 카테고리 분포 차트 렌더링
+            if (data.categoryStats && data.categoryStats.length > 0) {
+                const labels = data.categoryStats.map(c => c.category);
+                const counts = data.categoryStats.map(c => c.count);
+
+                updateOrCreateChart('questionCategoryChart', {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: counts,
+                            backgroundColor: [
+                                '#667eea', '#764ba2', '#f093fb', '#4facfe',
+                                '#43e97b', '#fa7c91', '#ffc107', '#28a745'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('질문 인사이트 로딩 실패:', error);
+        }
+    }
+
     // 초기 로드
     document.addEventListener('DOMContentLoaded', function() {
         const today = new Date();
@@ -1257,12 +1384,15 @@
         
         document.getElementById('startDate').value = sevenDaysAgo.toISOString().split('T')[0];
         document.getElementById('endDate').value = today.toISOString().split('T')[0];
-        
+
         // 7일 버튼 활성화
         const sevenDayBtn = document.querySelector('[data-days="7"]');
         if (sevenDayBtn) sevenDayBtn.classList.add('active');
-        
+
         updateDashboard(sevenDaysAgo.toISOString().split('T')[0], today.toISOString().split('T')[0]);
+
+        // 질문 인사이트 로드
+        loadQuestionInsights();
     });
 </script>
 </body>

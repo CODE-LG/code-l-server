@@ -4,6 +4,9 @@ import codel.config.Loggable
 import codel.kpi.infrastructure.DailyKpiJpaRepository
 import codel.kpi.presentation.response.DailyKpiResponse
 import codel.kpi.presentation.response.KpiSummaryResponse
+import codel.question.domain.QuestionCategory
+import codel.question.infrastructure.QuestionJpaRepository
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -16,7 +19,8 @@ import java.time.LocalDate
 @Service
 @Transactional(readOnly = true)
 class KpiService(
-    private val dailyKpiRepository: DailyKpiJpaRepository
+    private val dailyKpiRepository: DailyKpiJpaRepository,
+    private val questionRepository: QuestionJpaRepository
 ) : Loggable {
 
     /**
@@ -51,6 +55,12 @@ class KpiService(
                 avgMessageCountAvg = BigDecimal.ZERO,
                 questionClickSum = 0,
                 questionUsedChatroomsSum = 0,
+                questionUsedAvgMessageCountAvg = BigDecimal.ZERO,
+                questionNotUsedAvgMessageCountAvg = BigDecimal.ZERO,
+                questionUsedThreeTurnRateAvg = BigDecimal.ZERO,
+                questionNotUsedThreeTurnRateAvg = BigDecimal.ZERO,
+                questionUsedChatReturnRateAvg = BigDecimal.ZERO,
+                questionNotUsedChatReturnRateAvg = BigDecimal.ZERO,
                 codeUnlockRequestSum = 0,
                 codeUnlockApprovedSum = 0,
                 codeUnlockApprovalRateAvg = BigDecimal.ZERO,
@@ -80,6 +90,12 @@ class KpiService(
         val threeTurnRateAvg = calculateAverage(dailyKpis.map { it.threeTurnRate })
         val chatReturnRateAvg = calculateAverage(dailyKpis.map { it.chatReturnRate })
         val avgMessageCountAvg = calculateAverage(dailyKpis.map { it.avgMessageCount })
+        val questionUsedAvgMessageCountAvg = calculateAverage(dailyKpis.map { it.questionUsedAvgMessageCount })
+        val questionNotUsedAvgMessageCountAvg = calculateAverage(dailyKpis.map { it.questionNotUsedAvgMessageCount })
+        val questionUsedThreeTurnRateAvg = calculateAverage(dailyKpis.map { it.questionUsedThreeTurnRate })
+        val questionNotUsedThreeTurnRateAvg = calculateAverage(dailyKpis.map { it.questionNotUsedThreeTurnRate })
+        val questionUsedChatReturnRateAvg = calculateAverage(dailyKpis.map { it.questionUsedChatReturnRate })
+        val questionNotUsedChatReturnRateAvg = calculateAverage(dailyKpis.map { it.questionNotUsedChatReturnRate })
         val codeUnlockApprovalRateAvg = calculateAverage(dailyKpis.map { it.getCodeUnlockApprovalRate() })
         val avgChatDurationDaysAvg = calculateAverage(dailyKpis.map { it.avgChatDurationDays })
 
@@ -104,6 +120,12 @@ class KpiService(
             // 질문
             questionClickSum = questionClickSum,
             questionUsedChatroomsSum = questionUsedChatroomsSum,
+            questionUsedAvgMessageCountAvg = questionUsedAvgMessageCountAvg,
+            questionNotUsedAvgMessageCountAvg = questionNotUsedAvgMessageCountAvg,
+            questionUsedThreeTurnRateAvg = questionUsedThreeTurnRateAvg,
+            questionNotUsedThreeTurnRateAvg = questionNotUsedThreeTurnRateAvg,
+            questionUsedChatReturnRateAvg = questionUsedChatReturnRateAvg,
+            questionNotUsedChatReturnRateAvg = questionNotUsedChatReturnRateAvg,
 
             // 코드해제
             codeUnlockRequestSum = codeUnlockRequestSum,
@@ -136,5 +158,35 @@ class KpiService(
 
         val sum = values.fold(BigDecimal.ZERO) { acc, value -> acc.add(value) }
         return sum.divide(BigDecimal(values.size), 2, RoundingMode.HALF_UP)
+    }
+
+    /**
+     * 질문 콘텐츠 인사이트 조회 (프로필 대표 질문 통계)
+     */
+    fun getQuestionInsights(): Map<String, Any> {
+        // TOP 10 인기 질문
+        val topQuestions = questionRepository.findTopSelectedQuestions(PageRequest.of(0, 10))
+            .map { row ->
+                mapOf(
+                    "questionId" to row[0],
+                    "content" to row[1],
+                    "category" to row[2],
+                    "selectionCount" to row[3]
+                )
+            }
+
+        // 카테고리별 통계
+        val categoryStats = questionRepository.findQuestionCategoryStats()
+            .map { row ->
+                mapOf(
+                    "category" to (row[0] as QuestionCategory).name,
+                    "count" to row[1]
+                )
+            }
+
+        return mapOf(
+            "topQuestions" to topQuestions,
+            "categoryStats" to categoryStats
+        )
     }
 }

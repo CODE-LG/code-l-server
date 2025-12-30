@@ -82,4 +82,12 @@ class KpiController(
             ))
         }
     }
+
+    @GetMapping("/question-insights")
+    @ResponseBody
+    @Operation(summary = "질문 콘텐츠 인사이트 조회", description = "프로필 대표 질문 인기도 및 카테고리 통계를 조회합니다")
+    fun getQuestionInsights(): ResponseEntity<Map<String, Any>> {
+        val insights = kpiService.getQuestionInsights()
+        return ResponseEntity.ok(insights)
+    }
 }

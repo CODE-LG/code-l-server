@@ -33,7 +33,7 @@ interface QuestionJpaRepository : JpaRepository<Question, Long> {
     fun findUnusedQuestionsByChatRoom(@Param("chatRoomId") chatRoomId: Long): List<Question>
     
     @Query("""
-        SELECT q FROM Question q 
+        SELECT q FROM Question q
         WHERE (:keyword IS NULL OR :keyword = '' OR q.content LIKE CONCAT('%', :keyword, '%') OR q.description LIKE CONCAT('%', :keyword, '%'))
         AND (:category IS NULL OR q.category = :category)
         AND (:isActive IS NULL OR q.isActive = :isActive)
@@ -45,4 +45,30 @@ interface QuestionJpaRepository : JpaRepository<Question, Long> {
         @Param("isActive") isActive: Boolean?,
         pageable: Pageable
     ): Page<Question>
+
+    /**
+     * 프로필 대표 질문 통계 - 질문별 선택 횟수 (상위 N개)
+     */
+    @Query("""
+        SELECT q.id, q.content, q.category, COUNT(p) as selectionCount
+        FROM Profile p
+        JOIN p.representativeQuestion q
+        WHERE q IS NOT NULL
+        GROUP BY q.id, q.content, q.category
+        ORDER BY COUNT(p) DESC
+    """)
+    fun findTopSelectedQuestions(pageable: Pageable): List<Array<Any>>
+
+    /**
+     * 프로필 대표 질문 카테고리별 통계
+     */
+    @Query("""
+        SELECT q.category, COUNT(p) as count
+        FROM Profile p
+        JOIN p.representativeQuestion q
+        WHERE q IS NOT NULL
+        GROUP BY q.category
+        ORDER BY COUNT(p) DESC
+    """)
+    fun findQuestionCategoryStats(): List<Array<Any>>
 }

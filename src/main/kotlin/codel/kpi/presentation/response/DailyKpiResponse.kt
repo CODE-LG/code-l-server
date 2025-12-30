@@ -24,6 +24,12 @@ data class DailyKpiResponse(
     // 3. 질문추천 KPI
     val questionClickCount: Int,
     val questionUsedChatroomsCount: Int,
+    val questionUsedAvgMessageCount: BigDecimal,
+    val questionNotUsedAvgMessageCount: BigDecimal,
+    val questionUsedThreeTurnRate: BigDecimal,
+    val questionNotUsedThreeTurnRate: BigDecimal,
+    val questionUsedChatReturnRate: BigDecimal,
+    val questionNotUsedChatReturnRate: BigDecimal,
 
     // 4. 코드해제 KPI
     val codeUnlockRequestCount: Int,
@@ -56,6 +62,12 @@ data class DailyKpiResponse(
                 // 질문
                 questionClickCount = dailyKpi.questionClickCount,
                 questionUsedChatroomsCount = dailyKpi.questionUsedChatroomsCount,
+                questionUsedAvgMessageCount = dailyKpi.questionUsedAvgMessageCount,
+                questionNotUsedAvgMessageCount = dailyKpi.questionNotUsedAvgMessageCount,
+                questionUsedThreeTurnRate = dailyKpi.questionUsedThreeTurnRate,
+                questionNotUsedThreeTurnRate = dailyKpi.questionNotUsedThreeTurnRate,
+                questionUsedChatReturnRate = dailyKpi.questionUsedChatReturnRate,
+                questionNotUsedChatReturnRate = dailyKpi.questionNotUsedChatReturnRate,
 
                 // 코드해제
                 codeUnlockRequestCount = dailyKpi.codeUnlockRequestCount,

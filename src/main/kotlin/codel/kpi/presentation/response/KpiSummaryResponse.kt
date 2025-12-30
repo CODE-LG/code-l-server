@@ -23,9 +23,15 @@ data class KpiSummaryResponse(
     val chatReturnRateAvg: BigDecimal,
     val avgMessageCountAvg: BigDecimal,
 
-    // 질문 KPI (합계)
+    // 질문 KPI (합계 및 평균)
     val questionClickSum: Int,
     val questionUsedChatroomsSum: Int,
+    val questionUsedAvgMessageCountAvg: BigDecimal,
+    val questionNotUsedAvgMessageCountAvg: BigDecimal,
+    val questionUsedThreeTurnRateAvg: BigDecimal,
+    val questionNotUsedThreeTurnRateAvg: BigDecimal,
+    val questionUsedChatReturnRateAvg: BigDecimal,
+    val questionNotUsedChatReturnRateAvg: BigDecimal,
 
     // 코드해제 KPI (합계)
     val codeUnlockRequestSum: Int,

@@ -35,6 +35,12 @@ class DailyKpi(
     // 3. 질문추천 KPI
     var questionClickCount: Int = 0,
     var questionUsedChatroomsCount: Int = 0,
+    var questionUsedAvgMessageCount: BigDecimal = BigDecimal.ZERO,
+    var questionNotUsedAvgMessageCount: BigDecimal = BigDecimal.ZERO,
+    var questionUsedThreeTurnRate: BigDecimal = BigDecimal.ZERO,
+    var questionNotUsedThreeTurnRate: BigDecimal = BigDecimal.ZERO,
+    var questionUsedChatReturnRate: BigDecimal = BigDecimal.ZERO,
+    var questionNotUsedChatReturnRate: BigDecimal = BigDecimal.ZERO,
 
     // 4. 코드해제 KPI
     var codeUnlockRequestCount: Int = 0,
