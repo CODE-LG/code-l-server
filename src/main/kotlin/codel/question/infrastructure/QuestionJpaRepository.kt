@@ -1,5 +1,6 @@
 package codel.question.infrastructure
 
+import codel.chat.domain.ChatRoomQuestion
 import codel.question.domain.Question
 import codel.question.domain.QuestionCategory
 import org.springframework.data.domain.Page
@@ -47,28 +48,30 @@ interface QuestionJpaRepository : JpaRepository<Question, Long> {
     ): Page<Question>
 
     /**
-     * 프로필 대표 질문 통계 - 질문별 선택 횟수 (상위 N개)
+     * 채팅방 질문 통계 - 질문별 사용 횟수 (상위 N개)
+     * 초기 질문(isInitial=true) 제외, 질문하기 버튼 클릭으로 추가된 질문만 집계
      */
     @Query("""
-        SELECT q.id, q.content, q.category, COUNT(p) as selectionCount
-        FROM Profile p
-        JOIN p.representativeQuestion q
-        WHERE q IS NOT NULL
+        SELECT q.id, q.content, q.category, COUNT(crq) as selectionCount
+        FROM ChatRoomQuestion crq
+        JOIN crq.question q
+        WHERE crq.isInitial = false
         GROUP BY q.id, q.content, q.category
-        ORDER BY COUNT(p) DESC
+        ORDER BY COUNT(crq) DESC
     """)
     fun findTopSelectedQuestions(pageable: Pageable): List<Array<Any>>
 
     /**
-     * 프로필 대표 질문 카테고리별 통계
+     * 채팅방 질문 카테고리별 통계
+     * 초기 질문(isInitial=true) 제외, 질문하기 버튼 클릭으로 추가된 질문만 집계
      */
     @Query("""
-        SELECT q.category, COUNT(p) as count
-        FROM Profile p
-        JOIN p.representativeQuestion q
-        WHERE q IS NOT NULL
+        SELECT q.category, COUNT(crq) as count
+        FROM ChatRoomQuestion crq
+        JOIN crq.question q
+        WHERE crq.isInitial = false
         GROUP BY q.category
-        ORDER BY COUNT(p) DESC
+        ORDER BY COUNT(crq) DESC
     """)
     fun findQuestionCategoryStats(): List<Array<Any>>
 }

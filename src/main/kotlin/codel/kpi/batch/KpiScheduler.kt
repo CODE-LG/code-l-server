@@ -28,7 +28,7 @@ class KpiScheduler(
         try {
             val today = DateTimeFormatter.getToday("ko")
             // 최근 7일치 KPI 집계
-            for (i in 1..7) {
+            for (i in 1..60) {
                 val targetDate = today.minusDays(i.toLong())
                 log.info { "집계 대상 날짜 (KST): $targetDate" }
                 kpiBatchService.aggregateDailyKpi(targetDate)

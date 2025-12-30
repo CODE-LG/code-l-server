@@ -20,7 +20,9 @@
       "Bash(src/main/kotlin/codel/kpi/business/KpiBatchService.kt )",
       "Bash(src/main/kotlin/codel/question/business/QuestionService.kt)",
       "Bash(GIT_SEQUENCE_EDITOR=: git rebase:*)",
-      "Bash(./gradlew clean build:*)"
+      "Bash(./gradlew clean build:*)",
+      "Bash(mysql:*)",
+      "Bash(cat:*)"
     ]
   }
 }
