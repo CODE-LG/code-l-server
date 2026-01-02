@@ -175,19 +175,24 @@ class KpiService(
     /**
      * 질문 콘텐츠 인사이트 조회 (프로필 대표 질문 통계)
      */
-    fun getQuestionInsights(): Map<String, Any> {
-        // TOP 10 인기 질문
-        val topQuestions = questionRepository.findTopSelectedQuestions(PageRequest.of(0, 10))
-            .map { row ->
-                mapOf(
-                    "questionId" to row[0],
-                    "content" to row[1],
-                    "category" to row[2],
-                    "selectionCount" to row[3]
-                )
-            }
+    fun getQuestionInsights(startDate: LocalDate? = null, endDate: LocalDate? = null): Map<String, Any> {
+        // TOP 10 인기 질문 - 날짜 범위가 지정된 경우 해당 기간 데이터 사용
+        val topQuestions = if (startDate != null && endDate != null) {
+            val utcStart = codel.common.util.DateTimeFormatter.convertKstToUtc(startDate.atStartOfDay())
+            val utcEnd = codel.common.util.DateTimeFormatter.convertKstToUtc(endDate.atTime(java.time.LocalTime.MAX))
+            questionRepository.findTopSelectedQuestionsByDateRange(utcStart, utcEnd, PageRequest.of(0, 10))
+        } else {
+            questionRepository.findTopSelectedQuestions(PageRequest.of(0, 10))
+        }.map { row ->
+            mapOf(
+                "questionId" to row[0],
+                "content" to row[1],
+                "category" to row[2],
+                "selectionCount" to row[3]
+            )
+        }
 
-        // 카테고리별 통계
+        // 카테고리별 통계 - 전체 활성 질문 사용
         val categoryStats = questionRepository.findQuestionCategoryStats()
             .map { row ->
                 mapOf(

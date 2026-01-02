@@ -661,24 +661,14 @@
         <!-- 3-1. KPI 요약 -->
         <div class="kpi-summary">
             <div class="kpi-card chat">
-                <h3>전체 채팅방 수</h3>
-                <div class="number" id="totalChatrooms">0</div>
-                <div class="subtitle">모든 채팅방 (누적)</div>
-            </div>
-            <div class="kpi-card chat">
-                <h3>열린 채팅방 수</h3>
+                <h3>기간 내 열린 채팅방</h3>
                 <div class="number" id="openChatrooms">0</div>
-                <div class="subtitle">종료되지 않은 모든 채팅방</div>
-            </div>
-            <div class="kpi-card chat">
-                <h3>금일 열린 채팅방 수</h3>
-                <div class="number" id="todayOpenChatrooms">0</div>
-                <div class="subtitle">오늘 생성된 채팅방</div>
+                <div class="subtitle">선택 기간 동안 생성</div>
             </div>
             <div class="kpi-card chat" style="border-left-color: #43e97b;">
-                <h3>활성 채팅방 수</h3>
+                <h3>활성 채팅방 (기간)</h3>
                 <div class="number" id="activeChatrooms">0</div>
-                <div class="subtitle">최근 7일 내 활동 있는 채팅방</div>
+                <div class="subtitle">선택 기간 평균</div>
             </div>
             <div class="kpi-card chat-metric">
                 <h3>FMR (첫메시지율)</h3>
@@ -1086,36 +1076,24 @@
         kpiData = await fetchKpiData(startDate, endDate);
         if (!kpiData) return;
 
-        // 실시간 채팅방 통계 조회
-        const chatroomStats = await fetchChatroomStatistics();
-
         // 2. 시그널 KPI
         document.getElementById('signalSentSum').textContent = kpiData.signalSentSum.toLocaleString();
         document.getElementById('signalAcceptedSum').textContent = kpiData.signalAcceptedSum.toLocaleString();
         document.getElementById('signalAcceptanceRate').textContent = kpiData.signalAcceptanceRateAvg.toFixed(1) + '%';
 
-        // 3. 채팅 KPI - 실시간 통계
-        if (chatroomStats) {
-            document.getElementById('totalChatrooms').textContent = chatroomStats.totalChatrooms.toLocaleString();
-            document.getElementById('openChatrooms').textContent = chatroomStats.openChatrooms.toLocaleString();
-            document.getElementById('activeChatrooms').textContent = chatroomStats.activeChatrooms.toLocaleString();
-            document.getElementById('chatActivityRate').textContent = chatroomStats.activeChatroomRate.toFixed(1) + '%';
-        }
-
-        // 3. 채팅 KPI - 금일 열린 채팅방 수 (오늘 날짜의 DailyKpi에서 조회)
-        const today = new Date().toISOString().split('T')[0];
-        const todayKpi = kpiData.dailyKpis.find(d => d.targetDate === today);
-        if (todayKpi) {
-            document.getElementById('todayOpenChatrooms').textContent = todayKpi.openChatroomsCount.toLocaleString();
-        } else {
-            document.getElementById('todayOpenChatrooms').textContent = '0';
-        }
-
-        // 3. 채팅 KPI - 평균 지표
+        // 3. 채팅 KPI - 기간별 통계
+        document.getElementById('openChatrooms').textContent = kpiData.openChatroomsSum.toLocaleString();
+        document.getElementById('activeChatrooms').textContent = kpiData.activeChatroomsSum.toLocaleString();
         document.getElementById('avgFMR').textContent = kpiData.firstMessageRateAvg.toFixed(1) + '%';
         document.getElementById('avgThreeTurn').textContent = kpiData.threeTurnRateAvg.toFixed(1) + '%';
         document.getElementById('avgCRR').textContent = kpiData.chatReturnRateAvg.toFixed(1) + '%';
         document.getElementById('avgMessageCount').textContent = kpiData.avgMessageCountAvg.toFixed(1);
+
+        // 활성 채팅방 비율 계산 (기간 내)
+        const activityRate = kpiData.openChatroomsSum > 0
+            ? (kpiData.activeChatroomsSum / kpiData.openChatroomsSum * 100).toFixed(1)
+            : '0.0';
+        document.getElementById('chatActivityRate').textContent = activityRate + '%';
 
         // 3-2. 채팅 퍼널 데이터
         const activeChatrooms = kpiData.activeChatroomsSum;
@@ -1173,6 +1151,9 @@
 
         // KPI 테이블 업데이트
         updateKpiTable();
+
+        // 질문 인사이트 업데이트
+        await loadQuestionInsights(startDate, endDate);
     }
 
     function updateCharts() {
@@ -1365,9 +1346,12 @@
     }
 
     // 질문 콘텐츠 인사이트 로드
-    async function loadQuestionInsights() {
+    async function loadQuestionInsights(startDate, endDate) {
         try {
-            const response = await fetch('/v1/admin/kpi/question-insights');
+            const url = startDate && endDate
+                ? `/v1/admin/kpi/question-insights?startDate=${startDate}&endDate=${endDate}`
+                : '/v1/admin/kpi/question-insights';
+            const response = await fetch(url);
             if (!response.ok) {
                 throw new Error('질문 인사이트 조회 실패');
             }
@@ -1436,9 +1420,6 @@
         if (sevenDayBtn) sevenDayBtn.classList.add('active');
 
         updateDashboard(sevenDaysAgo.toISOString().split('T')[0], today.toISOString().split('T')[0]);
-
-        // 질문 인사이트 로드
-        loadQuestionInsights();
     });
 </script>
 </body>

@@ -62,6 +62,26 @@ interface QuestionJpaRepository : JpaRepository<Question, Long> {
     fun findTopSelectedQuestions(pageable: Pageable): List<Array<Any>>
 
     /**
+     * 채팅방 질문 통계 - 날짜 범위 기준 질문별 사용 횟수 (상위 N개)
+     * 특정 기간 동안 질문하기 버튼으로 추가된 질문만 집계
+     */
+    @Query("""
+        SELECT q.id, q.content, q.category, COUNT(crq) as selectionCount
+        FROM ChatRoomQuestion crq
+        JOIN crq.question q
+        WHERE crq.isInitial = false
+        AND crq.createdAt >= :startDate
+        AND crq.createdAt < :endDate
+        GROUP BY q.id, q.content, q.category
+        ORDER BY COUNT(crq) DESC
+    """)
+    fun findTopSelectedQuestionsByDateRange(
+        @Param("startDate") startDate: java.time.LocalDateTime,
+        @Param("endDate") endDate: java.time.LocalDateTime,
+        pageable: Pageable
+    ): List<Array<Any>>
+
+    /**
      * 활성화된 질문 카테고리별 분포
      * Question 테이블에 등록된 활성 질문들의 카테고리별 개수
      */

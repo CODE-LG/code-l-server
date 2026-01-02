@@ -23,7 +23,8 @@
       "Bash(./gradlew clean build:*)",
       "Bash(mysql:*)",
       "Bash(cat:*)",
-      "Bash(./gradlew bootRun)"
+      "Bash(./gradlew bootRun)",
+      "Bash(./gradlew build:*)"
     ]
   }
 }
