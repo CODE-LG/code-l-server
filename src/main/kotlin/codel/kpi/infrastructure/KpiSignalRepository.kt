@@ -24,7 +24,7 @@ interface KpiSignalRepository : JpaRepository<Signal, Long> {
     ): Int
 
     /**
-     * 특정 UTC 기간 승인된 시그널 개수
+     * 특정 UTC 기간 승인된 시그널 개수 (updatedAt 기준)
      */
     @Query("""
         SELECT COUNT(s) FROM Signal s
@@ -33,6 +33,21 @@ interface KpiSignalRepository : JpaRepository<Signal, Long> {
         AND s.updatedAt < :end
     """)
     fun countApprovedByUpdatedAtBetween(
+        @Param("start") start: LocalDateTime,
+        @Param("end") end: LocalDateTime
+    ): Int
+
+    /**
+     * 특정 UTC 기간 생성된 시그널 중 승인된 개수 (createdAt 기준)
+     * 시그널 수락률 계산용: 특정 날짜에 보낸 시그널 중 현재까지 승인된 개수
+     */
+    @Query("""
+        SELECT COUNT(s) FROM Signal s
+        WHERE s.createdAt >= :start
+        AND s.createdAt < :end
+        AND s.senderStatus = 'APPROVED'
+    """)
+    fun countApprovedByCreatedAtBetween(
         @Param("start") start: LocalDateTime,
         @Param("end") end: LocalDateTime
     ): Int

@@ -90,4 +90,12 @@ class KpiController(
         val insights = kpiService.getQuestionInsights()
         return ResponseEntity.ok(insights)
     }
+
+    @GetMapping("/chatroom-statistics")
+    @ResponseBody
+    @Operation(summary = "실시간 채팅방 통계 조회", description = "전체 채팅방, 열린 채팅방, 활성 채팅방 수 및 활성률을 조회합니다")
+    fun getChatroomStatistics(): ResponseEntity<Map<String, Any>> {
+        val statistics = kpiService.getChatroomStatistics()
+        return ResponseEntity.ok(statistics)
+    }
 }

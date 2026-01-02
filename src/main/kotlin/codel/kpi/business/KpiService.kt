@@ -20,7 +20,8 @@ import java.time.LocalDate
 @Transactional(readOnly = true)
 class KpiService(
     private val dailyKpiRepository: DailyKpiJpaRepository,
-    private val questionRepository: QuestionJpaRepository
+    private val questionRepository: QuestionJpaRepository,
+    private val kpiChatRepository: codel.kpi.infrastructure.KpiChatRepository
 ) : Loggable {
 
     /**
@@ -151,6 +152,17 @@ class KpiService(
     }
 
     /**
+     * 최근 N일간 KPI 조회
+     */
+    fun getRecentKpi(days: Int): List<DailyKpiResponse> {
+        val endDate = LocalDate.now()
+        val startDate = endDate.minusDays(days.toLong() - 1)
+        return dailyKpiRepository
+            .findByTargetDateBetweenOrderByTargetDateDesc(startDate, endDate)
+            .map { DailyKpiResponse.from(it) }
+    }
+
+    /**
      * BigDecimal 리스트의 평균 계산
      */
     private fun calculateAverage(values: List<BigDecimal>): BigDecimal {
@@ -187,6 +199,37 @@ class KpiService(
         return mapOf(
             "topQuestions" to topQuestions,
             "categoryStats" to categoryStats
+        )
+    }
+
+    /**
+     * 실시간 채팅방 통계 조회
+     */
+    fun getChatroomStatistics(): Map<String, Any> {
+        val now = java.time.LocalDateTime.now()
+
+        // 전체 채팅방 수
+        val totalChatrooms = kpiChatRepository.count().toInt()
+
+        // 열린 채팅방 수 (DISABLED가 아닌 것)
+        val openChatrooms = kpiChatRepository.countOpenChatroomsAsOfDate(now)
+
+        // 활성 채팅방 수 (최근 7일 내 활동)
+        val sevenDaysAgo = now.minusDays(7)
+        val activeChatrooms = kpiChatRepository.countActiveChatroomsAsOfDate(now, sevenDaysAgo)
+
+        // 활성 채팅방 비율 (활성 채팅방 / 열린 채팅방)
+        val activeChatroomRate = if (openChatrooms > 0) {
+            (activeChatrooms.toBigDecimal() / openChatrooms.toBigDecimal())
+                .multiply(BigDecimal(100))
+                .setScale(2, RoundingMode.HALF_UP)
+        } else BigDecimal.ZERO
+
+        return mapOf(
+            "totalChatrooms" to totalChatrooms,
+            "openChatrooms" to openChatrooms,
+            "activeChatrooms" to activeChatrooms,
+            "activeChatroomRate" to activeChatroomRate
         )
     }
 }

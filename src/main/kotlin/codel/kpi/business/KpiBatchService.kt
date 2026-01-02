@@ -75,8 +75,11 @@ class KpiBatchService(
         utcStart: LocalDateTime,
         utcEnd: LocalDateTime
     ) {
+        // 특정 날짜에 보낸 시그널 수
         dailyKpi.signalSentCount = kpiSignalRepository.countByCreatedAtBetween(utcStart, utcEnd)
-        dailyKpi.signalAcceptedCount = kpiSignalRepository.countApprovedByUpdatedAtBetween(utcStart, utcEnd)
+
+        // 특정 날짜에 보낸 시그널 중 현재까지 승인된 개수
+        dailyKpi.signalAcceptedCount = kpiSignalRepository.countApprovedByCreatedAtBetween(utcStart, utcEnd)
 
         log.debug {
             "시그널 KPI: 보낸 수=${dailyKpi.signalSentCount}, " +

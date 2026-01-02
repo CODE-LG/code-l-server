@@ -62,16 +62,15 @@ interface QuestionJpaRepository : JpaRepository<Question, Long> {
     fun findTopSelectedQuestions(pageable: Pageable): List<Array<Any>>
 
     /**
-     * 채팅방 질문 카테고리별 통계
-     * 초기 질문(isInitial=true) 제외, 질문하기 버튼 클릭으로 추가된 질문만 집계
+     * 활성화된 질문 카테고리별 분포
+     * Question 테이블에 등록된 활성 질문들의 카테고리별 개수
      */
     @Query("""
-        SELECT q.category, COUNT(crq) as count
-        FROM ChatRoomQuestion crq
-        JOIN crq.question q
-        WHERE crq.isInitial = false
+        SELECT q.category, COUNT(q) as count
+        FROM Question q
+        WHERE q.isActive = true
         GROUP BY q.category
-        ORDER BY COUNT(crq) DESC
+        ORDER BY COUNT(q) DESC
     """)
     fun findQuestionCategoryStats(): List<Array<Any>>
 }

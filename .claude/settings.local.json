@@ -22,7 +22,8 @@
       "Bash(GIT_SEQUENCE_EDITOR=: git rebase:*)",
       "Bash(./gradlew clean build:*)",
       "Bash(mysql:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(./gradlew bootRun)"
     ]
   }
 }
