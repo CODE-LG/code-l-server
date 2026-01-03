@@ -399,7 +399,7 @@ class ChatService(
                 type = NotificationType.MOBILE,
                 targetId = token,
                 title = "${requester.getProfileOrThrow().getCodeNameOrThrow()}님이 코드 해제를 요청했어요 🔐",
-                body = "상대방의 프로필을 확인해보세요!"
+                body = ""
             )
 
             // 비동기 알림 전송으로 변경
