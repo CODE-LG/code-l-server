@@ -78,8 +78,11 @@ class KpiService(
         val signalSentSum = dailyKpis.sumOf { it.signalSentCount }
         val signalAcceptedSum = dailyKpis.sumOf { it.signalAcceptedCount }
         val openChatroomsSum = dailyKpis.sumOf { it.openChatroomsCount }
-        val currentOpenChatroomsSum = dailyKpis.sumOf { it.currentOpenChatroomsCount }
-        val activeChatroomsSum = dailyKpis.sumOf { it.activeChatroomsCount }
+
+        // endDate 기준 스냅샷 값 (마지막 날짜의 값만 사용)
+        val currentOpenChatroomsSum = dailyKpis.lastOrNull()?.currentOpenChatroomsCount ?: 0
+        val activeChatroomsSum = dailyKpis.lastOrNull()?.activeChatroomsCount ?: 0
+
         val questionClickSum = dailyKpis.sumOf { it.questionClickCount }
         val questionUsedChatroomsSum = dailyKpis.sumOf { it.questionUsedChatroomsCount }
         val codeUnlockRequestSum = dailyKpis.sumOf { it.codeUnlockRequestCount }
