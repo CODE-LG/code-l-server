@@ -26,6 +26,7 @@ class DailyKpi(
 
     // 2. 채팅 KPI
     var openChatroomsCount: Int = 0,
+    var currentOpenChatroomsCount: Int = 0,
     var activeChatroomsCount: Int = 0,
     var firstMessageRate: BigDecimal = BigDecimal.ZERO,
     var threeTurnRate: BigDecimal = BigDecimal.ZERO,
@@ -74,11 +75,11 @@ class DailyKpi(
     }
 
     /**
-     * 채팅방 활성률 계산 (활성 채팅방 / 열린 채팅방)
+     * 채팅방 활성률 계산 (활성 채팅방 / 현재 열려있는 채팅방)
      */
     fun getChatActivityRate(): BigDecimal {
-        return if (openChatroomsCount > 0) {
-            (activeChatroomsCount.toBigDecimal() / openChatroomsCount.toBigDecimal())
+        return if (currentOpenChatroomsCount > 0) {
+            (activeChatroomsCount.toBigDecimal() / currentOpenChatroomsCount.toBigDecimal())
                 .multiply(BigDecimal(100))
                 .setScale(2, RoundingMode.HALF_UP)
         } else BigDecimal.ZERO

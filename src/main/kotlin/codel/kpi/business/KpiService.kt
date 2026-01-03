@@ -48,6 +48,7 @@ class KpiService(
                 signalAcceptedSum = 0,
                 signalAcceptanceRateAvg = BigDecimal.ZERO,
                 openChatroomsSum = 0,
+                currentOpenChatroomsSum = 0,
                 activeChatroomsSum = 0,
                 chatActivityRateAvg = BigDecimal.ZERO,
                 firstMessageRateAvg = BigDecimal.ZERO,
@@ -77,6 +78,7 @@ class KpiService(
         val signalSentSum = dailyKpis.sumOf { it.signalSentCount }
         val signalAcceptedSum = dailyKpis.sumOf { it.signalAcceptedCount }
         val openChatroomsSum = dailyKpis.sumOf { it.openChatroomsCount }
+        val currentOpenChatroomsSum = dailyKpis.sumOf { it.currentOpenChatroomsCount }
         val activeChatroomsSum = dailyKpis.sumOf { it.activeChatroomsCount }
         val questionClickSum = dailyKpis.sumOf { it.questionClickCount }
         val questionUsedChatroomsSum = dailyKpis.sumOf { it.questionUsedChatroomsCount }
@@ -111,6 +113,7 @@ class KpiService(
 
             // 채팅
             openChatroomsSum = openChatroomsSum,
+            currentOpenChatroomsSum = currentOpenChatroomsSum,
             activeChatroomsSum = activeChatroomsSum,
             chatActivityRateAvg = chatActivityRateAvg,
             firstMessageRateAvg = firstMessageRateAvg,

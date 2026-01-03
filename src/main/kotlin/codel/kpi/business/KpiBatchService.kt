@@ -104,11 +104,14 @@ class KpiBatchService(
         val kstEndOfDay = kstDate.atTime(LocalTime.MAX)
         val utcAsOfDate = DateTimeFormatter.convertKstToUtc(kstEndOfDay)
 
+        // 현재 열려있는 채팅방 수 (endDate 시점 기준)
+        dailyKpi.currentOpenChatroomsCount = kpiChatRepository.countOpenChatroomsAsOfDate(utcAsOfDate)
+
         // 7일 전 시점 (한국 기준)
         val kstSevenDaysAgo = kstDate.minusDays(7).atStartOfDay()
         val utcSevenDaysAgo = DateTimeFormatter.convertKstToUtc(kstSevenDaysAgo)
 
-        // 활성 채팅방 수 (최근 7일 내 활동, 한국 시간 기준)
+        // 활성 채팅방 수 (endDate 기준 최근 7일 내 updated_at, 중복 카운트 방지)
         dailyKpi.activeChatroomsCount = kpiChatRepository.countActiveChatroomsAsOfDate(
             utcAsOfDate,
             utcSevenDaysAgo

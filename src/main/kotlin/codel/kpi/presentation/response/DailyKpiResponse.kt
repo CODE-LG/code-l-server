@@ -14,6 +14,7 @@ data class DailyKpiResponse(
 
     // 2. 채팅 KPI
     val openChatroomsCount: Int,
+    val currentOpenChatroomsCount: Int,
     val activeChatroomsCount: Int,
     val chatActivityRate: BigDecimal,
     val firstMessageRate: BigDecimal,
@@ -52,6 +53,7 @@ data class DailyKpiResponse(
 
                 // 채팅
                 openChatroomsCount = dailyKpi.openChatroomsCount,
+                currentOpenChatroomsCount = dailyKpi.currentOpenChatroomsCount,
                 activeChatroomsCount = dailyKpi.activeChatroomsCount,
                 chatActivityRate = dailyKpi.getChatActivityRate(),
                 firstMessageRate = dailyKpi.firstMessageRate,

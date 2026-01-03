@@ -16,6 +16,7 @@ data class KpiSummaryResponse(
 
     // 채팅 KPI (합계 및 평균)
     val openChatroomsSum: Int,
+    val currentOpenChatroomsSum: Int,
     val activeChatroomsSum: Int,
     val chatActivityRateAvg: BigDecimal,
     val firstMessageRateAvg: BigDecimal,
