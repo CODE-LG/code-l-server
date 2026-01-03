@@ -9,6 +9,6 @@ import java.time.LocalDate
 @Repository
 interface DailyKpiJpaRepository : JpaRepository<DailyKpi, Long>, DailyKpiRepository {
     override fun findByTargetDate(targetDate: LocalDate): DailyKpi?
-    fun findByTargetDateBetweenOrderByTargetDateDesc(startDate: LocalDate, endDate: LocalDate): List<DailyKpi>
+    fun findByTargetDateBetweenOrderByTargetDateAsc(startDate: LocalDate, endDate: LocalDate): List<DailyKpi>
     override fun findByTargetDateBetween(startDate: LocalDate, endDate: LocalDate): List<DailyKpi>
 }

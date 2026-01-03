@@ -62,19 +62,15 @@ interface KpiChatRepository : JpaRepository<ChatRoom, Long> {
 
     /**
      * 특정 UTC 시점 기준 최근 7일 내 활동이 있는 활성 채팅방 수
+     * updated_at 기준으로 최근 활동 확인 (메시지 발송 시 자동 업데이트)
      */
     @Query(value = """
-        SELECT COUNT(DISTINCT cr.id)
+        SELECT COUNT(cr.id)
         FROM chat_room cr
         WHERE cr.status != 'DISABLED'
           AND cr.created_at < :asOfUtc
-          AND EXISTS (
-            SELECT 1
-            FROM chat c
-            WHERE c.chat_room_id = cr.id
-              AND c.sent_at >= :sevenDaysAgoUtc
-              AND c.sent_at < :asOfUtc
-          )
+          AND cr.updated_at >= :sevenDaysAgoUtc
+          AND cr.updated_at < :asOfUtc
     """, nativeQuery = true)
     fun countActiveChatroomsAsOfDate(
         @Param("asOfUtc") asOfUtc: LocalDateTime,

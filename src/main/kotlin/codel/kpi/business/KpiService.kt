@@ -38,7 +38,7 @@ class KpiService(
      */
     fun getKpiSummary(startDate: LocalDate, endDate: LocalDate): KpiSummaryResponse {
         val dailyKpis = dailyKpiRepository
-            .findByTargetDateBetweenOrderByTargetDateDesc(startDate, endDate)
+            .findByTargetDateBetweenOrderByTargetDateAsc(startDate, endDate)
 
         if (dailyKpis.isEmpty()) {
             return KpiSummaryResponse(
@@ -147,7 +147,7 @@ class KpiService(
      */
     fun getAllDailyKpis(): List<DailyKpiResponse> {
         return dailyKpiRepository.findAll()
-            .sortedByDescending { it.targetDate }
+            .sortedBy { it.targetDate }
             .map { DailyKpiResponse.from(it) }
     }
 
@@ -158,7 +158,7 @@ class KpiService(
         val endDate = LocalDate.now()
         val startDate = endDate.minusDays(days.toLong() - 1)
         return dailyKpiRepository
-            .findByTargetDateBetweenOrderByTargetDateDesc(startDate, endDate)
+            .findByTargetDateBetweenOrderByTargetDateAsc(startDate, endDate)
             .map { DailyKpiResponse.from(it) }
     }
 
