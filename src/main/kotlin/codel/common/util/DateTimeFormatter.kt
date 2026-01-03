@@ -1,8 +1,10 @@
 package codel.common.util
 
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatter as JavaDateTimeFormatter
 
 object DateTimeFormatter {
     // 지역별 시간대 매핑
@@ -14,9 +16,9 @@ object DateTimeFormatter {
 
     // 지역별 날짜 포맷터 매핑
     private val DATE_FORMATTER_MAP = mapOf(
-        "ko" to DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"),
-        "en" to DateTimeFormatter.ofPattern("MMM dd, yyyy"),
-        "ja" to DateTimeFormatter.ofPattern("yyyy年MM月dd日")
+        "ko" to JavaDateTimeFormatter.ofPattern("yyyy년 MM월 dd일"),
+        "en" to JavaDateTimeFormatter.ofPattern("MMM dd, yyyy"),
+        "ja" to JavaDateTimeFormatter.ofPattern("yyyy年MM月dd日")
     )
 
     /**
@@ -35,7 +37,7 @@ object DateTimeFormatter {
      * @param locale 지역 코드 (예: "ko", "en", "ja")
      * @return 해당 지역의 날짜 포맷터
      */
-    private fun getDateFormatter(locale: String): DateTimeFormatter {
+    private fun getDateFormatter(locale: String): JavaDateTimeFormatter {
         return DATE_FORMATTER_MAP[locale] ?: DATE_FORMATTER_MAP["ko"]!!
     }
 
@@ -103,5 +105,74 @@ object DateTimeFormatter {
         val convertedDate1 = convertUtcDateToLocale(date1, locale)
         val convertedDate2 = convertUtcDateToLocale(date2, locale)
         return convertedDate1 == convertedDate2
+    }
+
+    // ========== KPI 집계용 메서드 ==========
+
+    /**
+     * 한국 날짜를 UTC 시간 범위로 변환
+     *
+     * KPI 집계 시 DB에서 조회할 UTC 시간 범위를 계산
+     *
+     * 예시:
+     * - 입력: 2025-01-01 (KST 날짜)
+     * - 출력: 2024-12-31 15:00:00 (UTC) ~ 2025-01-01 14:59:59.999999999 (UTC)
+     *
+     * @param kstDate 한국 시간 기준 날짜
+     * @return UTC 시작 시간과 종료 시간의 Pair
+     */
+    fun getUtcRangeForKstDate(kstDate: LocalDate): Pair<LocalDateTime, LocalDateTime> {
+        val kstZone = ZoneId.of("Asia/Seoul")
+        val utcZone = ZoneId.of("UTC")
+
+        // 한국 날짜의 시작 (00:00:00 KST)
+        val kstStartOfDay = kstDate.atStartOfDay(kstZone)
+
+        // 한국 날짜의 종료 (23:59:59.999999999 KST)
+        val kstEndOfDay = kstDate.atTime(LocalTime.MAX).atZone(kstZone)
+
+        // UTC로 변환
+        val utcStart = kstStartOfDay.withZoneSameInstant(utcZone).toLocalDateTime()
+        val utcEnd = kstEndOfDay.withZoneSameInstant(utcZone).toLocalDateTime()
+
+        return Pair(utcStart, utcEnd)
+    }
+
+    /**
+     * UTC 시간을 한국 시간으로 변환
+     *
+     * @param utcDateTime UTC 기준 시간
+     * @return 한국 시간대로 변환된 LocalDateTime
+     */
+    fun convertUtcToKst(utcDateTime: LocalDateTime): LocalDateTime {
+        return utcDateTime
+            .atZone(ZoneId.of("UTC"))
+            .withZoneSameInstant(ZoneId.of("Asia/Seoul"))
+            .toLocalDateTime()
+    }
+
+    /**
+     * 한국 시간을 UTC 시간으로 변환
+     *
+     * @param kstDateTime 한국 시간대 기준 시간
+     * @return UTC로 변환된 LocalDateTime
+     */
+    fun convertKstToUtc(kstDateTime: LocalDateTime): LocalDateTime {
+        return kstDateTime
+            .atZone(ZoneId.of("Asia/Seoul"))
+            .withZoneSameInstant(ZoneId.of("UTC"))
+            .toLocalDateTime()
+    }
+
+    /**
+     * UTC 시간이 특정 한국 날짜에 속하는지 확인
+     *
+     * @param utcDateTime UTC 기준 시간
+     * @param kstDate 한국 날짜
+     * @return 해당 날짜에 속하면 true
+     */
+    fun isUtcTimeInKstDate(utcDateTime: LocalDateTime, kstDate: LocalDate): Boolean {
+        val kstDateTime = convertUtcToKst(utcDateTime)
+        return kstDateTime.toLocalDate() == kstDate
     }
 }

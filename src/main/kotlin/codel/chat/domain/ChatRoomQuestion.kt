@@ -30,7 +30,10 @@ class ChatRoomQuestion(
     @Column(nullable = false)
     val isUsed: Boolean = false,
 
-    val usedAt: LocalDateTime? = null
+    val usedAt: LocalDateTime? = null,
+
+    @Column(nullable = false)
+    val isInitial: Boolean = false
 ) : BaseTimeEntity() {
     
     fun getIdOrThrow(): Long = id ?: throw IllegalStateException("채팅방 질문이 존재하지 않습니다.")
@@ -42,18 +45,37 @@ class ChatRoomQuestion(
             question = this.question,
             requestedBy = requestedBy,
             isUsed = true,
-            usedAt = LocalDateTime.now()
+            usedAt = LocalDateTime.now(),
+            isInitial = this.isInitial
         )
     }
     
     companion object {
+        /**
+         * 일반 질문하기 버튼 클릭 시 (KPI 집계 대상)
+         */
         fun create(chatRoom: ChatRoom, question: Question, requestedBy: Member): ChatRoomQuestion {
             return ChatRoomQuestion(
                 chatRoom = chatRoom,
                 question = question,
                 requestedBy = requestedBy,
                 isUsed = true,
-                usedAt = LocalDateTime.now()
+                usedAt = LocalDateTime.now(),
+                isInitial = false
+            )
+        }
+
+        /**
+         * 초기 질문 생성 (시그널 수락 시, KPI 제외 대상)
+         */
+        fun createInitial(chatRoom: ChatRoom, question: Question, requestedBy: Member): ChatRoomQuestion {
+            return ChatRoomQuestion(
+                chatRoom = chatRoom,
+                question = question,
+                requestedBy = requestedBy,
+                isUsed = true,
+                usedAt = LocalDateTime.now(),
+                isInitial = true
             )
         }
     }
