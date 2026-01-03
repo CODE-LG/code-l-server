@@ -83,6 +83,66 @@ class KpiController(
         }
     }
 
+    @PostMapping("/aggregate-range")
+    @ResponseBody
+    @Operation(
+        summary = "KPI 대량 수동 집계",
+        description = "시작일부터 종료일까지의 KPI를 한 번에 집계합니다. 날짜를 지정하지 않으면 최근 30일을 집계합니다."
+    )
+    fun aggregateKpiRange(
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) startDate: LocalDate?,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) endDate: LocalDate?
+    ): ResponseEntity<Map<String, Any>> {
+        val end = endDate ?: LocalDate.now().minusDays(1)
+        val start = startDate ?: end.minusDays(29)
+
+        // 날짜 범위 검증
+        if (start.isAfter(end)) {
+            return ResponseEntity.badRequest().body(mapOf(
+                "success" to false,
+                "message" to "시작일이 종료일보다 늦을 수 없습니다.",
+                "startDate" to start.toString(),
+                "endDate" to end.toString()
+            ))
+        }
+
+        val results = mutableListOf<Map<String, Any>>()
+        var successCount = 0
+        var failCount = 0
+
+        // 시작일부터 종료일까지 순회하며 집계
+        var currentDate = start
+        while (!currentDate.isAfter(end)) {
+            try {
+                kpiBatchService.aggregateDailyKpi(currentDate)
+                results.add(mapOf(
+                    "date" to currentDate.toString(),
+                    "success" to true
+                ))
+                successCount++
+            } catch (e: Exception) {
+                results.add(mapOf(
+                    "date" to currentDate.toString(),
+                    "success" to false,
+                    "error" to (e.message ?: "Unknown error")
+                ))
+                failCount++
+            }
+            currentDate = currentDate.plusDays(1)
+        }
+
+        return ResponseEntity.ok(mapOf(
+            "success" to true,
+            "message" to "KPI 대량 집계가 완료되었습니다.",
+            "startDate" to start.toString(),
+            "endDate" to end.toString(),
+            "totalDays" to results.size,
+            "successCount" to successCount,
+            "failCount" to failCount,
+            "details" to results
+        ))
+    }
+
     @GetMapping("/question-insights")
     @ResponseBody
     @Operation(summary = "질문 콘텐츠 인사이트 조회", description = "프로필 대표 질문 인기도 및 카테고리 통계를 조회합니다")
