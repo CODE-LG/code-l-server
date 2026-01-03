@@ -72,38 +72,7 @@
 </head>
 <body>
 <!-- 사이드바 -->
-<nav class="sidebar">
-    <a href="/v1/admin/home" class="brand">
-        <i class="fa-solid fa-user-shield"></i> code:L 관리자
-    </a>
-    <ul style="list-style: none; padding: 0;">
-        <li class="nav-item">
-            <a class="nav-link" href="/v1/admin/home">
-                <i class="fa-solid fa-gauge"></i> 대시보드
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/v1/admin/members">
-                <i class="fa-solid fa-users"></i> 회원 관리
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/v1/admin/questions">
-                <i class="fa-solid fa-circle-question"></i> 질문 관리
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link active" href="/v1/admin/reports">
-                <i class="fa-solid fa-flag"></i> 신고 관리
-            </a>
-        </li>
-        <li class="nav-item mb-2">
-            <a class="nav-link active" href="/v1/admin/verification-images">
-                <i class="fa-solid fa-image"></i> 표준 인증 이미지 관리
-            </a>
-        </li>
-    </ul>
-</nav>
+<div th:replace="~{fragments/sidebar :: customSidebar('reports')}"></div>
 
 <!-- 메인 컨텐츠 -->
 <div class="main-content">
