@@ -141,6 +141,151 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
+        .aggregate-btn {
+            padding: 10px 30px;
+            background: rgba(255, 193, 7, 0.9);
+            color: #333;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-left: 10px;
+        }
+        .aggregate-btn:hover {
+            background: rgba(255, 193, 7, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* 모달 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s;
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .modal-header h2 {
+            font-size: 22px;
+            color: #333;
+        }
+        .close-modal {
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+        }
+        .close-modal:hover {
+            color: #333;
+        }
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        .modal-form-group {
+            margin-bottom: 20px;
+        }
+        .modal-form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        .modal-form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .modal-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .modal-btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .modal-btn-primary:hover {
+            background: #5568d3;
+        }
+        .modal-btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        .modal-btn-secondary:hover {
+            background: #d0d0d0;
+        }
+        .modal-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        .modal-result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .modal-result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .modal-result-details {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+            font-size: 12px;
+        }
 
         /* 섹션 타이틀 */
         .section-title {
@@ -616,6 +761,9 @@
                 </div>
                 <button class="apply-btn" onclick="applyDateFilter()">
                     <i class="fa-solid fa-check"></i> 적용
+                </button>
+                <button class="aggregate-btn" onclick="openAggregateModal()">
+                    <i class="fa-solid fa-database"></i> 대량 집계
                 </button>
             </div>
         </div>
@@ -1427,6 +1575,137 @@
 
         updateDashboard(sevenDaysAgo.toISOString().split('T')[0], today.toISOString().split('T')[0]);
     });
+
+    // 대량 집계 모달 관련 함수들
+    function openAggregateModal() {
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+
+        document.getElementById('aggregateStartDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+        document.getElementById('aggregateEndDate').value = today.toISOString().split('T')[0];
+        document.getElementById('aggregateModal').style.display = 'block';
+        document.getElementById('aggregateResult').style.display = 'none';
+    }
+
+    function closeAggregateModal() {
+        document.getElementById('aggregateModal').style.display = 'none';
+    }
+
+    async function runBulkAggregate() {
+        const startDate = document.getElementById('aggregateStartDate').value;
+        const endDate = document.getElementById('aggregateEndDate').value;
+        const resultDiv = document.getElementById('aggregateResult');
+        const resultMessage = document.getElementById('aggregateResultMessage');
+        const resultDetails = document.getElementById('aggregateResultDetails');
+
+        if (!startDate || !endDate) {
+            alert('시작일과 종료일을 모두 입력해주세요.');
+            return;
+        }
+
+        if (new Date(startDate) > new Date(endDate)) {
+            alert('시작일이 종료일보다 늦을 수 없습니다.');
+            return;
+        }
+
+        // 버튼 비활성화
+        const aggregateBtn = document.getElementById('runAggregateBtn');
+        const originalText = aggregateBtn.innerHTML;
+        aggregateBtn.disabled = true;
+        aggregateBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 집계 중...';
+
+        try {
+            const response = await fetch(`/v1/admin/kpi/aggregate-range?startDate=${startDate}&endDate=${endDate}`, {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            // 결과 표시
+            resultDiv.style.display = 'block';
+            if (result.success) {
+                resultDiv.className = 'modal-result success';
+                resultMessage.innerHTML = `
+                    <strong>✅ ${result.message}</strong><br>
+                    기간: ${result.startDate} ~ ${result.endDate}<br>
+                    총 ${result.totalDays}일 중 성공 ${result.successCount}일, 실패 ${result.failCount}일
+                `;
+
+                // 상세 결과
+                if (result.details && result.details.length > 0) {
+                    const failedDates = result.details.filter(d => !d.success);
+                    if (failedDates.length > 0) {
+                        resultDetails.innerHTML = '<strong>실패한 날짜:</strong><br>' +
+                            failedDates.map(d => `${d.date}: ${d.error}`).join('<br>');
+                    } else {
+                        resultDetails.innerHTML = '모든 날짜가 성공적으로 집계되었습니다.';
+                    }
+                }
+
+                // 성공 시 대시보드 새로고침
+                setTimeout(() => {
+                    applyDateFilter();
+                }, 2000);
+            } else {
+                resultDiv.className = 'modal-result error';
+                resultMessage.innerHTML = `<strong>❌ ${result.message}</strong>`;
+                resultDetails.innerHTML = '';
+            }
+        } catch (error) {
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'modal-result error';
+            resultMessage.innerHTML = `<strong>❌ 집계 중 오류 발생</strong><br>${error.message}`;
+            resultDetails.innerHTML = '';
+        } finally {
+            // 버튼 활성화
+            aggregateBtn.disabled = false;
+            aggregateBtn.innerHTML = originalText;
+        }
+    }
+
+    // 모달 외부 클릭 시 닫기
+    window.onclick = function(event) {
+        const modal = document.getElementById('aggregateModal');
+        if (event.target == modal) {
+            closeAggregateModal();
+        }
+    }
 </script>
+
+<!-- 대량 집계 모달 -->
+<div id="aggregateModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fa-solid fa-database"></i> KPI 대량 집계</h2>
+            <button class="close-modal" onclick="closeAggregateModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="color: #666; margin-bottom: 20px; line-height: 1.6;">
+                시작일부터 종료일까지의 KPI 데이터를 일괄적으로 집계합니다.<br>
+                기존 데이터가 있는 경우 덮어쓰기됩니다.
+            </p>
+            <div class="modal-form-group">
+                <label for="aggregateStartDate">시작일</label>
+                <input type="date" id="aggregateStartDate">
+            </div>
+            <div class="modal-form-group">
+                <label for="aggregateEndDate">종료일</label>
+                <input type="date" id="aggregateEndDate">
+            </div>
+            <div id="aggregateResult" class="modal-result">
+                <div id="aggregateResultMessage"></div>
+                <div id="aggregateResultDetails" class="modal-result-details"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn modal-btn-secondary" onclick="closeAggregateModal()">취소</button>
+            <button id="runAggregateBtn" class="modal-btn modal-btn-primary" onclick="runBulkAggregate()">
+                <i class="fa-solid fa-play"></i> 집계 시작
+            </button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
