@@ -93,11 +93,16 @@ class ChatService(
             responseOfApproverQuestion
         )
 
-        // 4. 양쪽 대표 질문을 사용된 것으로 표시
+        // 4. 양쪽 대표 질문을 사용된 것으로 표시 (초기 질문이므로 isInitial = true)
         val approverRepresentativeQuestion = managedApprover.getProfileOrThrow().getRepresentativeQuestionOrThrow()
         val senderRepresentativeQuestion = managedSender.getProfileOrThrow().getRepresentativeQuestionOrThrow()
 
-        questionService.markQuestionAsUsed(savedChatRoom.getIdOrThrow(), approverRepresentativeQuestion, managedSender)
+        questionService.markQuestionAsUsed(
+            savedChatRoom.getIdOrThrow(),
+            approverRepresentativeQuestion,
+            managedSender,
+            isInitial = true  // 초기 질문으로 표시 (KPI 집계 제외)
+        )
 //        questionService.markQuestionAsUsed(savedChatRoom.getIdOrThrow(), senderRepresentativeQuestion, managedApprover)
 
         // 5. 생성된 채팅방의 읽지 않은 메시지 수 계산 (각자 기준)
@@ -399,7 +404,7 @@ class ChatService(
                 type = NotificationType.MOBILE,
                 targetId = token,
                 title = "${requester.getProfileOrThrow().getCodeNameOrThrow()}님이 코드 해제를 요청했어요 🔐",
-                body = "상대방의 프로필을 확인해보세요!"
+                body = ""
             )
 
             // 비동기 알림 전송으로 변경
