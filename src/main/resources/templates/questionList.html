@@ -119,12 +119,17 @@
                                     <td th:text="${#temporals.format(question.createdAt, 'yyyy-MM-dd')}"></td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a th:href="@{/v1/admin/questions/{id}/edit(id=${question.id})}"
+                                            <a th:href="@{/v1/admin/questions/{id}/edit(id=${question.id}, keyword=${param.keyword}, category=${param.category}, isActive=${param.isActive}, page=${questions.number}, size=${questions.size})}"
                                                class="btn btn-outline-primary btn-sm" title="수정">
                                                 <i class="fa-solid fa-edit"></i>
                                             </a>
                                             <form th:action="@{/v1/admin/questions/{id}/toggle(id=${question.id})}"
                                                   method="post" style="display: inline;">
+                                                <input type="hidden" name="keyword" th:value="${param.keyword}">
+                                                <input type="hidden" name="category" th:value="${param.category}">
+                                                <input type="hidden" name="isActive" th:value="${param.isActive}">
+                                                <input type="hidden" name="page" th:value="${questions.number}">
+                                                <input type="hidden" name="size" th:value="${questions.size}">
                                                 <button type="submit"
                                                         th:class="${question.isActive ? 'btn btn-outline-warning btn-sm' : 'btn btn-outline-success btn-sm'}"
                                                         th:title="${question.isActive ? '비활성화' : '활성화'}"
@@ -134,6 +139,11 @@
                                             </form>
                                             <form th:action="@{/v1/admin/questions/{id}/delete(id=${question.id})}"
                                                   method="post" style="display: inline;">
+                                                <input type="hidden" name="keyword" th:value="${param.keyword}">
+                                                <input type="hidden" name="category" th:value="${param.category}">
+                                                <input type="hidden" name="isActive" th:value="${param.isActive}">
+                                                <input type="hidden" name="page" th:value="${questions.number}">
+                                                <input type="hidden" name="size" th:value="${questions.size}">
                                                 <button type="submit" class="btn btn-outline-danger btn-sm" title="삭제"
                                                         onclick="return confirm('정말 삭제하시겠습니까?')">
                                                     <i class="fa-solid fa-trash"></i>
