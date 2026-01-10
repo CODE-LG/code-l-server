@@ -50,24 +50,24 @@
                         <div class="col-md-4">
                             <label for="keyword" class="form-label">키워드 검색</label>
                             <input type="text" class="form-control" id="keyword" name="keyword"
-                                   th:value="${param.keyword}" placeholder="질문 내용 또는 설명 검색">
+                                   th:value="${selectedKeyword}" placeholder="질문 내용 또는 설명 검색">
                         </div>
                         <div class="col-md-3">
                             <label for="category" class="form-label">카테고리</label>
                             <select class="form-select" id="category" name="category">
-                                <option value="">전체 카테고리</option>
+                                <option value="" th:selected="${selectedCategory == ''}">전체 카테고리</option>
                                 <option th:each="cat : ${categories}"
                                         th:value="${cat.name}"
                                         th:text="${cat.displayName}"
-                                        th:selected="${param.category == cat.name}"></option>
+                                        th:selected="${selectedCategory == cat.name}"></option>
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label for="isActive" class="form-label">상태</label>
                             <select class="form-select" id="isActive" name="isActive">
-                                <option value="">전체</option>
-                                <option value="true" th:selected="${param.isActive == 'true'}">활성</option>
-                                <option value="false" th:selected="${param.isActive == 'false'}">비활성</option>
+                                <option value="" th:selected="${selectedIsActive == ''}">전체</option>
+                                <option value="true" th:selected="${selectedIsActive == 'true'}">활성</option>
+                                <option value="false" th:selected="${selectedIsActive == 'false'}">비활성</option>
                             </select>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">

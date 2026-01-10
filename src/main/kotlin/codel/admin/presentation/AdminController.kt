@@ -367,11 +367,9 @@ class AdminController(
         val questions = adminService.findQuestionsWithFilter(keyword, category, isActive, pageable)
         model.addAttribute("questions", questions)
         model.addAttribute("categories", QuestionCategory.values())
-        model.addAttribute("param", mapOf(
-            "keyword" to (keyword ?: ""),
-            "category" to (category ?: ""),
-            "isActive" to (isActive?.toString() ?: "")
-        ))
+        model.addAttribute("selectedKeyword", keyword ?: "")
+        model.addAttribute("selectedCategory", category ?: "")
+        model.addAttribute("selectedIsActive", isActive?.toString() ?: "")
         return "questionList"
     }
 
