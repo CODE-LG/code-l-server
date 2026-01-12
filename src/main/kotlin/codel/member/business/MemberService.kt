@@ -701,11 +701,32 @@ class MemberService(
             null
         }
 
+        // 날짜 파싱 - yyyy-MM-dd 형식의 문자열을 LocalDateTime으로 변환
+        val startDateTime = if (!startDate.isNullOrBlank()) {
+            try {
+                LocalDate.parse(startDate).atStartOfDay() // 00:00:00
+            } catch (e: Exception) {
+                null
+            }
+        } else {
+            null
+        }
+
+        val endDateTime = if (!endDate.isNullOrBlank()) {
+            try {
+                LocalDate.parse(endDate).plusDays(1).atStartOfDay() // 다음 날 00:00:00 (해당일 23:59:59까지 포함)
+            } catch (e: Exception) {
+                null
+            }
+        } else {
+            null
+        }
+
         // 정렬 처리를 위한 새로운 Pageable 생성
         val sortedPageable = createSortedPageable(pageable, sort, direction)
 
-        // 새로운 메서드 사용
-        return memberJpaRepository.findMembersWithFilterAdvanced(keyword, statusEnum, sortedPageable)
+        // 새로운 메서드 사용 (날짜 파라미터 추가)
+        return memberJpaRepository.findMembersWithFilterAdvanced(keyword, statusEnum, startDateTime, endDateTime, sortedPageable)
     }
 
     /**
