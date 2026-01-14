@@ -320,7 +320,9 @@ class AdminController(
             "PENDING" to adminService.countMembersByStatus("PENDING"),
             "DONE" to adminService.countMembersByStatus("DONE"),
             "REJECT" to adminService.countMembersByStatus("REJECT"),
-            "PHONE_VERIFIED" to adminService.countMembersByStatus("PHONE_VERIFIED")
+            "PHONE_VERIFIED" to adminService.countMembersByStatus("PHONE_VERIFIED"),
+            "WITHDRAWN" to adminService.countMembersByStatus("WITHDRAWN"),
+            "PERSONALITY_COMPLETED" to adminService.countMembersByStatus("PERSONALITY_COMPLETED")
         )
 
         model.addAttribute("members", members)
@@ -365,11 +367,9 @@ class AdminController(
         val questions = adminService.findQuestionsWithFilter(keyword, category, isActive, pageable)
         model.addAttribute("questions", questions)
         model.addAttribute("categories", QuestionCategory.values())
-        model.addAttribute("param", mapOf(
-            "keyword" to (keyword ?: ""),
-            "category" to (category ?: ""),
-            "isActive" to (isActive?.toString() ?: "")
-        ))
+        model.addAttribute("selectedKeyword", keyword ?: "")
+        model.addAttribute("selectedCategory", category ?: "")
+        model.addAttribute("selectedIsActive", isActive?.toString() ?: "")
         return "questionList"
     }
 
@@ -400,11 +400,21 @@ class AdminController(
     @GetMapping("/v1/admin/questions/{questionId}/edit")
     fun editQuestionForm(
         @PathVariable questionId: Long,
+        @RequestParam(required = false) keyword: String?,
+        @RequestParam(required = false) category: String?,
+        @RequestParam(required = false) isActive: String?,
+        @RequestParam(required = false, defaultValue = "0") page: Int,
+        @RequestParam(required = false, defaultValue = "20") size: Int,
         model: Model
     ): String {
         val question = adminService.findQuestionById(questionId)
         model.addAttribute("question", question)
         model.addAttribute("categories", QuestionCategory.values())
+        model.addAttribute("filterKeyword", keyword)
+        model.addAttribute("filterCategory", category)
+        model.addAttribute("filterIsActive", isActive)
+        model.addAttribute("filterPage", page)
+        model.addAttribute("filterSize", size)
         return "questionEditForm"
     }
 
@@ -415,6 +425,11 @@ class AdminController(
         @RequestParam category: String,
         @RequestParam(required = false) description: String?,
         @RequestParam(defaultValue = "false") isActive: Boolean,
+        @RequestParam(required = false) keyword: String?,
+        @RequestParam(required = false) filterCategory: String?,
+        @RequestParam(required = false) filterIsActive: String?,
+        @RequestParam(required = false, defaultValue = "0") page: Int,
+        @RequestParam(required = false, defaultValue = "20") size: Int,
         redirectAttributes: RedirectAttributes
     ): String {
         try {
@@ -424,12 +439,27 @@ class AdminController(
         } catch (e: Exception) {
             redirectAttributes.addFlashAttribute("error", "질문 수정에 실패했습니다: ${e.message}")
         }
-        return "redirect:/v1/admin/questions"
+
+        // 필터 조건 유지하여 리다이렉트
+        val params = mutableListOf<String>()
+        keyword?.let { if (it.isNotBlank()) params.add("keyword=$it") }
+        filterCategory?.let { if (it.isNotBlank()) params.add("category=$it") }
+        filterIsActive?.let { if (it.isNotBlank()) params.add("isActive=$it") }
+        params.add("page=$page")
+        params.add("size=$size")
+
+        val queryString = if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
+        return "redirect:/v1/admin/questions$queryString"
     }
 
     @PostMapping("/v1/admin/questions/{questionId}/delete")
     fun deleteQuestion(
         @PathVariable questionId: Long,
+        @RequestParam(required = false) keyword: String?,
+        @RequestParam(required = false) category: String?,
+        @RequestParam(required = false) isActive: String?,
+        @RequestParam(required = false, defaultValue = "0") page: Int,
+        @RequestParam(required = false, defaultValue = "20") size: Int,
         redirectAttributes: RedirectAttributes
     ): String {
         try {
@@ -438,12 +468,27 @@ class AdminController(
         } catch (e: Exception) {
             redirectAttributes.addFlashAttribute("error", "질문 삭제에 실패했습니다: ${e.message}")
         }
-        return "redirect:/v1/admin/questions"
+
+        // 필터 조건 유지하여 리다이렉트
+        val params = mutableListOf<String>()
+        keyword?.let { if (it.isNotBlank()) params.add("keyword=$it") }
+        category?.let { if (it.isNotBlank()) params.add("category=$it") }
+        isActive?.let { if (it.isNotBlank()) params.add("isActive=$it") }
+        params.add("page=$page")
+        params.add("size=$size")
+
+        val queryString = if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
+        return "redirect:/v1/admin/questions$queryString"
     }
 
     @PostMapping("/v1/admin/questions/{questionId}/toggle")
     fun toggleQuestionStatus(
         @PathVariable questionId: Long,
+        @RequestParam(required = false) keyword: String?,
+        @RequestParam(required = false) category: String?,
+        @RequestParam(required = false) isActive: String?,
+        @RequestParam(required = false, defaultValue = "0") page: Int,
+        @RequestParam(required = false, defaultValue = "20") size: Int,
         redirectAttributes: RedirectAttributes
     ): String {
         try {
@@ -453,7 +498,17 @@ class AdminController(
         } catch (e: Exception) {
             redirectAttributes.addFlashAttribute("error", "질문 상태 변경에 실패했습니다: ${e.message}")
         }
-        return "redirect:/v1/admin/questions"
+
+        // 필터 조건 유지하여 리다이렉트
+        val params = mutableListOf<String>()
+        keyword?.let { if (it.isNotBlank()) params.add("keyword=$it") }
+        category?.let { if (it.isNotBlank()) params.add("category=$it") }
+        isActive?.let { if (it.isNotBlank()) params.add("isActive=$it") }
+        params.add("page=$page")
+        params.add("size=$size")
+
+        val queryString = if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
+        return "redirect:/v1/admin/questions$queryString"
     }
 
     // ========== 신고 관리 ==========
