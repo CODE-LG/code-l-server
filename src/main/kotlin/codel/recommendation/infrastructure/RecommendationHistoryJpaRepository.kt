@@ -112,22 +112,22 @@ interface RecommendationHistoryJpaRepository : JpaRepository<RecommendationHisto
     /**
      * 시간 범위 내 특정 시간대 코드타임 추천 조회
      * 날짜가 바뀌는 경우를 처리하기 위한 범위 조회
-     * 
+     *
      * @param user 사용자
      * @param timeSlot 시간대 ("10:00" 또는 "22:00")
      * @param startDateTime 시작 시간 (포함)
      * @param endDateTime 종료 시간 (미포함)
-     * @return 해당 시간 범위 내 추천된 사용자 ID 목록
+     * @return 해당 시간 범위 내 추천된 사용자 ID 목록 (생성 순서대로)
      */
     @Query("""
-        SELECT rh.recommendedUser.id 
-        FROM RecommendationHistory rh 
-        WHERE rh.user = :user 
+        SELECT rh.recommendedUser.id
+        FROM RecommendationHistory rh
+        WHERE rh.user = :user
         AND rh.recommendationType = 'CODE_TIME'
         AND rh.recommendationTimeSlot = :timeSlot
         AND rh.recommendedAt >= :startDateTime
         AND rh.recommendedAt < :endDateTime
-        ORDER BY rh.createdAt DESC
+        ORDER BY rh.createdAt ASC
     """)
     fun findCodeTimeIdsByTimeRange(
         @Param("user") user: Member,

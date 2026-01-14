@@ -11,16 +11,18 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.*
 import org.springframework.http.HttpStatus
 import org.springframework.mock.web.MockMultipartFile
+import java.time.LocalDate
 
 class PreVerificationStrategyTest {
 
     private lateinit var signupService: SignupService
     private lateinit var memberJpaRepository: MemberJpaRepository
-    private lateinit var strategy: PreVerificationStrategy
     private lateinit var asyncNotificationService: IAsyncNotificationService
+    private lateinit var strategy: PreVerificationStrategy
 
     @BeforeEach
     fun setUp() {
@@ -30,12 +32,16 @@ class PreVerificationStrategyTest {
         strategy = PreVerificationStrategy(signupService, memberJpaRepository, asyncNotificationService)
     }
 
-    @DisplayName("PERSONALITY_COMPLETED 상태에서는 히든 이미지 등록 후 HIDDEN_COMPLETED 상태로 변경한다")
+    @DisplayName("PERSONALITY_COMPLETED 상태에서는 히든 이미지 등록 후 PENDING 상태로 변경한다")
     @Test
-    fun handleHiddenImages_personalityCompleted_changeToHiddenCompleted() {
+    fun handleHiddenImages_personalityCompleted_changeToPending() {
         // given
         val profile = Profile(
-            codeName = "테스트유저"
+            id = 1L,
+            codeName = "테스트유저",
+            bigCity = "서울",
+            smallCity = "강남구",
+            birthDate = LocalDate.of(1990, 1, 1)
         )
 
         val member = Member(
@@ -43,11 +49,11 @@ class PreVerificationStrategyTest {
             oauthId = "test-oauth-id",
             oauthType = OauthType.KAKAO,
             memberStatus = MemberStatus.PERSONALITY_COMPLETED,
-            email = "test@test.com"
+            email = "test@test.com",
+            profile = profile
         )
 
-        // 양방향 연관관계 설정
-        member.updateProfile(profile)
+        profile.member = member
 
         val images = listOf(
             MockMultipartFile("image1", "test1.jpg", "image/jpeg", "test1".toByteArray()),
@@ -55,6 +61,7 @@ class PreVerificationStrategyTest {
             MockMultipartFile("image3", "test3.jpg", "image/jpeg", "test3".toByteArray())
         )
 
+        // memberJpaRepository.findByMemberId가 member를 반환하도록 mock 설정
         `when`(memberJpaRepository.findByMemberId(1L)).thenReturn(member)
 
         // when
@@ -64,7 +71,6 @@ class PreVerificationStrategyTest {
         verify(signupService, times(1)).registerHiddenImages(member, images)
         verify(memberJpaRepository, times(1)).findByMemberId(1L)
 
-        // member 상태가 PENDING으로 변경되었는지 확인
         assertEquals(MemberStatus.PENDING, member.memberStatus)
         assertEquals(HttpStatus.OK, response.statusCode)
     }
