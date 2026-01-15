@@ -186,8 +186,8 @@
                         <small>거부됨</small>
                     </div>
                     <div class="col-md-2">
-                        <h4 th:text="${statusCounts.PHONE_VERIFIED}">0</h4>
-                        <small>핸드폰 인증 완료</small>
+                        <h4 th:text="${statusCounts.WITHDRAWN}">0</h4>
+                        <small>탈퇴</small>
                     </div>
                     <div class="col-md-2">
                         <h4 th:text="${#numbers.formatDecimal((statusCounts.DONE * 100.0) / (statusCounts.DONE + statusCounts.REJECT), 1, 1) + '%'}">0%</h4>
@@ -213,6 +213,8 @@
                                 <option th:selected="${param.status == 'DONE'}" value="DONE">승인 완료</option>
                                 <option th:selected="${param.status == 'REJECT'}" value="REJECT">거부됨</option>
                                 <option th:selected="${param.status == 'PHONE_VERIFIED'}" value="PHONE_VERIFIED">핸드폰 인증 완료</option>
+                                <option th:selected="${param.status == 'PERSONALITY_COMPLETED'}" value="PERSONALITY_COMPLETED">오픈프로필 작성 완료</option>
+                                <option th:selected="${param.status == 'WITHDRAWN'}" value="WITHDRAWN">탈퇴</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -293,6 +295,22 @@
                        th:href="@{/v1/admin/members(status='PHONE_VERIFIED')}">
                         <span>핸드폰 인증 완료</span>
                         <span class="badge badge-signup ms-2" th:text="${statusCounts.PHONE_VERIFIED}">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center"
+                       th:classappend="${param.status == 'PERSONALITY_COMPLETED'} ? 'active'"
+                       th:href="@{/v1/admin/members(status='PERSONALITY_COMPLETED')}">
+                        <span>오픈프로필 작성 완료</span>
+                        <span class="badge bg-info ms-2" th:text="${statusCounts.PERSONALITY_COMPLETED}">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center"
+                       th:classappend="${param.status == 'WITHDRAWN'} ? 'active'"
+                       th:href="@{/v1/admin/members(status='WITHDRAWN')}">
+                        <span>탈퇴</span>
+                        <span class="badge bg-secondary ms-2" th:text="${statusCounts.WITHDRAWN}">0</span>
                     </a>
                 </li>
             </ul>
@@ -400,6 +418,12 @@
                                     </span>
                                     <span class="badge badge-signup" th:case="'PHONE_VERIFIED'">
                                         <i class="fa-solid fa-user-plus me-1"></i>핸드폰 인증 완료
+                                    </span>
+                                    <span class="badge bg-info text-white" th:case="'PERSONALITY_COMPLETED'">
+                                        <i class="fa-solid fa-user-edit me-1"></i>오픈프로필 작성 완료
+                                    </span>
+                                    <span class="badge bg-secondary" th:case="'WITHDRAWN'">
+                                        <i class="fa-solid fa-user-slash me-1"></i>탈퇴
                                     </span>
                                     <span class="badge bg-light text-dark" th:case="*" th:text="${member.memberStatus}"></span>
                                 </span>
