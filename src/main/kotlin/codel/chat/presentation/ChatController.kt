@@ -1,12 +1,15 @@
 package codel.chat.presentation
 
 import codel.chat.business.ChatService
+import codel.chat.business.strategy.QuestionRecommendStrategyResolver
 import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.ChatLogRequest
 import codel.chat.presentation.request.ChatSendRequest
+import codel.chat.presentation.request.QuestionRecommendRequest
 import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomEventType
 import codel.chat.presentation.response.ChatRoomResponse
+import codel.chat.presentation.response.QuestionRecommendResponseV2
 import codel.chat.presentation.swagger.ChatControllerSwagger
 import codel.config.Loggable
 import codel.config.argumentresolver.LoginMember
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.*
 class ChatController(
     private val chatService: ChatService,
     private val messagingTemplate: SimpMessagingTemplate,
+    private val strategyResolver: QuestionRecommendStrategyResolver
 ) : ChatControllerSwagger, Loggable {
     @GetMapping("/v1/chatrooms")
     override fun getChatRooms(
@@ -89,6 +93,48 @@ class ChatController(
             result.partnerChatRoomResponse,
         )
         return ResponseEntity.ok(result.chatResponse)
+    }
+
+    /**
+     * 질문 추천 API (버전 분기)
+     *
+     * - 1.3.0 이상: 카테고리 기반 질문 추천 (CategoryBasedQuestionStrategy)
+     * - 1.3.0 미만: 기존 랜덤 질문 추천 (LegacyRandomQuestionStrategy)
+     */
+    @PostMapping("/v1/chatroom/{chatRoomId}/questions/recommend")
+    override fun recommendQuestion(
+        @LoginMember requester: Member,
+        @PathVariable chatRoomId: Long,
+        @RequestHeader(value = "X-App-Version", required = false) appVersion: String?,
+        @RequestBody request: QuestionRecommendRequest
+    ): ResponseEntity<Any> {
+        log.info { "질문 추천 요청 - chatRoomId: $chatRoomId, appVersion: $appVersion, category: ${request.category}" }
+
+        val strategy = strategyResolver.resolveStrategy(appVersion)
+        val response = strategy.recommendQuestion(chatRoomId, requester, request)
+
+        // V2 응답인 경우 WebSocket 메시지 전송
+        if (response.body is QuestionRecommendResponseV2) {
+            val v2Response = response.body as QuestionRecommendResponseV2
+            if (v2Response.success && v2Response.chat != null) {
+                // 채팅방 실시간 메시지 전송
+                messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", v2Response.chat.chatResponse)
+
+                // 발송자에게 채팅방 응답 전송
+                messagingTemplate.convertAndSend(
+                    "/sub/v1/chatroom/member/${requester.getIdOrThrow()}",
+                    v2Response.chat.requesterChatRoomResponse
+                )
+
+                // 상대방에게 채팅방 응답 전송
+                messagingTemplate.convertAndSend(
+                    "/sub/v1/chatroom/member/${v2Response.chat.partner.getIdOrThrow()}",
+                    v2Response.chat.partnerChatRoomResponse
+                )
+            }
+        }
+
+        return response
     }
 
     @PostMapping("/v1/chatroom/{chatRoomId}/chat")
