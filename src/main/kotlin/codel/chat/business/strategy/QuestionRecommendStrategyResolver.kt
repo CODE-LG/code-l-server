@@ -45,7 +45,7 @@ class QuestionRecommendStrategyResolver(
     /**
      * 1.3.0 이상이면 신규 앱으로 간주
      */
-    private fun isNewApp(version: String?): Boolean {
+    fun isNewApp(version: String?): Boolean {
         if (version == null) {
             log.debug { "앱 버전 null → 구버전으로 간주" }
             return false

@@ -10,6 +10,8 @@ import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomEventType
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.chat.presentation.response.QuestionRecommendResponseV2
+import codel.chat.presentation.response.QuestionSendResult
+import codel.chat.presentation.response.SavedChatDto
 import codel.chat.presentation.swagger.ChatControllerSwagger
 import codel.config.Loggable
 import codel.config.argumentresolver.LoginMember
@@ -71,70 +73,63 @@ class ChatController(
         return ResponseEntity.noContent().build()
     }
 
-    @PostMapping("/v1/chatroom/{chatRoomId}/questions/random")
-    override fun sendRandomQuestion(
-        @LoginMember requester: Member,
-        @PathVariable chatRoomId: Long
-    ): ResponseEntity<ChatResponse> {
-        val result = chatService.sendRandomQuestion(chatRoomId, requester)
-        
-        // 1. 채팅방 실시간 메시지 전송 (채팅방에 있는 사용자들에게)
-        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", result.chatResponse)
-        
-        // 2. 발송자에게는 본인용 채팅방 응답 전송
-        messagingTemplate.convertAndSend(
-            "/sub/v1/chatroom/member/${requester.getIdOrThrow()}",
-            result.requesterChatRoomResponse,
-        )
-        
-        // 3. 상대방에게는 읽지 않은 수가 증가된 채팅방 응답 전송
-        messagingTemplate.convertAndSend(
-            "/sub/v1/chatroom/member/${result.partner.getIdOrThrow()}",
-            result.partnerChatRoomResponse,
-        )
-        return ResponseEntity.ok(result.chatResponse)
-    }
-
     /**
      * 질문 추천 API (버전 분기)
      *
      * - 1.3.0 이상: 카테고리 기반 질문 추천 (CategoryBasedQuestionStrategy)
-     * - 1.3.0 미만: 기존 랜덤 질문 추천 (LegacyRandomQuestionStrategy)
+     * - 1.3.0 미만: 기존 랜덤 질문 추천
      */
-    @PostMapping("/v1/chatroom/{chatRoomId}/questions/recommend")
-    override fun recommendQuestion(
+    @PostMapping("/v1/chatroom/{chatRoomId}/questions/random")
+    override fun sendRandomQuestion(
         @LoginMember requester: Member,
         @PathVariable chatRoomId: Long,
         @RequestHeader(value = "X-App-Version", required = false) appVersion: String?,
-        @RequestBody request: QuestionRecommendRequest
+        @RequestBody(required = false) request: QuestionRecommendRequest?
     ): ResponseEntity<Any> {
-        log.info { "질문 추천 요청 - chatRoomId: $chatRoomId, appVersion: $appVersion, category: ${request.category}" }
+        log.info { "질문 추천 요청 - chatRoomId: $chatRoomId, appVersion: $appVersion, category: ${request?.category}" }
 
-        val strategy = strategyResolver.resolveStrategy(appVersion)
-        val response = strategy.recommendQuestion(chatRoomId, requester, request)
+        // 1.3.0 이상: 카테고리 기반 질문 추천
+        if (strategyResolver.isNewApp(appVersion)) {
+            val strategy = strategyResolver.resolveStrategy(appVersion)
+            val response = strategy.recommendQuestion(chatRoomId, requester, request ?: QuestionRecommendRequest())
 
-        // V2 응답인 경우 WebSocket 메시지 전송
-        if (response.body is QuestionRecommendResponseV2) {
-            val v2Response = response.body as QuestionRecommendResponseV2
-            if (v2Response.success && v2Response.chat != null) {
-                // 채팅방 실시간 메시지 전송
-                messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", v2Response.chat.chatResponse)
-
-                // 발송자에게 채팅방 응답 전송
-                messagingTemplate.convertAndSend(
-                    "/sub/v1/chatroom/member/${requester.getIdOrThrow()}",
-                    v2Response.chat.requesterChatRoomResponse
-                )
-
-                // 상대방에게 채팅방 응답 전송
-                messagingTemplate.convertAndSend(
-                    "/sub/v1/chatroom/member/${v2Response.chat.partner.getIdOrThrow()}",
-                    v2Response.chat.partnerChatRoomResponse
-                )
+            if (response.body is QuestionRecommendResponseV2) {
+                val v2Response = response.body as QuestionRecommendResponseV2
+                if (v2Response.success && v2Response.chat != null) {
+                    sendQuestionWebSocketMessages(chatRoomId, requester, v2Response.chat)
+                }
             }
+            return response
         }
 
-        return response
+        // 1.3.0 미만: 기존 랜덤 질문 추천
+        val result = chatService.sendRandomQuestion(chatRoomId, requester)
+        sendQuestionWebSocketMessages(chatRoomId, requester, result)
+        return ResponseEntity.ok(result.chatResponse)
+    }
+
+    private fun sendQuestionWebSocketMessages(chatRoomId: Long, requester: Member, result: QuestionSendResult) {
+        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", result.chatResponse)
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${requester.getIdOrThrow()}",
+            result.requesterChatRoomResponse
+        )
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${result.partner.getIdOrThrow()}",
+            result.partnerChatRoomResponse
+        )
+    }
+
+    private fun sendQuestionWebSocketMessages(chatRoomId: Long, requester: Member, chat: SavedChatDto) {
+        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", chat.chatResponse)
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${requester.getIdOrThrow()}",
+            chat.requesterChatRoomResponse
+        )
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${chat.partner.getIdOrThrow()}",
+            chat.partnerChatRoomResponse
+        )
     }
 
     @PostMapping("/v1/chatroom/{chatRoomId}/chat")
