@@ -9,6 +9,7 @@ import codel.question.business.QuestionService
 import codel.question.presentation.response.QuestionResponse
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 
 /**
  * 카테고리 기반 질문 추천 전략 (1.3.0 이상)
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component
  * - A/B 그룹 정책 적용 (텐션업 제외)
  */
 @Component
+@Transactional
 class CategoryBasedQuestionStrategy(
     private val questionService: QuestionService,
     private val chatService: ChatService

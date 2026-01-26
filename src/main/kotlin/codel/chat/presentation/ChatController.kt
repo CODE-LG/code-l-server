@@ -77,7 +77,7 @@ class ChatController(
      * 질문 추천 API (버전 분기)
      *
      * - 1.3.0 이상: 카테고리 기반 질문 추천 (CategoryBasedQuestionStrategy)
-     * - 1.3.0 미만: 기존 랜덤 질문 추천
+     * - 1.3.0 미만: 기존 랜덤 질문 추천 (LegacyRandomQuestionStrategy)
      */
     @PostMapping("/v1/chatroom/{chatRoomId}/questions/random")
     override fun sendRandomQuestion(
@@ -88,24 +88,23 @@ class ChatController(
     ): ResponseEntity<Any> {
         log.info { "질문 추천 요청 - chatRoomId: $chatRoomId, appVersion: $appVersion, category: ${request?.category}" }
 
-        // 1.3.0 이상: 카테고리 기반 질문 추천
-        if (strategyResolver.isNewApp(appVersion)) {
-            val strategy = strategyResolver.resolveStrategy(appVersion)
-            val response = strategy.recommendQuestion(chatRoomId, requester, request ?: QuestionRecommendRequest())
+        val strategy = strategyResolver.resolveStrategy(appVersion)
+        val response = strategy.recommendQuestion(chatRoomId, requester, request ?: QuestionRecommendRequest())
 
-            if (response.body is QuestionRecommendResponseV2) {
-                val v2Response = response.body as QuestionRecommendResponseV2
-                if (v2Response.success && v2Response.chat != null) {
-                    sendQuestionWebSocketMessages(chatRoomId, requester, v2Response.chat)
+        // 응답 타입에 따라 WebSocket 메시지 전송 및 HTTP 응답 처리
+        return when (val body = response.body) {
+            is QuestionRecommendResponseV2 -> {
+                if (body.success && body.chat != null) {
+                    sendQuestionWebSocketMessages(chatRoomId, requester, body.chat)
                 }
+                response
             }
-            return response
+            is QuestionSendResult -> {
+                sendQuestionWebSocketMessages(chatRoomId, requester, body)
+                ResponseEntity.ok(body.chatResponse)
+            }
+            else -> response
         }
-
-        // 1.3.0 미만: 기존 랜덤 질문 추천
-        val result = chatService.sendRandomQuestion(chatRoomId, requester)
-        sendQuestionWebSocketMessages(chatRoomId, requester, result)
-        return ResponseEntity.ok(result.chatResponse)
     }
 
     private fun sendQuestionWebSocketMessages(chatRoomId: Long, requester: Member, result: QuestionSendResult) {
