@@ -5,6 +5,7 @@ import codel.member.domain.Member
 import codel.member.domain.MemberStatus
 import codel.member.domain.OauthType
 import codel.member.infrastructure.MemberJpaRepository
+import codel.notification.business.IAsyncNotificationService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -18,13 +19,15 @@ class PreVerificationStrategyTest {
 
     private lateinit var signupService: SignupService
     private lateinit var memberJpaRepository: MemberJpaRepository
+    private lateinit var asyncNotificationService: IAsyncNotificationService
     private lateinit var strategy: PreVerificationStrategy
 
     @BeforeEach
     fun setUp() {
         signupService = mock(SignupService::class.java)
         memberJpaRepository = mock(MemberJpaRepository::class.java)
-        strategy = PreVerificationStrategy(signupService, memberJpaRepository)
+        asyncNotificationService = mock(IAsyncNotificationService::class.java)
+        strategy = PreVerificationStrategy(signupService, memberJpaRepository, asyncNotificationService)
     }
 
     @DisplayName("PERSONALITY_COMPLETED 상태에서는 히든 이미지 등록 후 HIDDEN_COMPLETED 상태로 변경한다")
