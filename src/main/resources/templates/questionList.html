@@ -46,32 +46,58 @@
             <!-- 검색 및 필터 -->
             <div class="card table-card mb-4">
                 <div class="card-body">
-                    <form method="get" class="row g-3">
-                        <div class="col-md-4">
+                    <form method="get" class="row g-3 align-items-end">
+                        <div class="col-md-3">
                             <label for="keyword" class="form-label">키워드 검색</label>
                             <input type="text" class="form-control" id="keyword" name="keyword"
-                                   th:value="${selectedKeyword}" placeholder="질문 내용 또는 설명 검색">
+                                   th:value="${searchParams['keyword']}" placeholder="질문 내용 또는 설명 검색">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
+                            <label for="purpose" class="form-label">용도</label>
+                            <select class="form-select" id="purpose" name="purpose" onchange="updateCategoryOptions()">
+                                <option value="">전체</option>
+                                <option value="chatroom" th:selected="${searchParams['purpose'] == 'chatroom'}">채팅방 질문 추천</option>
+                                <option value="profile" th:selected="${searchParams['purpose'] == 'profile'}">회원가입·프로필 수정</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <label for="category" class="form-label">카테고리</label>
                             <select class="form-select" id="category" name="category">
-                                <option value="" th:selected="${selectedCategory == ''}">전체 카테고리</option>
-                                <option th:each="cat : ${categories}"
-                                        th:value="${cat.name}"
-                                        th:text="${cat.displayName}"
-                                        th:selected="${selectedCategory == cat.name}"></option>
+                                <option value="">전체 카테고리</option>
+                                <optgroup label="채팅방 질문 추천" id="chatroomGroup">
+                                    <option value="VALUES" th:selected="${searchParams['category'] == 'VALUES' and (searchParams['purpose'] == 'chatroom' or searchParams['purpose'] == '')}" class="chat-category shared-category">가치관 코드</option>
+                                    <option value="TENSION_UP" th:selected="${searchParams['category'] == 'TENSION_UP'}" class="chat-category">텐션업 코드</option>
+                                    <option value="IF" th:selected="${searchParams['category'] == 'IF'}" class="chat-category">만약에 코드</option>
+                                    <option value="SECRET" th:selected="${searchParams['category'] == 'SECRET'}" class="chat-category">비밀 코드 (19+)</option>
+                                </optgroup>
+                                <optgroup label="회원가입·프로필 수정" id="profileGroup">
+                                    <option value="VALUES" th:selected="${searchParams['category'] == 'VALUES' and searchParams['purpose'] == 'profile'}" class="profile-category shared-category">가치관</option>
+                                    <option value="FAVORITE" th:selected="${searchParams['category'] == 'FAVORITE'}" class="profile-category">favorite</option>
+                                    <option value="DATE" th:selected="${searchParams['category'] == 'DATE'}" class="profile-category">데이트</option>
+                                    <option value="MEMORY" th:selected="${searchParams['category'] == 'MEMORY'}" class="profile-category">추억</option>
+                                    <option value="WANT_TALK" th:selected="${searchParams['category'] == 'WANT_TALK'}" class="profile-category">이런대화해보고싶어</option>
+                                </optgroup>
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
+                            <label for="questionGroup" class="form-label">그룹</label>
+                            <select class="form-select" id="questionGroup" name="questionGroup">
+                                <option value="">전체</option>
+                                <option value="A" th:selected="${searchParams['questionGroup'] == 'A'}">A그룹</option>
+                                <option value="B" th:selected="${searchParams['questionGroup'] == 'B'}">B그룹</option>
+                                <option value="RANDOM" th:selected="${searchParams['questionGroup'] == 'RANDOM'}">랜덤</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <label for="isActive" class="form-label">상태</label>
                             <select class="form-select" id="isActive" name="isActive">
-                                <option value="" th:selected="${selectedIsActive == ''}">전체</option>
-                                <option value="true" th:selected="${selectedIsActive == 'true'}">활성</option>
-                                <option value="false" th:selected="${selectedIsActive == 'false'}">비활성</option>
+                                <option value="">전체</option>
+                                <option value="true" th:selected="${searchParams['isActive'] == 'true'}">활성</option>
+                                <option value="false" th:selected="${searchParams['isActive'] == 'false'}">비활성</option>
                             </select>
                         </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="submit" class="btn btn-outline-primary w-100">
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-primary w-100">
                                 <i class="fa-solid fa-search"></i> 검색
                             </button>
                         </div>
@@ -87,17 +113,18 @@
                             <thead class="table-light">
                                 <tr>
                                     <th width="5%">ID</th>
-                                    <th width="35%">질문 내용</th>
-                                    <th width="15%">카테고리</th>
-                                    <th width="20%">설명</th>
+                                    <th width="30%">질문 내용</th>
+                                    <th width="12%">카테고리</th>
+                                    <th width="8%">그룹</th>
+                                    <th width="18%">설명</th>
                                     <th width="8%">상태</th>
                                     <th width="12%">등록일</th>
-                                    <th width="5%">관리</th>
+                                    <th width="7%">관리</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr th:if="${questions.empty}">
-                                    <td colspan="7" class="text-center py-4 text-muted">
+                                    <td colspan="8" class="text-center py-4 text-muted">
                                         등록된 질문이 없습니다.
                                     </td>
                                 </tr>
@@ -110,6 +137,11 @@
                                         <span class="badge bg-info" th:text="${question.category.displayName}"></span>
                                     </td>
                                     <td>
+                                        <span class="badge"
+                                              th:classappend="${question.questionGroup.name == 'A' ? 'bg-primary' : (question.questionGroup.name == 'B' ? 'bg-secondary' : 'bg-warning')}"
+                                              th:text="${question.questionGroup.displayName}"></span>
+                                    </td>
+                                    <td>
                                         <div class="question-description" th:text="${question.description ?: '-'}"></div>
                                     </td>
                                     <td>
@@ -119,17 +151,12 @@
                                     <td th:text="${#temporals.format(question.createdAt, 'yyyy-MM-dd')}"></td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a th:href="@{/v1/admin/questions/{id}/edit(id=${question.id}, keyword=${param.keyword}, category=${param.category}, isActive=${param.isActive}, page=${questions.number}, size=${questions.size})}"
+                                            <a th:href="@{/v1/admin/questions/{id}/edit(id=${question.id})}"
                                                class="btn btn-outline-primary btn-sm" title="수정">
                                                 <i class="fa-solid fa-edit"></i>
                                             </a>
                                             <form th:action="@{/v1/admin/questions/{id}/toggle(id=${question.id})}"
                                                   method="post" style="display: inline;">
-                                                <input type="hidden" name="keyword" th:value="${param.keyword}">
-                                                <input type="hidden" name="category" th:value="${param.category}">
-                                                <input type="hidden" name="isActive" th:value="${param.isActive}">
-                                                <input type="hidden" name="page" th:value="${questions.number}">
-                                                <input type="hidden" name="size" th:value="${questions.size}">
                                                 <button type="submit"
                                                         th:class="${question.isActive ? 'btn btn-outline-warning btn-sm' : 'btn btn-outline-success btn-sm'}"
                                                         th:title="${question.isActive ? '비활성화' : '활성화'}"
@@ -139,11 +166,6 @@
                                             </form>
                                             <form th:action="@{/v1/admin/questions/{id}/delete(id=${question.id})}"
                                                   method="post" style="display: inline;">
-                                                <input type="hidden" name="keyword" th:value="${param.keyword}">
-                                                <input type="hidden" name="category" th:value="${param.category}">
-                                                <input type="hidden" name="isActive" th:value="${param.isActive}">
-                                                <input type="hidden" name="page" th:value="${questions.number}">
-                                                <input type="hidden" name="size" th:value="${questions.size}">
                                                 <button type="submit" class="btn btn-outline-danger btn-sm" title="삭제"
                                                         onclick="return confirm('정말 삭제하시겠습니까?')">
                                                     <i class="fa-solid fa-trash"></i>
@@ -160,15 +182,15 @@
                     <nav th:if="${questions.totalPages > 1}" aria-label="Page navigation">
                         <ul class="pagination justify-content-center">
                             <li class="page-item" th:classappend="${questions.first ? 'disabled' : ''}">
-                                <a class="page-link" th:href="@{/v1/admin/questions(page=${questions.number - 1}, keyword=${param.keyword}, category=${param.category}, isActive=${param.isActive})}">이전</a>
+                                <a class="page-link" th:href="@{/v1/admin/questions(page=${questions.number - 1}, keyword=${searchParams['keyword']}, purpose=${searchParams['purpose']}, category=${searchParams['category']}, questionGroup=${searchParams['questionGroup']}, isActive=${searchParams['isActive']})}">이전</a>
                             </li>
                             <li th:each="i : ${#numbers.sequence(0, questions.totalPages - 1)}"
                                 class="page-item" th:classappend="${i == questions.number ? 'active' : ''}">
-                                <a class="page-link" th:href="@{/v1/admin/questions(page=${i}, keyword=${param.keyword}, category=${param.category}, isActive=${param.isActive})}"
+                                <a class="page-link" th:href="@{/v1/admin/questions(page=${i}, keyword=${searchParams['keyword']}, purpose=${searchParams['purpose']}, category=${searchParams['category']}, questionGroup=${searchParams['questionGroup']}, isActive=${searchParams['isActive']})}"
                                    th:text="${i + 1}"></a>
                             </li>
                             <li class="page-item" th:classappend="${questions.last ? 'disabled' : ''}">
-                                <a class="page-link" th:href="@{/v1/admin/questions(page=${questions.number + 1}, keyword=${param.keyword}, category=${param.category}, isActive=${param.isActive})}">다음</a>
+                                <a class="page-link" th:href="@{/v1/admin/questions(page=${questions.number + 1}, keyword=${searchParams['keyword']}, purpose=${searchParams['purpose']}, category=${searchParams['category']}, questionGroup=${searchParams['questionGroup']}, isActive=${searchParams['isActive']})}">다음</a>
                             </li>
                         </ul>
                     </nav>
@@ -179,5 +201,46 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function updateCategoryOptions() {
+        const purpose = document.getElementById('purpose').value;
+        const chatroomGroup = document.getElementById('chatroomGroup');
+        const profileGroup = document.getElementById('profileGroup');
+        const categorySelect = document.getElementById('category');
+
+        // 현재 선택된 값 저장
+        const currentValue = categorySelect.value;
+
+        // 채팅방 전용 카테고리
+        const chatOnlyCategories = ['TENSION_UP', 'IF', 'SECRET'];
+        // 프로필 전용 카테고리
+        const profileOnlyCategories = ['FAVORITE', 'DATE', 'MEMORY', 'WANT_TALK'];
+
+        if (purpose === 'chatroom') {
+            chatroomGroup.style.display = '';
+            profileGroup.style.display = 'none';
+            // 프로필 전용 카테고리가 선택되어 있으면 초기화
+            if (profileOnlyCategories.includes(currentValue)) {
+                categorySelect.value = '';
+            }
+        } else if (purpose === 'profile') {
+            chatroomGroup.style.display = 'none';
+            profileGroup.style.display = '';
+            // 채팅방 전용 카테고리가 선택되어 있으면 초기화
+            if (chatOnlyCategories.includes(currentValue)) {
+                categorySelect.value = '';
+            }
+        } else {
+            // 전체: 두 그룹 모두 표시
+            chatroomGroup.style.display = '';
+            profileGroup.style.display = '';
+        }
+    }
+
+    // 페이지 로드 시 초기화
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCategoryOptions();
+    });
+</script>
 </body>
 </html>
