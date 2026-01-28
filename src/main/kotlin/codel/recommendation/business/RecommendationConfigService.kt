@@ -100,7 +100,28 @@ class RecommendationConfigService(
     fun getAllowDuplicate(): Boolean {
         return getConfig().allowDuplicate
     }
-    
+
+    /**
+     * 우선 추천 최대 나이 차이 조회
+     */
+    fun getAgePreferredMaxDiff(): Int {
+        return getConfig().agePreferredMaxDiff
+    }
+
+    /**
+     * 컷오프 기준 나이 차이 조회
+     */
+    fun getAgeCutoffDiff(): Int {
+        return getConfig().ageCutoffDiff
+    }
+
+    /**
+     * 후보 부족 시 컷오프 대상 허용 여부 조회
+     */
+    fun getAgeAllowCutoffWhenInsufficient(): Boolean {
+        return getConfig().ageAllowCutoffWhenInsufficient
+    }
+
     /**
      * 설정 업데이트 (캐시 제거)
      */
@@ -112,38 +133,54 @@ class RecommendationConfigService(
         codeTimeSlots: List<String>? = null,
         dailyRefreshTime: String? = null,
         repeatAvoidDays: Int? = null,
-        allowDuplicate: Boolean? = null
+        allowDuplicate: Boolean? = null,
+        agePreferredMaxDiff: Int? = null,
+        ageCutoffDiff: Int? = null,
+        ageAllowCutoffWhenInsufficient: Boolean? = null
     ): RecommendationConfigEntity {
         val config = configRepository.findTopByOrderByIdAsc()
             ?: RecommendationConfigEntity.createDefault().also { configRepository.save(it) }
-        
-        dailyCodeCount?.let { 
+
+        dailyCodeCount?.let {
             require(it > 0) { "dailyCodeCount는 0보다 커야 합니다" }
-            config.dailyCodeCount = it 
+            config.dailyCodeCount = it
         }
-        codeTimeCount?.let { 
+        codeTimeCount?.let {
             require(it > 0) { "codeTimeCount는 0보다 커야 합니다" }
-            config.codeTimeCount = it 
+            config.codeTimeCount = it
         }
-        codeTimeSlots?.let { 
+        codeTimeSlots?.let {
             require(it.isNotEmpty()) { "codeTimeSlots는 비어있을 수 없습니다" }
-            config.setCodeTimeSlotsFromList(it) 
+            config.setCodeTimeSlotsFromList(it)
         }
-        dailyRefreshTime?.let { 
+        dailyRefreshTime?.let {
             require(it.matches(Regex("^([01]?[0-9]|2[0-3]):[0-5][0-9]$"))) {
                 "잘못된 시간 형식: $it"
             }
-            config.dailyRefreshTime = it 
+            config.dailyRefreshTime = it
         }
-        repeatAvoidDays?.let { 
+        repeatAvoidDays?.let {
             require(it >= 0) { "repeatAvoidDays는 0 이상이어야 합니다" }
-            config.repeatAvoidDays = it 
+            config.repeatAvoidDays = it
         }
         allowDuplicate?.let { config.allowDuplicate = it }
-        
+
+        // 나이 설정 업데이트
+        agePreferredMaxDiff?.let {
+            require(it >= 0) { "agePreferredMaxDiff는 0 이상이어야 합니다" }
+            config.agePreferredMaxDiff = it
+        }
+        ageCutoffDiff?.let {
+            require(it > (agePreferredMaxDiff ?: config.agePreferredMaxDiff)) {
+                "ageCutoffDiff는 agePreferredMaxDiff보다 커야 합니다"
+            }
+            config.ageCutoffDiff = it
+        }
+        ageAllowCutoffWhenInsufficient?.let { config.ageAllowCutoffWhenInsufficient = it }
+
         val updated = configRepository.save(config)
         log.info { "추천 시스템 설정 업데이트 완료" }
-        
+
         return updated
     }
     
@@ -158,7 +195,10 @@ class RecommendationConfigService(
             "codeTimeSlots" to config.getCodeTimeSlotsAsList(),
             "dailyRefreshTime" to config.dailyRefreshTime,
             "repeatAvoidDays" to config.repeatAvoidDays,
-            "allowDuplicate" to config.allowDuplicate
+            "allowDuplicate" to config.allowDuplicate,
+            "agePreferredMaxDiff" to config.agePreferredMaxDiff,
+            "ageCutoffDiff" to config.ageCutoffDiff,
+            "ageAllowCutoffWhenInsufficient" to config.ageAllowCutoffWhenInsufficient
         )
     }
 }

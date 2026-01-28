@@ -31,7 +31,8 @@ class CodeTimeService(
     private val bucketService: RecommendationBucketService,
     private val historyService: RecommendationHistoryService,
     private val exclusionService: RecommendationExclusionService,
-    private val timeZoneService: TimeZoneService
+    private val timeZoneService: TimeZoneService,
+    private val agePreferenceResolver: AgePreferenceResolver
 ) : Loggable {
 
     /**
@@ -257,22 +258,35 @@ class CodeTimeService(
 
         val excludeIds = getExcludeIdsForCodeTime(user)
 
+        // 나이 정보 조회
+        val userAge = try {
+            userProfile.getAge()
+        } catch (e: Exception) {
+            log.warn { "사용자 나이 정보 조회 실패 - userId: ${user.getIdOrThrow()}, 나이 필터링 없이 진행" }
+            null
+        }
+
+        val agePreference = agePreferenceResolver.resolve(user)
+
         log.debug {
             "코드타임 생성 - userId: ${user.getIdOrThrow()}, " +
-            "timeSlot: $timeSlot, region: $userMainRegion-$userSubRegion, " +
-            "excludeCount: ${excludeIds.size}개"
+                "timeSlot: $timeSlot, region: $userMainRegion-$userSubRegion, userAge: $userAge, " +
+                "agePreference: preferredMax=${agePreference.preferredMaxDiff}, cutoff=${agePreference.cutoffDiff}, " +
+                "excludeCount: ${excludeIds.size}개"
         }
 
         val candidates = bucketService.getCandidatesByBucket(
             userMainRegion = userMainRegion,
             userSubRegion = userSubRegion ?: "",
             excludeIds = excludeIds,
-            requiredCount = config.codeTimeCount
+            requiredCount = config.codeTimeCount,
+            userAge = userAge,
+            agePreference = agePreference
         )
 
         log.info {
             "코드타임 후보자 선정 - userId: ${user.getIdOrThrow()}, " +
-            "timeSlot: $timeSlot, requested: ${config.codeTimeCount}개, actual: ${candidates.size}개"
+                "timeSlot: $timeSlot, requested: ${config.codeTimeCount}개, actual: ${candidates.size}개"
         }
 
         return candidates
