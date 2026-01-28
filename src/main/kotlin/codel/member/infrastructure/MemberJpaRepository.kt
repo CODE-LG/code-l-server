@@ -85,14 +85,17 @@ interface MemberJpaRepository : JpaRepository<Member, Long> {
         WHERE (:status IS NULL OR m.memberStatus = :status)
           AND (
             :keyword IS NULL OR :keyword = ''
-            OR LOWER(m.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(p.codeName) LIKE LOWER(CONCAT('%', :keyword, '%'))
           )
+          AND (:startDate IS NULL OR m.createdAt >= :startDate)
+          AND (:endDate IS NULL OR m.createdAt < :endDate)
         """
     )
     fun findMembersWithFilterAdvanced(
         @Param("keyword") keyword: String?,
         @Param("status") status: MemberStatus?,
+        @Param("startDate") startDate: LocalDateTime?,
+        @Param("endDate") endDate: LocalDateTime?,
         pageable: Pageable
     ): Page<Member>
 

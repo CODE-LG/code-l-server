@@ -2,6 +2,7 @@ package codel.chat.presentation.swagger
 
 import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.ChatLogRequest
+import codel.chat.presentation.request.QuestionRecommendRequest
 import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomResponse
 import codel.question.presentation.response.QuestionResponse
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
 
 @Tag(name = "Chat", description = "채팅 관련 API")
@@ -127,20 +129,42 @@ interface ChatControllerSwagger {
     ): ResponseEntity<Unit>
 
     @Operation(
-        summary = "랜덤 질문 전송",
-        description = "채팅방에 시스템이 추천하는 랜덤 질문을 전송합니다."
+        summary = "질문 추천",
+        description = """
+            채팅방에 질문을 추천합니다.
+
+            **버전 분기 동작:**
+            - 1.3.0 이상: 카테고리 기반 질문 추천 (request body의 category 필수)
+            - 1.3.0 미만 또는 헤더 없음: 기존 랜덤 질문 추천
+
+            **채팅방 카테고리 (1.3.0+):**
+            - VALUES: 가치관 코드 (A/B 그룹 적용)
+            - TENSION_UP: 텐션업 코드 (랜덤)
+            - IF: 만약에 코드 (A/B 그룹 적용)
+            - SECRET: 비밀 코드 (A/B 그룹 적용, 19+)
+
+            **A/B 그룹 정책:**
+            - A그룹 질문을 우선 추천하고, 소진되면 B그룹 질문 추천
+            - 텐션업 코드는 그룹 구분 없이 랜덤 추천
+        """
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "성공적으로 랜덤 질문 전송"),
-            ApiResponse(responseCode = "400", description = "요청 값이 잘못됨"),
-            ApiResponse(responseCode = "500", description = "서버 내부 오류"),
+            ApiResponse(responseCode = "200", description = "질문 추천 성공 또는 소진"),
+            ApiResponse(responseCode = "400", description = "카테고리 미선택 또는 잘못된 카테고리 (1.3.0+)"),
+            ApiResponse(responseCode = "403", description = "채팅방 접근 권한 없음"),
+            ApiResponse(responseCode = "404", description = "채팅방을 찾을 수 없음"),
+            ApiResponse(responseCode = "500", description = "서버 내부 오류")
         ]
     )
     fun sendRandomQuestion(
         @Parameter(hidden = true) @LoginMember requester: Member,
-        @PathVariable chatRoomId: Long
-    ): ResponseEntity<ChatResponse>
+        @Parameter(description = "채팅방 ID", required = true, example = "123")
+        @PathVariable chatRoomId: Long,
+        @Parameter(description = "앱 버전 (1.3.0 이상에서 카테고리 기반 추천)", required = false, example = "1.3.0")
+        @RequestHeader(value = "X-App-Version", required = false) appVersion: String?,
+        @RequestBody(required = false) request: QuestionRecommendRequest?
+    ): ResponseEntity<Any>
 
     @Operation(
         summary = "채팅방 대화 종료",

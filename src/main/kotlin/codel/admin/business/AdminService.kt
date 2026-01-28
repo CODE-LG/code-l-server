@@ -14,6 +14,7 @@ import codel.notification.domain.NotificationType
 import codel.question.business.QuestionService
 import codel.question.domain.Question
 import codel.question.domain.QuestionCategory
+import codel.question.domain.QuestionGroup
 import codel.verification.domain.StandardVerificationImage
 import codel.verification.domain.VerificationImage
 import codel.verification.infrastructure.StandardVerificationImageJpaRepository
@@ -290,6 +291,14 @@ class AdminService(
         isActive: Boolean?,
         pageable: Pageable
     ): Page<Question> = questionService.findQuestionsWithFilter(keyword, category, isActive, pageable)
+
+    fun findQuestionsWithFilterV2(
+        keyword: String?,
+        category: String?,
+        questionGroup: String?,
+        isActive: Boolean?,
+        pageable: Pageable
+    ): Page<Question> = questionService.findQuestionsWithFilterV2(keyword, category, questionGroup, isActive, pageable)
     
     fun findQuestionById(questionId: Long): Question = questionService.findQuestionById(questionId)
     
@@ -300,6 +309,15 @@ class AdminService(
         description: String?,
         isActive: Boolean
     ): Question = questionService.createQuestion(content, category, description, isActive)
+
+    @Transactional
+    fun createQuestionV2(
+        content: String,
+        category: QuestionCategory,
+        questionGroup: QuestionGroup,
+        description: String?,
+        isActive: Boolean
+    ): Question = questionService.createQuestionV2(content, category, questionGroup, description, isActive)
     
     @Transactional
     fun updateQuestion(
@@ -309,6 +327,16 @@ class AdminService(
         description: String?,
         isActive: Boolean
     ): Question = questionService.updateQuestion(questionId, content, category, description, isActive)
+
+    @Transactional
+    fun updateQuestionV2(
+        questionId: Long,
+        content: String,
+        category: QuestionCategory,
+        questionGroup: QuestionGroup,
+        description: String?,
+        isActive: Boolean
+    ): Question = questionService.updateQuestionV2(questionId, content, category, questionGroup, description, isActive)
     
     @Transactional
     fun deleteQuestion(questionId: Long) = questionService.deleteQuestion(questionId)

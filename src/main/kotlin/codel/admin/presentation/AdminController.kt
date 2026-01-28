@@ -9,6 +9,7 @@ import codel.admin.presentation.request.AdminLoginRequest
 import codel.admin.presentation.request.RejectProfileRequest
 import codel.member.domain.Member
 import codel.question.domain.QuestionCategory
+import codel.question.domain.QuestionGroup
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.data.domain.Page
@@ -358,16 +359,21 @@ class AdminController(
     fun questionList(
         model: Model,
         @RequestParam(required = false) keyword: String?,
+        @RequestParam(required = false) purpose: String?,
         @RequestParam(required = false) category: String?,
+        @RequestParam(required = false) questionGroup: String?,
         @RequestParam(required = false) isActive: Boolean?,
         @PageableDefault(size = 20) pageable: Pageable
     ): String {
-        val questions = adminService.findQuestionsWithFilter(keyword, category, isActive, pageable)
+        val questions = adminService.findQuestionsWithFilterV2(keyword, category, questionGroup, isActive, pageable)
         model.addAttribute("questions", questions)
         model.addAttribute("categories", QuestionCategory.values())
-        model.addAttribute("param", mapOf(
+        model.addAttribute("questionGroups", QuestionGroup.values())
+        model.addAttribute("searchParams", mapOf(
             "keyword" to (keyword ?: ""),
+            "purpose" to (purpose ?: ""),
             "category" to (category ?: ""),
+            "questionGroup" to (questionGroup ?: ""),
             "isActive" to (isActive?.toString() ?: "")
         ))
         return "questionList"
@@ -376,6 +382,7 @@ class AdminController(
     @GetMapping("/v1/admin/questions/new")
     fun questionForm(model: Model): String {
         model.addAttribute("categories", QuestionCategory.values())
+        model.addAttribute("questionGroups", QuestionGroup.values())
         return "questionForm"
     }
 
@@ -383,13 +390,15 @@ class AdminController(
     fun createQuestion(
         @RequestParam content: String,
         @RequestParam category: String,
+        @RequestParam questionGroup: String,
         @RequestParam(required = false) description: String?,
         @RequestParam(defaultValue = "true") isActive: Boolean,
         redirectAttributes: RedirectAttributes
     ): String {
         try {
             val questionCategory = QuestionCategory.valueOf(category)
-            adminService.createQuestion(content, questionCategory, description, isActive)
+            val group = QuestionGroup.valueOf(questionGroup)
+            adminService.createQuestionV2(content, questionCategory, group, description, isActive)
             redirectAttributes.addFlashAttribute("success", "질문이 성공적으로 등록되었습니다.")
         } catch (e: Exception) {
             redirectAttributes.addFlashAttribute("error", "질문 등록에 실패했습니다: ${e.message}")
@@ -405,6 +414,7 @@ class AdminController(
         val question = adminService.findQuestionById(questionId)
         model.addAttribute("question", question)
         model.addAttribute("categories", QuestionCategory.values())
+        model.addAttribute("questionGroups", QuestionGroup.values())
         return "questionEditForm"
     }
 
@@ -413,13 +423,15 @@ class AdminController(
         @PathVariable questionId: Long,
         @RequestParam content: String,
         @RequestParam category: String,
+        @RequestParam questionGroup: String,
         @RequestParam(required = false) description: String?,
         @RequestParam(defaultValue = "false") isActive: Boolean,
         redirectAttributes: RedirectAttributes
     ): String {
         try {
             val questionCategory = QuestionCategory.valueOf(category)
-            adminService.updateQuestion(questionId, content, questionCategory, description, isActive)
+            val group = QuestionGroup.valueOf(questionGroup)
+            adminService.updateQuestionV2(questionId, content, questionCategory, group, description, isActive)
             redirectAttributes.addFlashAttribute("success", "질문이 성공적으로 수정되었습니다.")
         } catch (e: Exception) {
             redirectAttributes.addFlashAttribute("error", "질문 수정에 실패했습니다: ${e.message}")

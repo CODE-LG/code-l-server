@@ -145,8 +145,10 @@ class CodeTimeService(
      * 제외 대상:
      * - 차단한 사용자
      * - 나를 차단한 사용자
-     * - 최근 시그널 보낸 사용자
      * - WITHDRAWN 상태의 사용자 (회원 탈퇴)
+     *
+     * 주의: 시그널 관계는 실시간 필터링에서 제외하지 않음
+     * → 추천 세션 일관성 유지를 위해 새로운 추천 생성 시에만 제외
      *
      * @param user 기준 사용자
      * @param memberIds 필터링할 사용자 ID 목록
@@ -157,15 +159,21 @@ class CodeTimeService(
             return emptyList()
         }
 
+        // 실시간 제외 대상 조회 (차단만)
         val excludeIds = mutableSetOf<Long>()
-        excludeIds.addAll(exclusionService.getBlockedMemberIds(user))
-        excludeIds.addAll(exclusionService.getRecentSignalMemberIds(user))
 
-        // WITHDRAWN 상태의 회원 필터링
+        // 1. 차단 관계만 확인 (즉시 반영)
+        excludeIds.addAll(exclusionService.getBlockedMemberIds(user))
+
+        // 2. 시그널 관계는 확인하지 않음 (추천 세션 일관성 유지)
+        // → 새로운 추천 생성 시에만 제외됨
+
+        // 3. WITHDRAWN 상태의 회원 필터링
         // getMembersByIds를 통해 조회하면 자동으로 WITHDRAWN이 제외됨
         val validMembers = bucketService.getMembersByIds(memberIds)
         val validIds = validMembers.map { it.getIdOrThrow() }
 
+        // 4. 최종 필터링
         val filteredIds = validIds.filter { it !in excludeIds }
 
         log.debug {
