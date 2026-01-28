@@ -25,7 +25,8 @@ class DailyCodeMatchingService(
     private val bucketService: RecommendationBucketService,
     private val historyService: RecommendationHistoryService,
     private val exclusionService: RecommendationExclusionService,
-    private val timeZoneService: TimeZoneService
+    private val timeZoneService: TimeZoneService,
+    private val agePreferenceResolver: AgePreferenceResolver
 ) : Loggable {
 
     /**
@@ -167,22 +168,36 @@ class DailyCodeMatchingService(
 
         log.info { "코드매칭 중 제외된 아이디 전부 조회 :::: " + excludeIds.joinToString(",") }
 
-        log.debug {
-            "오늘의 코드매칭 생성 - userId: ${user.getIdOrThrow()}, " +
-                    "region: $userMainRegion-$userSubRegion, excludeCount: ${excludeIds.size}개"
+        // 3. 나이 정보 조회
+        val userAge = try {
+            userProfile.getAge()
+        } catch (e: Exception) {
+            log.warn { "사용자 나이 정보 조회 실패 - userId: ${user.getIdOrThrow()}, 나이 필터링 없이 진행" }
+            null
         }
 
-        // 3. 버킷 정책으로 후보자 조회
+        val agePreference = agePreferenceResolver.resolve(user)
+
+        log.debug {
+            "오늘의 코드매칭 생성 - userId: ${user.getIdOrThrow()}, " +
+                "region: $userMainRegion-$userSubRegion, userAge: $userAge, " +
+                "agePreference: preferredMax=${agePreference.preferredMaxDiff}, cutoff=${agePreference.cutoffDiff}, " +
+                "excludeCount: ${excludeIds.size}개"
+        }
+
+        // 4. 버킷 정책으로 후보자 조회 (나이 우선순위 적용)
         val candidates = bucketService.getCandidatesByBucket(
             userMainRegion = userMainRegion,
             userSubRegion = userSubRegion ?: "",
             excludeIds = excludeIds,
-            requiredCount = config.dailyCodeCount
+            requiredCount = config.dailyCodeCount,
+            userAge = userAge,
+            agePreference = agePreference
         )
 
         log.info {
             "오늘의 코드매칭 후보자 선정 - userId: ${user.getIdOrThrow()}, " +
-                    "requested: ${config.dailyCodeCount}개, actual: ${candidates.size}개"
+                "requested: ${config.dailyCodeCount}개, actual: ${candidates.size}개"
         }
 
         return candidates

@@ -2,11 +2,14 @@ package codel.recommendation.business
 
 import codel.member.domain.Member
 import codel.member.infrastructure.MemberJpaRepository
+import codel.recommendation.domain.AgePreference
+import codel.recommendation.domain.AgeTier
 import codel.recommendation.domain.RecommendationConfig
 import org.springframework.stereotype.Service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.transaction.annotation.Transactional
 import org.hibernate.Hibernate
+import kotlin.math.abs
 
 /**
  * 추천 시스템의 4단계 버킷 정책을 구현하는 서비스
@@ -28,68 +31,315 @@ class RecommendationBucketService(
     
     /**
      * 4단계 버킷 정책에 따라 추천 후보자들을 추출합니다.
-     * 상위 버킷에서 부족한 인원을 하위 버킷에서 보충합니다.
-     * 
+     * 나이 우선순위 정책이 적용됩니다.
+     *
+     * 버킷 정책 우선순위: B1 → B2 → B3 → B4
+     * 나이 정책:
+     * - Phase 1: 각 버킷에서 선호 범위(0~5살) 후보만 선발
+     * - Phase 2: 부족 시 컷오프 대상(6살+) 허용 (설정에 따라)
+     *
      * @param userMainRegion 사용자의 메인 지역 (예: 서울, 경기)
      * @param userSubRegion 사용자의 서브 지역 (예: 강남, 분당)
      * @param excludeIds 제외할 사용자 ID 목록 (자신, 차단, 중복 방지 대상)
      * @param requiredCount 필요한 추천 인원수
-     * @return 버킷 정책에 따라 정렬된 추천 후보자 목록
+     * @param userAge 사용자의 나이 (null이면 나이 필터링 없이 기존 로직 적용)
+     * @param agePreference 나이 선호도 설정 (null이면 기본값 사용)
+     * @return 버킷 및 나이 정책에 따라 정렬된 추천 후보자 목록
      */
     fun getCandidatesByBucket(
         userMainRegion: String,
         userSubRegion: String,
         excludeIds: Set<Long>,
+        requiredCount: Int,
+        userAge: Int? = null,
+        agePreference: AgePreference? = null
+    ): List<Member> {
+
+        // 나이 정보가 없으면 기존 로직 사용
+        if (userAge == null) {
+            return getCandidatesByBucketLegacy(userMainRegion, userSubRegion, excludeIds, requiredCount)
+        }
+
+        val agePref = agePreference ?: AgePreference.default()
+
+        logger.info {
+            "버킷 정책 시작 (나이 우선순위 적용) - userRegion: $userMainRegion-$userSubRegion, " +
+                "userAge: $userAge, excludeIds: ${excludeIds.size}개, requiredCount: $requiredCount, " +
+                "agePreference: preferredMax=${agePref.preferredMaxDiff}, cutoff=${agePref.cutoffDiff}"
+        }
+
+        val results = mutableListOf<Member>()
+        val usedIds = excludeIds.toMutableSet()
+
+        // Phase 1: 선호 범위(0~5살) 후보만 찾기 (버킷 점프 적용)
+        collectPreferredAgeCandidates(
+            userMainRegion, userSubRegion, userAge, agePref, usedIds, requiredCount, results
+        )
+
+        // Phase 2: 부족 시 컷오프 대상(6살+) 허용
+        if (results.size < requiredCount && agePref.allowCutoffWhenInsufficient) {
+            logger.info { "선호 범위 후보 부족 - 컷오프 대상(${agePref.cutoffDiff}살+) 허용" }
+
+            collectCutoffAgeCandidates(
+                userMainRegion, userSubRegion, userAge, agePref, usedIds, requiredCount, results
+            )
+        }
+
+        logger.info { "버킷 정책 완료 - 최종 선택: ${results.size}명 / 요청: ${requiredCount}명" }
+
+        return results
+    }
+
+    /**
+     * Phase 1: 선호 범위(0~5살) 후보 수집
+     * 각 버킷에서 선호 범위 내의 후보만 선발하며, 버킷 점프 적용
+     */
+    private fun collectPreferredAgeCandidates(
+        userMainRegion: String,
+        userSubRegion: String,
+        userAge: Int,
+        agePref: AgePreference,
+        usedIds: MutableSet<Long>,
+        requiredCount: Int,
+        results: MutableList<Member>
+    ) {
+        // B1: 동일 subRegion - 선호 범위만
+        if (results.size < requiredCount) {
+            val b1Candidates = getBucket1Candidates(userMainRegion, userSubRegion, usedIds)
+            val b1Preferred = filterAndSortByAge(b1Candidates, userAge, agePref, preferredOnly = true)
+            val b1Selected = b1Preferred.take(requiredCount - results.size)
+            results.addAll(b1Selected)
+            usedIds.addAll(b1Selected.mapNotNull { it.id })
+
+            logger.info {
+                "B1 버킷 (동일 subRegion, 선호 범위): ${b1Selected.size}명 선택 " +
+                    "(전체: ${b1Candidates.size}명, 선호 범위: ${b1Preferred.size}명)"
+            }
+        }
+
+        // B2: 동일 mainRegion 내 다른 subRegion - 선호 범위만
+        if (results.size < requiredCount) {
+            val b2Candidates = getBucket2Candidates(userMainRegion, userSubRegion, usedIds)
+            val b2Preferred = filterAndSortByAge(b2Candidates, userAge, agePref, preferredOnly = true)
+            val b2Selected = b2Preferred.take(requiredCount - results.size)
+            results.addAll(b2Selected)
+            usedIds.addAll(b2Selected.mapNotNull { it.id })
+
+            logger.info {
+                "B2 버킷 (동일 mainRegion, 선호 범위): ${b2Selected.size}명 선택 " +
+                    "(전체: ${b2Candidates.size}명, 선호 범위: ${b2Preferred.size}명)"
+            }
+        }
+
+        // B3: 인접 mainRegion - 선호 범위만
+        if (results.size < requiredCount) {
+            val b3Candidates = getBucket3Candidates(userMainRegion, usedIds)
+            val b3Preferred = filterAndSortByAge(b3Candidates, userAge, agePref, preferredOnly = true)
+            val b3Selected = b3Preferred.take(requiredCount - results.size)
+            results.addAll(b3Selected)
+            usedIds.addAll(b3Selected.mapNotNull { it.id })
+
+            logger.info {
+                "B3 버킷 (인접 mainRegion, 선호 범위): ${b3Selected.size}명 선택 " +
+                    "(전체: ${b3Candidates.size}명, 선호 범위: ${b3Preferred.size}명)"
+            }
+        }
+
+        // B4: 전국 범위 - 선호 범위만
+        if (results.size < requiredCount) {
+            val b4Candidates = getBucket4Candidates(usedIds)
+            val b4Preferred = filterAndSortByAge(b4Candidates, userAge, agePref, preferredOnly = true)
+            val b4Selected = b4Preferred.take(requiredCount - results.size)
+            results.addAll(b4Selected)
+            usedIds.addAll(b4Selected.mapNotNull { it.id })
+
+            logger.info {
+                "B4 버킷 (전국 범위, 선호 범위): ${b4Selected.size}명 선택 " +
+                    "(전체: ${b4Candidates.size}명, 선호 범위: ${b4Preferred.size}명)"
+            }
+        }
+    }
+
+    /**
+     * Phase 2: 컷오프 대상(6살+) 후보 수집
+     * 선호 범위 후보가 부족할 때 실행
+     */
+    private fun collectCutoffAgeCandidates(
+        userMainRegion: String,
+        userSubRegion: String,
+        userAge: Int,
+        agePref: AgePreference,
+        usedIds: MutableSet<Long>,
+        requiredCount: Int,
+        results: MutableList<Member>
+    ) {
+        // B1: 동일 subRegion - 컷오프 대상
+        if (results.size < requiredCount) {
+            val b1Candidates = getBucket1Candidates(userMainRegion, userSubRegion, usedIds)
+            val b1Cutoff = filterAndSortByAge(b1Candidates, userAge, agePref, preferredOnly = false)
+                .filter { agePref.isCutoff(abs(userAge - getAgeOrDefault(it))) }
+            val b1Selected = b1Cutoff.take(requiredCount - results.size)
+            results.addAll(b1Selected)
+            usedIds.addAll(b1Selected.mapNotNull { it.id })
+
+            if (b1Selected.isNotEmpty()) {
+                logger.info { "B1 버킷 (동일 subRegion, 컷오프): ${b1Selected.size}명 선택" }
+            }
+        }
+
+        // B2~B4도 동일하게 컷오프 대상 수집
+        if (results.size < requiredCount) {
+            val b2Candidates = getBucket2Candidates(userMainRegion, userSubRegion, usedIds)
+            val b2Cutoff = filterAndSortByAge(b2Candidates, userAge, agePref, preferredOnly = false)
+                .filter { agePref.isCutoff(abs(userAge - getAgeOrDefault(it))) }
+            val b2Selected = b2Cutoff.take(requiredCount - results.size)
+            results.addAll(b2Selected)
+            usedIds.addAll(b2Selected.mapNotNull { it.id })
+
+            if (b2Selected.isNotEmpty()) {
+                logger.info { "B2 버킷 (동일 mainRegion, 컷오프): ${b2Selected.size}명 선택" }
+            }
+        }
+
+        if (results.size < requiredCount) {
+            val b3Candidates = getBucket3Candidates(userMainRegion, usedIds)
+            val b3Cutoff = filterAndSortByAge(b3Candidates, userAge, agePref, preferredOnly = false)
+                .filter { agePref.isCutoff(abs(userAge - getAgeOrDefault(it))) }
+            val b3Selected = b3Cutoff.take(requiredCount - results.size)
+            results.addAll(b3Selected)
+            usedIds.addAll(b3Selected.mapNotNull { it.id })
+
+            if (b3Selected.isNotEmpty()) {
+                logger.info { "B3 버킷 (인접 mainRegion, 컷오프): ${b3Selected.size}명 선택" }
+            }
+        }
+
+        if (results.size < requiredCount) {
+            val b4Candidates = getBucket4Candidates(usedIds)
+            val b4Cutoff = filterAndSortByAge(b4Candidates, userAge, agePref, preferredOnly = false)
+                .filter { agePref.isCutoff(abs(userAge - getAgeOrDefault(it))) }
+            val b4Selected = b4Cutoff.take(requiredCount - results.size)
+            results.addAll(b4Selected)
+
+            if (b4Selected.isNotEmpty()) {
+                logger.info { "B4 버킷 (전국 범위, 컷오프): ${b4Selected.size}명 선택" }
+            }
+        }
+    }
+
+    /**
+     * 나이 기준으로 후보 필터링 및 정렬
+     *
+     * 정렬 기준:
+     * 1. AgeTier (A1 > A2 > A3)
+     * 2. 같은 Tier 내에서는 ageDiff 작은 순
+     * 3. 동일하면 랜덤
+     *
+     * @param candidates 원본 후보 목록
+     * @param userAge 사용자 나이
+     * @param agePref 나이 선호도 설정
+     * @param preferredOnly true면 선호 범위(0~5살)만, false면 전체
+     */
+    private fun filterAndSortByAge(
+        candidates: List<Member>,
+        userAge: Int,
+        agePref: AgePreference,
+        preferredOnly: Boolean
+    ): List<Member> {
+        val filtered = if (preferredOnly) {
+            candidates.filter { member ->
+                val age = getAgeOrNull(member) ?: return@filter false
+                agePref.isPreferred(abs(userAge - age))
+            }
+        } else {
+            candidates.filter { getAgeOrNull(it) != null }
+        }
+
+        return filtered
+            .shuffled() // 먼저 랜덤 셔플 (동일 조건일 때 랜덤 효과)
+            .sortedWith(compareBy(
+                { AgeTier.from(abs(userAge - getAgeOrDefault(it))).priority }, // Tier 우선
+                { abs(userAge - getAgeOrDefault(it)) } // 같은 Tier 내에서는 ageDiff 작은 순
+            ))
+    }
+
+    /**
+     * Member의 나이를 안전하게 조회 (null 반환)
+     */
+    private fun getAgeOrNull(member: Member): Int? {
+        return try {
+            member.profile?.getAge()
+        } catch (e: Exception) {
+            logger.debug { "나이 조회 실패 - memberId: ${member.id}" }
+            null
+        }
+    }
+
+    /**
+     * Member의 나이를 안전하게 조회 (기본값 반환)
+     */
+    private fun getAgeOrDefault(member: Member, default: Int = Int.MAX_VALUE): Int {
+        return getAgeOrNull(member) ?: default
+    }
+
+    /**
+     * 기존 버킷 정책 (나이 필터링 없음)
+     * 하위 호환성을 위해 유지
+     */
+    private fun getCandidatesByBucketLegacy(
+        userMainRegion: String,
+        userSubRegion: String,
+        excludeIds: Set<Long>,
         requiredCount: Int
     ): List<Member> {
-        
-        logger.info { "버킷 정책 시작 - userRegion: $userMainRegion-$userSubRegion, excludeIds: ${excludeIds.size}개, requiredCount: $requiredCount" }
-        
+
+        logger.info { "버킷 정책 시작 (레거시) - userRegion: $userMainRegion-$userSubRegion, excludeIds: ${excludeIds.size}개, requiredCount: $requiredCount" }
+
         val results = mutableListOf<Member>()
         val usedIds = mutableSetOf<Long>()
         usedIds.addAll(excludeIds)
-        
+
         // B1: 동일 subRegion (최우선)
         if (results.size < requiredCount) {
             val b1Candidates = getBucket1Candidates(userMainRegion, userSubRegion, usedIds)
             val b1Selected = b1Candidates.take(requiredCount - results.size)
             results.addAll(b1Selected)
             usedIds.addAll(b1Selected.mapNotNull { it.id })
-            
+
             logger.info { "B1 버킷 (동일 subRegion): ${b1Selected.size}명 선택 (전체 후보: ${b1Candidates.size}명)" }
         }
-        
-        // B2: 동일 mainRegion 내 다른 subRegion  
+
+        // B2: 동일 mainRegion 내 다른 subRegion
         if (results.size < requiredCount) {
             val b2Candidates = getBucket2Candidates(userMainRegion, userSubRegion, usedIds)
             val b2Selected = b2Candidates.take(requiredCount - results.size)
             results.addAll(b2Selected)
             usedIds.addAll(b2Selected.mapNotNull { it.id })
-            
+
             logger.info { "B2 버킷 (동일 mainRegion): ${b2Selected.size}명 선택 (전체 후보: ${b2Candidates.size}명)" }
         }
-        
+
         // B3: 인접 mainRegion
         if (results.size < requiredCount) {
             val b3Candidates = getBucket3Candidates(userMainRegion, usedIds)
             val b3Selected = b3Candidates.take(requiredCount - results.size)
             results.addAll(b3Selected)
             usedIds.addAll(b3Selected.mapNotNull { it.id })
-            
+
             logger.info { "B3 버킷 (인접 mainRegion): ${b3Selected.size}명 선택 (전체 후보: ${b3Candidates.size}명)" }
         }
-        
+
         // B4: 전국 범위 (최후 보충)
         if (results.size < requiredCount) {
             val b4Candidates = getBucket4Candidates(usedIds)
             val b4Selected = b4Candidates.take(requiredCount - results.size)
             results.addAll(b4Selected)
-            
+
             logger.info { "B4 버킷 (전국 범위): ${b4Selected.size}명 선택 (전체 후보: ${b4Candidates.size}명)" }
         }
-        
+
         logger.info { "버킷 정책 완료 - 최종 선택: ${results.size}명 / 요청: ${requiredCount}명" }
-        
+
         return results
     }
     
