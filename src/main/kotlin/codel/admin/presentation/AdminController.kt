@@ -321,7 +321,9 @@ class AdminController(
             "PENDING" to adminService.countMembersByStatus("PENDING"),
             "DONE" to adminService.countMembersByStatus("DONE"),
             "REJECT" to adminService.countMembersByStatus("REJECT"),
-            "PHONE_VERIFIED" to adminService.countMembersByStatus("PHONE_VERIFIED")
+            "PHONE_VERIFIED" to adminService.countMembersByStatus("PHONE_VERIFIED"),
+            "PERSONALITY_COMPLETED" to adminService.countMembersByStatus("PERSONALITY_COMPLETED"),
+            "WITHDRAWN" to adminService.countMembersByStatus("WITHDRAWN")
         )
 
         model.addAttribute("members", members)
@@ -390,14 +392,19 @@ class AdminController(
     fun createQuestion(
         @RequestParam content: String,
         @RequestParam category: String,
-        @RequestParam questionGroup: String,
+        @RequestParam(required = false) questionGroup: String?,
         @RequestParam(required = false) description: String?,
         @RequestParam(defaultValue = "true") isActive: Boolean,
         redirectAttributes: RedirectAttributes
     ): String {
         try {
             val questionCategory = QuestionCategory.valueOf(category)
-            val group = QuestionGroup.valueOf(questionGroup)
+            // 회원가입 전용 카테고리(채팅 미사용)는 자동으로 RANDOM 그룹 지정
+            val group = if (questionCategory.usedInSignup && !questionCategory.usedInChat) {
+                QuestionGroup.RANDOM
+            } else {
+                QuestionGroup.valueOf(questionGroup ?: "RANDOM")
+            }
             adminService.createQuestionV2(content, questionCategory, group, description, isActive)
             redirectAttributes.addFlashAttribute("success", "질문이 성공적으로 등록되었습니다.")
         } catch (e: Exception) {
@@ -423,14 +430,19 @@ class AdminController(
         @PathVariable questionId: Long,
         @RequestParam content: String,
         @RequestParam category: String,
-        @RequestParam questionGroup: String,
+        @RequestParam(required = false) questionGroup: String?,
         @RequestParam(required = false) description: String?,
         @RequestParam(defaultValue = "false") isActive: Boolean,
         redirectAttributes: RedirectAttributes
     ): String {
         try {
             val questionCategory = QuestionCategory.valueOf(category)
-            val group = QuestionGroup.valueOf(questionGroup)
+            // 회원가입 전용 카테고리(채팅 미사용)는 자동으로 RANDOM 그룹 지정
+            val group = if (questionCategory.usedInSignup && !questionCategory.usedInChat) {
+                QuestionGroup.RANDOM
+            } else {
+                QuestionGroup.valueOf(questionGroup ?: "RANDOM")
+            }
             adminService.updateQuestionV2(questionId, content, questionCategory, group, description, isActive)
             redirectAttributes.addFlashAttribute("success", "질문이 성공적으로 수정되었습니다.")
         } catch (e: Exception) {

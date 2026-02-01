@@ -54,7 +54,7 @@
                         </div>
                         <div class="col-md-2">
                             <label for="purpose" class="form-label">용도</label>
-                            <select class="form-select" id="purpose" name="purpose" onchange="updateCategoryOptions()">
+                            <select class="form-select" id="purpose" name="purpose">
                                 <option value="">전체</option>
                                 <option value="chatroom" th:selected="${searchParams['purpose'] == 'chatroom'}">채팅방 질문 추천</option>
                                 <option value="profile" th:selected="${searchParams['purpose'] == 'profile'}">회원가입·프로필 수정</option>
@@ -64,20 +64,9 @@
                             <label for="category" class="form-label">카테고리</label>
                             <select class="form-select" id="category" name="category">
                                 <option value="">전체 카테고리</option>
-                                <optgroup label="채팅방 질문 추천" id="chatroomGroup">
-                                    <option value="VALUES" th:selected="${searchParams['category'] == 'VALUES' and (searchParams['purpose'] == 'chatroom' or searchParams['purpose'] == '')}" class="chat-category shared-category">가치관 코드</option>
-                                    <option value="TENSION_UP" th:selected="${searchParams['category'] == 'TENSION_UP'}" class="chat-category">텐션업 코드</option>
-                                    <option value="IF" th:selected="${searchParams['category'] == 'IF'}" class="chat-category">만약에 코드</option>
-                                    <option value="SECRET" th:selected="${searchParams['category'] == 'SECRET'}" class="chat-category">비밀 코드 (19+)</option>
-                                </optgroup>
-                                <optgroup label="회원가입·프로필 수정" id="profileGroup">
-                                    <option value="VALUES" th:selected="${searchParams['category'] == 'VALUES' and searchParams['purpose'] == 'profile'}" class="profile-category shared-category">가치관</option>
-                                    <option value="FAVORITE" th:selected="${searchParams['category'] == 'FAVORITE'}" class="profile-category">favorite</option>
-                                    <option value="DATE" th:selected="${searchParams['category'] == 'DATE'}" class="profile-category">데이트</option>
-                                    <option value="MEMORY" th:selected="${searchParams['category'] == 'MEMORY'}" class="profile-category">추억</option>
-                                    <option value="WANT_TALK" th:selected="${searchParams['category'] == 'WANT_TALK'}" class="profile-category">이런대화해보고싶어</option>
-                                </optgroup>
                             </select>
+                            <!-- 서버에서 전달받은 현재 카테고리 값 저장 -->
+                            <input type="hidden" id="currentCategory" th:value="${searchParams['category']}">
                         </div>
                         <div class="col-md-2">
                             <label for="questionGroup" class="form-label">그룹</label>
@@ -202,43 +191,66 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    function updateCategoryOptions() {
+    // 용도별 카테고리 옵션
+    const categoryOptions = {
+        chatroom: [
+            { value: 'VALUES', label: '가치관 코드' },
+            { value: 'TENSION_UP', label: '텐션업 코드' },
+            { value: 'IF', label: '만약에 코드' },
+            { value: 'SECRET', label: '비밀 코드 (19+)' }
+        ],
+        profile: [
+            { value: 'VALUES', label: '가치관' },
+            { value: 'FAVORITE', label: 'favorite' },
+            { value: 'DATE', label: '데이트' },
+            { value: 'MEMORY', label: '추억' },
+            { value: 'WANT_TALK', label: '이런대화해보고싶어' }
+        ]
+    };
+
+    function updateCategoryOptions(selectedCategory = null) {
         const purpose = document.getElementById('purpose').value;
-        const chatroomGroup = document.getElementById('chatroomGroup');
-        const profileGroup = document.getElementById('profileGroup');
         const categorySelect = document.getElementById('category');
 
-        // 현재 선택된 값 저장
-        const currentValue = categorySelect.value;
+        let html = '<option value="">전체 카테고리</option>';
 
-        // 채팅방 전용 카테고리
-        const chatOnlyCategories = ['TENSION_UP', 'IF', 'SECRET'];
-        // 프로필 전용 카테고리
-        const profileOnlyCategories = ['FAVORITE', 'DATE', 'MEMORY', 'WANT_TALK'];
+        if (!purpose) {
+            // 전체: optgroup으로 두 그룹 모두 표시
+            html += '<optgroup label="채팅방 질문 추천">';
+            categoryOptions.chatroom.forEach(opt => {
+                const selected = selectedCategory === opt.value ? ' selected' : '';
+                html += `<option value="${opt.value}"${selected}>${opt.label}</option>`;
+            });
+            html += '</optgroup>';
 
-        if (purpose === 'chatroom') {
-            chatroomGroup.style.display = '';
-            profileGroup.style.display = 'none';
-            // 프로필 전용 카테고리가 선택되어 있으면 초기화
-            if (profileOnlyCategories.includes(currentValue)) {
-                categorySelect.value = '';
-            }
-        } else if (purpose === 'profile') {
-            chatroomGroup.style.display = 'none';
-            profileGroup.style.display = '';
-            // 채팅방 전용 카테고리가 선택되어 있으면 초기화
-            if (chatOnlyCategories.includes(currentValue)) {
-                categorySelect.value = '';
-            }
+            html += '<optgroup label="회원가입·프로필 수정">';
+            categoryOptions.profile.forEach(opt => {
+                // VALUES는 이미 chatroom에서 추가했으므로 profile에서는 생략
+                if (opt.value === 'VALUES') return;
+                const selected = selectedCategory === opt.value ? ' selected' : '';
+                html += `<option value="${opt.value}"${selected}>${opt.label}</option>`;
+            });
+            html += '</optgroup>';
         } else {
-            // 전체: 두 그룹 모두 표시
-            chatroomGroup.style.display = '';
-            profileGroup.style.display = '';
+            // 특정 용도 선택: 해당 용도의 카테고리만 표시 (optgroup 없이)
+            const options = categoryOptions[purpose];
+            options.forEach(opt => {
+                const selected = selectedCategory === opt.value ? ' selected' : '';
+                html += `<option value="${opt.value}"${selected}>${opt.label}</option>`;
+            });
         }
+
+        categorySelect.innerHTML = html;
     }
 
     // 페이지 로드 시 초기화
     document.addEventListener('DOMContentLoaded', function() {
+        const currentCategory = document.getElementById('currentCategory').value;
+        updateCategoryOptions(currentCategory);
+    });
+
+    // 용도 변경 시 카테고리 옵션 업데이트
+    document.getElementById('purpose').addEventListener('change', function() {
         updateCategoryOptions();
     });
 </script>
