@@ -97,7 +97,13 @@ class ChatController(
                 if (body.success && body.chat != null) {
                     sendQuestionWebSocketMessages(chatRoomId, requester, body.chat)
                 }
-                response
+                // Map으로 직접 응답 구성 (SavedChatDto.partner 직렬화 시 LazyInitializationException 방지)
+                ResponseEntity.ok(mapOf(
+                    "success" to body.success,
+                    "question" to body.question,
+                    "chat" to body.chat?.chatResponse,
+                    "exhaustedMessage" to body.exhaustedMessage
+                ))
             }
             is QuestionSendResult -> {
                 sendQuestionWebSocketMessages(chatRoomId, requester, body)
