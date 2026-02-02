@@ -53,7 +53,7 @@ class QuestionServiceRecommendationTest {
         fun recommend_from_group_a_when_available() {
             // given
             val chatRoomId = 1L
-            val category = QuestionCategory.VALUES
+            val category = QuestionCategory.VALUES_CODE
             val groupAQuestions = listOf(
                 createQuestion(1L, category, QuestionGroup.A),
                 createQuestion(2L, category, QuestionGroup.A)
@@ -82,7 +82,7 @@ class QuestionServiceRecommendationTest {
         fun recommend_from_group_b_when_group_a_exhausted() {
             // given
             val chatRoomId = 1L
-            val category = QuestionCategory.VALUES
+            val category = QuestionCategory.VALUES_CODE
             val groupBQuestions = listOf(
                 createQuestion(3L, category, QuestionGroup.B),
                 createQuestion(4L, category, QuestionGroup.B)
@@ -110,7 +110,7 @@ class QuestionServiceRecommendationTest {
         fun return_exhausted_when_all_groups_exhausted() {
             // given
             val chatRoomId = 1L
-            val category = QuestionCategory.VALUES
+            val category = QuestionCategory.VALUES_CODE
 
             `when`(questionJpaRepository.findUnusedQuestionsByChatRoomAndCategoryAndGroup(
                 chatRoomId, category, QuestionGroup.A

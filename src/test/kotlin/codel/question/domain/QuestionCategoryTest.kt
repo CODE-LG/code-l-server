@@ -11,17 +11,32 @@ class QuestionCategoryTest {
     @DisplayName("카테고리 용도 테스트")
     inner class CategoryUsageTest {
 
-        @DisplayName("VALUES는 회원가입과 채팅방 양쪽에서 사용된다")
+        @DisplayName("VALUES는 회원가입에서만 사용된다")
         @Test
-        fun values_used_in_both() {
+        fun values_used_in_signup_only() {
             // given
             val category = QuestionCategory.VALUES
 
             // then
             assertTrue(category.usedInSignup)
-            assertTrue(category.usedInChat)
+            assertFalse(category.usedInChat)
             assertTrue(category.isSignupCategory())
+            assertFalse(category.isChatCategory())
+            assertEquals(GroupPolicy.NONE, category.chatGroupPolicy)
+        }
+
+        @DisplayName("VALUES_CODE는 채팅방에서만 사용된다")
+        @Test
+        fun values_code_used_in_chat_only() {
+            // given
+            val category = QuestionCategory.VALUES_CODE
+
+            // then
+            assertFalse(category.usedInSignup)
+            assertTrue(category.usedInChat)
+            assertFalse(category.isSignupCategory())
             assertTrue(category.isChatCategory())
+            assertEquals(GroupPolicy.A_THEN_B, category.chatGroupPolicy)
         }
 
         @DisplayName("FAVORITE은 회원가입에서만 사용된다")
@@ -77,11 +92,11 @@ class QuestionCategoryTest {
     @DisplayName("그룹 정책 테스트")
     inner class GroupPolicyTest {
 
-        @DisplayName("VALUES는 A_THEN_B 그룹 정책을 사용한다")
+        @DisplayName("VALUES_CODE는 A_THEN_B 그룹 정책을 사용한다")
         @Test
-        fun values_has_a_then_b_policy() {
+        fun values_code_has_a_then_b_policy() {
             // given
-            val category = QuestionCategory.VALUES
+            val category = QuestionCategory.VALUES_CODE
 
             // then
             assertEquals(GroupPolicy.A_THEN_B, category.chatGroupPolicy)
@@ -122,7 +137,9 @@ class QuestionCategoryTest {
         fun signup_only_categories_have_none_policy() {
             // given
             val signupOnlyCategories = listOf(
+                QuestionCategory.VALUES,
                 QuestionCategory.FAVORITE,
+                QuestionCategory.CURRENT_ME,
                 QuestionCategory.DATE,
                 QuestionCategory.MEMORY,
                 QuestionCategory.WANT_TALK
@@ -149,9 +166,11 @@ class QuestionCategoryTest {
             // then
             assertTrue(signupCategories.contains(QuestionCategory.VALUES))
             assertTrue(signupCategories.contains(QuestionCategory.FAVORITE))
+            assertTrue(signupCategories.contains(QuestionCategory.CURRENT_ME))
             assertTrue(signupCategories.contains(QuestionCategory.DATE))
             assertTrue(signupCategories.contains(QuestionCategory.MEMORY))
             assertTrue(signupCategories.contains(QuestionCategory.WANT_TALK))
+            assertFalse(signupCategories.contains(QuestionCategory.VALUES_CODE))
             assertFalse(signupCategories.contains(QuestionCategory.TENSION_UP))
             assertFalse(signupCategories.contains(QuestionCategory.IF))
             assertFalse(signupCategories.contains(QuestionCategory.SECRET))
@@ -164,10 +183,11 @@ class QuestionCategoryTest {
             val chatCategories = QuestionCategory.getChatCategories()
 
             // then
-            assertTrue(chatCategories.contains(QuestionCategory.VALUES))
+            assertTrue(chatCategories.contains(QuestionCategory.VALUES_CODE))
             assertTrue(chatCategories.contains(QuestionCategory.TENSION_UP))
             assertTrue(chatCategories.contains(QuestionCategory.IF))
             assertTrue(chatCategories.contains(QuestionCategory.SECRET))
+            assertFalse(chatCategories.contains(QuestionCategory.VALUES))
             assertFalse(chatCategories.contains(QuestionCategory.FAVORITE))
             assertFalse(chatCategories.contains(QuestionCategory.DATE))
         }

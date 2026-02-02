@@ -167,7 +167,7 @@
     // 용도별 카테고리 옵션
     const categoryOptions = {
         chatroom: [
-            { value: 'VALUES', label: '가치관 코드' },
+            { value: 'VALUES_CODE', label: '가치관 코드' },
             { value: 'TENSION_UP', label: '텐션업 코드' },
             { value: 'IF', label: '만약에 코드' },
             { value: 'SECRET', label: '비밀 코드 (19+)' }
@@ -175,6 +175,7 @@
         profile: [
             { value: 'VALUES', label: '가치관' },
             { value: 'FAVORITE', label: 'favorite' },
+            { value: 'CURRENT_ME', label: '요즘 나' },
             { value: 'DATE', label: '데이트' },
             { value: 'MEMORY', label: '추억' },
             { value: 'WANT_TALK', label: '이런대화해보고싶어' }
@@ -183,18 +184,20 @@
 
     // 카테고리별 용도 매핑
     const categoryToPurpose = {
-        'VALUES': 'both', // 양쪽 모두 가능
+        'VALUES': 'profile',
+        'VALUES_CODE': 'chatroom',
         'TENSION_UP': 'chatroom',
         'IF': 'chatroom',
         'SECRET': 'chatroom',
         'FAVORITE': 'profile',
+        'CURRENT_ME': 'profile',
         'DATE': 'profile',
         'MEMORY': 'profile',
         'WANT_TALK': 'profile'
     };
 
     // 회원가입 전용 카테고리 (그룹 자동 RANDOM)
-    const signupOnlyCategories = ['FAVORITE', 'DATE', 'MEMORY', 'WANT_TALK'];
+    const signupOnlyCategories = ['FAVORITE', 'CURRENT_ME', 'DATE', 'MEMORY', 'WANT_TALK'];
 
     const purposeSelect = document.getElementById('purpose');
     const categorySelect = document.getElementById('category');
@@ -251,15 +254,7 @@
         // 기존 카테고리로 용도 결정
         const purpose = categoryToPurpose[currentCategory];
 
-        if (purpose === 'both') {
-            // VALUES는 채팅방 용도로 기본 설정 (채팅방에서 사용되는 경우가 더 흔함)
-            // 그룹이 RANDOM이면 profile, 아니면 chatroom으로 추정
-            if (currentGroup === 'RANDOM') {
-                purposeSelect.value = 'profile';
-            } else {
-                purposeSelect.value = 'chatroom';
-            }
-        } else if (purpose === 'chatroom') {
+        if (purpose === 'chatroom') {
             purposeSelect.value = 'chatroom';
         } else {
             purposeSelect.value = 'profile';
