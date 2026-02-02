@@ -151,7 +151,7 @@
     // 용도별 카테고리 옵션
     const categoryOptions = {
         chatroom: [
-            { value: 'VALUES', label: '가치관 코드' },
+            { value: 'VALUES_CODE', label: '가치관 코드' },
             { value: 'TENSION_UP', label: '텐션업 코드' },
             { value: 'IF', label: '만약에 코드' },
             { value: 'SECRET', label: '비밀 코드 (19+)' }
@@ -159,6 +159,7 @@
         profile: [
             { value: 'VALUES', label: '가치관' },
             { value: 'FAVORITE', label: 'favorite' },
+            { value: 'CURRENT_ME', label: '요즘 나' },
             { value: 'DATE', label: '데이트' },
             { value: 'MEMORY', label: '추억' },
             { value: 'WANT_TALK', label: '이런대화해보고싶어' }
@@ -166,7 +167,7 @@
     };
 
     // 회원가입 전용 카테고리 (그룹 자동 RANDOM)
-    const signupOnlyCategories = ['FAVORITE', 'DATE', 'MEMORY', 'WANT_TALK'];
+    const signupOnlyCategories = ['FAVORITE', 'CURRENT_ME', 'DATE', 'MEMORY', 'WANT_TALK'];
 
     const purposeSelect = document.getElementById('purpose');
     const categorySelect = document.getElementById('category');
