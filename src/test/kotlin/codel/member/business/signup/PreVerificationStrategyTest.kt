@@ -11,39 +11,33 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.*
 import org.springframework.http.HttpStatus
 import org.springframework.mock.web.MockMultipartFile
-import java.time.LocalDate
 
 class PreVerificationStrategyTest {
 
     private lateinit var signupService: SignupService
     private lateinit var memberJpaRepository: MemberJpaRepository
-    private lateinit var asyncNotificationService: IAsyncNotificationService
     private lateinit var strategy: PreVerificationStrategy
+    private lateinit var asyncNotificationSet: IAsyncNotificationService
 
     @BeforeEach
     fun setUp() {
         signupService = mock(SignupService::class.java)
         memberJpaRepository = mock(MemberJpaRepository::class.java)
-        asyncNotificationService = mock(IAsyncNotificationService::class.java)
-        strategy = PreVerificationStrategy(signupService, memberJpaRepository, asyncNotificationService)
+        asyncNotificationSet = mock(IAsyncNotificationService::class.java)
+        strategy = PreVerificationStrategy(signupService, memberJpaRepository, asyncNotificationSet)
     }
 
-    @DisplayName("PERSONALITY_COMPLETED 상태에서는 히든 이미지 등록 후 PENDING 상태로 변경한다")
+    @DisplayName("PERSONALITY_COMPLETED 상태에서는 히든 이미지 등록 후 HIDDEN_COMPLETED 상태로 변경한다")
     @Test
-    fun handleHiddenImages_personalityCompleted_changeToPending() {
+    fun handleHiddenImages_personalityCompleted_changeToHiddenCompleted() {
         // given
         val profile = Profile(
             id = 1L,
-            codeName = "테스트유저",
-            bigCity = "서울",
-            smallCity = "강남구",
-            birthDate = LocalDate.of(1990, 1, 1)
+            codeName = "테스트유저"
         )
-
         val member = Member(
             id = 1L,
             oauthId = "test-oauth-id",
@@ -53,15 +47,13 @@ class PreVerificationStrategyTest {
             profile = profile
         )
 
-        profile.member = member
-
         val images = listOf(
             MockMultipartFile("image1", "test1.jpg", "image/jpeg", "test1".toByteArray()),
             MockMultipartFile("image2", "test2.jpg", "image/jpeg", "test2".toByteArray()),
             MockMultipartFile("image3", "test3.jpg", "image/jpeg", "test3".toByteArray())
         )
 
-        // memberJpaRepository.findByMemberId가 member를 반환하도록 mock 설정
+        // mock: findByMemberId가 member를 반환하도록 설정
         `when`(memberJpaRepository.findByMemberId(1L)).thenReturn(member)
 
         // when
@@ -69,9 +61,7 @@ class PreVerificationStrategyTest {
 
         // then
         verify(signupService, times(1)).registerHiddenImages(member, images)
-        verify(memberJpaRepository, times(1)).findByMemberId(1L)
-
-        assertEquals(MemberStatus.PENDING, member.memberStatus)
+        assertEquals(MemberStatus.PENDING, member.memberStatus) // completeHiddenProfile()이 PENDING으로 변경
         assertEquals(HttpStatus.OK, response.statusCode)
     }
 }

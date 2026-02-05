@@ -496,6 +496,39 @@ class ChatService(
     }
 
     /**
+     * 특정 질문을 채팅방에 전송 (Strategy 패턴용)
+     *
+     * @param chatRoomId 채팅방 ID
+     * @param requester 요청 회원
+     * @param question 전송할 질문
+     * @return 저장된 채팅 정보
+     */
+    fun sendQuestionMessage(chatRoomId: Long, requester: Member, question: Question): SavedChatDto {
+        // 1. 채팅방 검증
+        val chatRoom = chatRoomJpaRepository.findById(chatRoomId)
+            .orElseThrow { ChatException(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다.") }
+
+        validateChatRoomMember(chatRoomId, requester)
+        val partner = findPartner(chatRoomId, requester)
+
+        // 2. 질문 사용 표시
+        questionService.markQuestionAsUsed(chatRoomId, question, requester)
+
+        // 3. 채팅 메시지 생성
+        val savedChat = createQuestionSystemMessage(chatRoom, question, requester)
+        chatRoom.updateRecentChat(savedChat)
+
+        // 4. 결과 반환
+        val result = buildQuestionSendResult(requester, partner, savedChat)
+        return SavedChatDto(
+            partner = result.partner,
+            requesterChatRoomResponse = result.requesterChatRoomResponse,
+            partnerChatRoomResponse = result.partnerChatRoomResponse,
+            chatResponse = result.chatResponse
+        )
+    }
+
+    /**
      * 채팅방 멤버 권한 검증
      */
     private fun validateChatRoomMember(chatRoomId: Long, member: Member) {

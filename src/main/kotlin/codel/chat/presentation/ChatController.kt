@@ -1,12 +1,17 @@
 package codel.chat.presentation
 
 import codel.chat.business.ChatService
+import codel.chat.business.strategy.QuestionRecommendStrategyResolver
 import codel.chat.presentation.request.CreateChatRoomRequest
 import codel.chat.presentation.request.ChatLogRequest
 import codel.chat.presentation.request.ChatSendRequest
+import codel.chat.presentation.request.QuestionRecommendRequest
 import codel.chat.presentation.response.ChatResponse
 import codel.chat.presentation.response.ChatRoomEventType
 import codel.chat.presentation.response.ChatRoomResponse
+import codel.chat.presentation.response.QuestionRecommendResponseV2
+import codel.chat.presentation.response.QuestionSendResult
+import codel.chat.presentation.response.SavedChatDto
 import codel.chat.presentation.swagger.ChatControllerSwagger
 import codel.config.Loggable
 import codel.config.argumentresolver.LoginMember
@@ -23,6 +28,7 @@ import org.springframework.web.bind.annotation.*
 class ChatController(
     private val chatService: ChatService,
     private val messagingTemplate: SimpMessagingTemplate,
+    private val strategyResolver: QuestionRecommendStrategyResolver
 ) : ChatControllerSwagger, Loggable {
     @GetMapping("/v1/chatrooms")
     override fun getChatRooms(
@@ -67,28 +73,68 @@ class ChatController(
         return ResponseEntity.noContent().build()
     }
 
+    /**
+     * 질문 추천 API (버전 분기)
+     *
+     * - 1.3.0 이상: 카테고리 기반 질문 추천 (CategoryBasedQuestionStrategy)
+     * - 1.3.0 미만: 기존 랜덤 질문 추천 (LegacyRandomQuestionStrategy)
+     */
     @PostMapping("/v1/chatroom/{chatRoomId}/questions/random")
     override fun sendRandomQuestion(
         @LoginMember requester: Member,
-        @PathVariable chatRoomId: Long
-    ): ResponseEntity<ChatResponse> {
-        val result = chatService.sendRandomQuestion(chatRoomId, requester)
-        
-        // 1. 채팅방 실시간 메시지 전송 (채팅방에 있는 사용자들에게)
+        @PathVariable chatRoomId: Long,
+        @RequestHeader(value = "X-App-Version", required = false) appVersion: String?,
+        @RequestBody(required = false) request: QuestionRecommendRequest?
+    ): ResponseEntity<Any> {
+        log.info { "질문 추천 요청 - chatRoomId: $chatRoomId, appVersion: $appVersion, category: ${request?.category}" }
+
+        val strategy = strategyResolver.resolveStrategy(appVersion)
+        val response = strategy.recommendQuestion(chatRoomId, requester, request ?: QuestionRecommendRequest())
+
+        // 응답 타입에 따라 WebSocket 메시지 전송 및 HTTP 응답 처리
+        return when (val body = response.body) {
+            is QuestionRecommendResponseV2 -> {
+                if (body.success && body.chat != null) {
+                    sendQuestionWebSocketMessages(chatRoomId, requester, body.chat)
+                }
+                // Map으로 직접 응답 구성 (SavedChatDto.partner 직렬화 시 LazyInitializationException 방지)
+                ResponseEntity.ok(mapOf(
+                    "success" to body.success,
+                    "question" to body.question,
+                    "chat" to body.chat?.chatResponse,
+                    "exhaustedMessage" to body.exhaustedMessage
+                ))
+            }
+            is QuestionSendResult -> {
+                sendQuestionWebSocketMessages(chatRoomId, requester, body)
+                ResponseEntity.ok(body.chatResponse)
+            }
+            else -> response
+        }
+    }
+
+    private fun sendQuestionWebSocketMessages(chatRoomId: Long, requester: Member, result: QuestionSendResult) {
         messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", result.chatResponse)
-        
-        // 2. 발송자에게는 본인용 채팅방 응답 전송
         messagingTemplate.convertAndSend(
             "/sub/v1/chatroom/member/${requester.getIdOrThrow()}",
-            result.requesterChatRoomResponse,
+            result.requesterChatRoomResponse
         )
-        
-        // 3. 상대방에게는 읽지 않은 수가 증가된 채팅방 응답 전송
         messagingTemplate.convertAndSend(
             "/sub/v1/chatroom/member/${result.partner.getIdOrThrow()}",
-            result.partnerChatRoomResponse,
+            result.partnerChatRoomResponse
         )
-        return ResponseEntity.ok(result.chatResponse)
+    }
+
+    private fun sendQuestionWebSocketMessages(chatRoomId: Long, requester: Member, chat: SavedChatDto) {
+        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", chat.chatResponse)
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${requester.getIdOrThrow()}",
+            chat.requesterChatRoomResponse
+        )
+        messagingTemplate.convertAndSend(
+            "/sub/v1/chatroom/member/${chat.partner.getIdOrThrow()}",
+            chat.partnerChatRoomResponse
+        )
     }
 
     @PostMapping("/v1/chatroom/{chatRoomId}/chat")

@@ -3,6 +3,7 @@ package codel.question.infrastructure
 import codel.chat.domain.ChatRoomQuestion
 import codel.question.domain.Question
 import codel.question.domain.QuestionCategory
+import codel.question.domain.QuestionGroup
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
@@ -17,11 +18,47 @@ interface QuestionJpaRepository : JpaRepository<Question, Long> {
     fun findActiveQuestions(): List<Question>
     
     @Query("""
-        SELECT q FROM Question q 
-        WHERE q.isActive = true 
-        AND q.category NOT IN ('IF', 'BALANCE_ONE')
+        SELECT q FROM Question q
+        WHERE q.isActive = true
+        AND q.category IN ('VALUES', 'FAVORITE', 'DATE', 'MEMORY', 'WANT_TALK')
     """)
     fun findActiveQuestionsForSignup(): List<Question>
+
+    /**
+     * 채팅방에서 특정 카테고리의 미사용 질문 조회 (그룹별)
+     */
+    @Query("""
+        SELECT q FROM Question q
+        WHERE q.isActive = true
+        AND q.category = :category
+        AND q.questionGroup = :questionGroup
+        AND q.id NOT IN (
+            SELECT crq.question.id FROM ChatRoomQuestion crq
+            WHERE crq.chatRoom.id = :chatRoomId AND crq.isUsed = true
+        )
+    """)
+    fun findUnusedQuestionsByChatRoomAndCategoryAndGroup(
+        @Param("chatRoomId") chatRoomId: Long,
+        @Param("category") category: QuestionCategory,
+        @Param("questionGroup") questionGroup: QuestionGroup
+    ): List<Question>
+
+    /**
+     * 채팅방에서 특정 카테고리의 미사용 질문 조회 (그룹 무관)
+     */
+    @Query("""
+        SELECT q FROM Question q
+        WHERE q.isActive = true
+        AND q.category = :category
+        AND q.id NOT IN (
+            SELECT crq.question.id FROM ChatRoomQuestion crq
+            WHERE crq.chatRoom.id = :chatRoomId AND crq.isUsed = true
+        )
+    """)
+    fun findUnusedQuestionsByChatRoomAndCategory(
+        @Param("chatRoomId") chatRoomId: Long,
+        @Param("category") category: QuestionCategory
+    ): List<Question>
     
     @Query("""
         SELECT q FROM Question q 
@@ -43,6 +80,25 @@ interface QuestionJpaRepository : JpaRepository<Question, Long> {
     fun findAllWithFilter(
         @Param("keyword") keyword: String?,
         @Param("category") category: QuestionCategory?,
+        @Param("isActive") isActive: Boolean?,
+        pageable: Pageable
+    ): Page<Question>
+
+    /**
+     * 관리자: 카테고리/그룹/상태 필터 조회
+     */
+    @Query("""
+        SELECT q FROM Question q
+        WHERE (:keyword IS NULL OR :keyword = '' OR q.content LIKE CONCAT('%', :keyword, '%') OR q.description LIKE CONCAT('%', :keyword, '%'))
+        AND (:category IS NULL OR q.category = :category)
+        AND (:questionGroup IS NULL OR q.questionGroup = :questionGroup)
+        AND (:isActive IS NULL OR q.isActive = :isActive)
+        ORDER BY q.createdAt DESC
+    """)
+    fun findAllWithFilterV2(
+        @Param("keyword") keyword: String?,
+        @Param("category") category: QuestionCategory?,
+        @Param("questionGroup") questionGroup: QuestionGroup?,
         @Param("isActive") isActive: Boolean?,
         pageable: Pageable
     ): Page<Question>

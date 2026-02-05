@@ -9,6 +9,7 @@ import codel.admin.presentation.request.AdminLoginRequest
 import codel.admin.presentation.request.RejectProfileRequest
 import codel.member.domain.Member
 import codel.question.domain.QuestionCategory
+import codel.question.domain.QuestionGroup
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.data.domain.Page
@@ -321,8 +322,8 @@ class AdminController(
             "DONE" to adminService.countMembersByStatus("DONE"),
             "REJECT" to adminService.countMembersByStatus("REJECT"),
             "PHONE_VERIFIED" to adminService.countMembersByStatus("PHONE_VERIFIED"),
-            "WITHDRAWN" to adminService.countMembersByStatus("WITHDRAWN"),
-            "PERSONALITY_COMPLETED" to adminService.countMembersByStatus("PERSONALITY_COMPLETED")
+            "PERSONALITY_COMPLETED" to adminService.countMembersByStatus("PERSONALITY_COMPLETED"),
+            "WITHDRAWN" to adminService.countMembersByStatus("WITHDRAWN")
         )
 
         model.addAttribute("members", members)
@@ -360,22 +361,30 @@ class AdminController(
     fun questionList(
         model: Model,
         @RequestParam(required = false) keyword: String?,
+        @RequestParam(required = false) purpose: String?,
         @RequestParam(required = false) category: String?,
+        @RequestParam(required = false) questionGroup: String?,
         @RequestParam(required = false) isActive: Boolean?,
         @PageableDefault(size = 20) pageable: Pageable
     ): String {
-        val questions = adminService.findQuestionsWithFilter(keyword, category, isActive, pageable)
+        val questions = adminService.findQuestionsWithFilterV2(keyword, category, questionGroup, isActive, pageable)
         model.addAttribute("questions", questions)
         model.addAttribute("categories", QuestionCategory.values())
-        model.addAttribute("selectedKeyword", keyword ?: "")
-        model.addAttribute("selectedCategory", category ?: "")
-        model.addAttribute("selectedIsActive", isActive?.toString() ?: "")
+        model.addAttribute("questionGroups", QuestionGroup.values())
+        model.addAttribute("searchParams", mapOf(
+            "keyword" to (keyword ?: ""),
+            "purpose" to (purpose ?: ""),
+            "category" to (category ?: ""),
+            "questionGroup" to (questionGroup ?: ""),
+            "isActive" to (isActive?.toString() ?: "")
+        ))
         return "questionList"
     }
 
     @GetMapping("/v1/admin/questions/new")
     fun questionForm(model: Model): String {
         model.addAttribute("categories", QuestionCategory.values())
+        model.addAttribute("questionGroups", QuestionGroup.values())
         return "questionForm"
     }
 
@@ -383,13 +392,20 @@ class AdminController(
     fun createQuestion(
         @RequestParam content: String,
         @RequestParam category: String,
+        @RequestParam(required = false) questionGroup: String?,
         @RequestParam(required = false) description: String?,
         @RequestParam(defaultValue = "true") isActive: Boolean,
         redirectAttributes: RedirectAttributes
     ): String {
         try {
             val questionCategory = QuestionCategory.valueOf(category)
-            adminService.createQuestion(content, questionCategory, description, isActive)
+            // 회원가입 전용 카테고리(채팅 미사용)는 자동으로 RANDOM 그룹 지정
+            val group = if (questionCategory.usedInSignup && !questionCategory.usedInChat) {
+                QuestionGroup.RANDOM
+            } else {
+                QuestionGroup.valueOf(questionGroup ?: "RANDOM")
+            }
+            adminService.createQuestionV2(content, questionCategory, group, description, isActive)
             redirectAttributes.addFlashAttribute("success", "질문이 성공적으로 등록되었습니다.")
         } catch (e: Exception) {
             redirectAttributes.addFlashAttribute("error", "질문 등록에 실패했습니다: ${e.message}")
@@ -400,21 +416,12 @@ class AdminController(
     @GetMapping("/v1/admin/questions/{questionId}/edit")
     fun editQuestionForm(
         @PathVariable questionId: Long,
-        @RequestParam(required = false) keyword: String?,
-        @RequestParam(required = false) category: String?,
-        @RequestParam(required = false) isActive: String?,
-        @RequestParam(required = false, defaultValue = "0") page: Int,
-        @RequestParam(required = false, defaultValue = "20") size: Int,
         model: Model
     ): String {
         val question = adminService.findQuestionById(questionId)
         model.addAttribute("question", question)
         model.addAttribute("categories", QuestionCategory.values())
-        model.addAttribute("filterKeyword", keyword)
-        model.addAttribute("filterCategory", category)
-        model.addAttribute("filterIsActive", isActive)
-        model.addAttribute("filterPage", page)
-        model.addAttribute("filterSize", size)
+        model.addAttribute("questionGroups", QuestionGroup.values())
         return "questionEditForm"
     }
 
@@ -423,43 +430,30 @@ class AdminController(
         @PathVariable questionId: Long,
         @RequestParam content: String,
         @RequestParam category: String,
+        @RequestParam(required = false) questionGroup: String?,
         @RequestParam(required = false) description: String?,
         @RequestParam(defaultValue = "false") isActive: Boolean,
-        @RequestParam(required = false) keyword: String?,
-        @RequestParam(required = false) filterCategory: String?,
-        @RequestParam(required = false) filterIsActive: String?,
-        @RequestParam(required = false, defaultValue = "0") page: Int,
-        @RequestParam(required = false, defaultValue = "20") size: Int,
         redirectAttributes: RedirectAttributes
     ): String {
         try {
             val questionCategory = QuestionCategory.valueOf(category)
-            adminService.updateQuestion(questionId, content, questionCategory, description, isActive)
+            // 회원가입 전용 카테고리(채팅 미사용)는 자동으로 RANDOM 그룹 지정
+            val group = if (questionCategory.usedInSignup && !questionCategory.usedInChat) {
+                QuestionGroup.RANDOM
+            } else {
+                QuestionGroup.valueOf(questionGroup ?: "RANDOM")
+            }
+            adminService.updateQuestionV2(questionId, content, questionCategory, group, description, isActive)
             redirectAttributes.addFlashAttribute("success", "질문이 성공적으로 수정되었습니다.")
         } catch (e: Exception) {
             redirectAttributes.addFlashAttribute("error", "질문 수정에 실패했습니다: ${e.message}")
         }
-
-        // 필터 조건 유지하여 리다이렉트
-        val params = mutableListOf<String>()
-        keyword?.let { if (it.isNotBlank()) params.add("keyword=$it") }
-        filterCategory?.let { if (it.isNotBlank()) params.add("category=$it") }
-        filterIsActive?.let { if (it.isNotBlank()) params.add("isActive=$it") }
-        params.add("page=$page")
-        params.add("size=$size")
-
-        val queryString = if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
-        return "redirect:/v1/admin/questions$queryString"
+        return "redirect:/v1/admin/questions"
     }
 
     @PostMapping("/v1/admin/questions/{questionId}/delete")
     fun deleteQuestion(
         @PathVariable questionId: Long,
-        @RequestParam(required = false) keyword: String?,
-        @RequestParam(required = false) category: String?,
-        @RequestParam(required = false) isActive: String?,
-        @RequestParam(required = false, defaultValue = "0") page: Int,
-        @RequestParam(required = false, defaultValue = "20") size: Int,
         redirectAttributes: RedirectAttributes
     ): String {
         try {
@@ -468,27 +462,12 @@ class AdminController(
         } catch (e: Exception) {
             redirectAttributes.addFlashAttribute("error", "질문 삭제에 실패했습니다: ${e.message}")
         }
-
-        // 필터 조건 유지하여 리다이렉트
-        val params = mutableListOf<String>()
-        keyword?.let { if (it.isNotBlank()) params.add("keyword=$it") }
-        category?.let { if (it.isNotBlank()) params.add("category=$it") }
-        isActive?.let { if (it.isNotBlank()) params.add("isActive=$it") }
-        params.add("page=$page")
-        params.add("size=$size")
-
-        val queryString = if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
-        return "redirect:/v1/admin/questions$queryString"
+        return "redirect:/v1/admin/questions"
     }
 
     @PostMapping("/v1/admin/questions/{questionId}/toggle")
     fun toggleQuestionStatus(
         @PathVariable questionId: Long,
-        @RequestParam(required = false) keyword: String?,
-        @RequestParam(required = false) category: String?,
-        @RequestParam(required = false) isActive: String?,
-        @RequestParam(required = false, defaultValue = "0") page: Int,
-        @RequestParam(required = false, defaultValue = "20") size: Int,
         redirectAttributes: RedirectAttributes
     ): String {
         try {
@@ -498,17 +477,7 @@ class AdminController(
         } catch (e: Exception) {
             redirectAttributes.addFlashAttribute("error", "질문 상태 변경에 실패했습니다: ${e.message}")
         }
-
-        // 필터 조건 유지하여 리다이렉트
-        val params = mutableListOf<String>()
-        keyword?.let { if (it.isNotBlank()) params.add("keyword=$it") }
-        category?.let { if (it.isNotBlank()) params.add("category=$it") }
-        isActive?.let { if (it.isNotBlank()) params.add("isActive=$it") }
-        params.add("page=$page")
-        params.add("size=$size")
-
-        val queryString = if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
-        return "redirect:/v1/admin/questions$queryString"
+        return "redirect:/v1/admin/questions"
     }
 
     // ========== 신고 관리 ==========

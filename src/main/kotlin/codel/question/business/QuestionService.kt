@@ -3,6 +3,8 @@ package codel.question.business
 import codel.question.infrastructure.QuestionJpaRepository
 import codel.question.domain.Question
 import codel.question.domain.QuestionCategory
+import codel.question.domain.QuestionGroup
+import codel.question.domain.GroupPolicy
 import codel.chat.domain.ChatRoomQuestion
 import codel.chat.infrastructure.ChatRoomQuestionJpaRepository
 import codel.chat.infrastructure.ChatRoomJpaRepository
@@ -59,6 +61,74 @@ class QuestionService(
         }
         return questions.random()
     }
+
+    // ========== 채팅방 질문 추천 (카테고리 기반) ==========
+
+    /**
+     * 채팅방 질문 추천 (카테고리별 그룹 정책 적용)
+     *
+     * @param chatRoomId 채팅방 ID
+     * @param category 선택한 카테고리
+     * @return 추천 결과 (Success 또는 Exhausted)
+     */
+    fun recommendQuestionForChat(
+        chatRoomId: Long,
+        category: QuestionCategory
+    ): QuestionRecommendationResult {
+        if (!category.isChatCategory()) {
+            throw IllegalArgumentException("채팅방에서 사용할 수 없는 카테고리입니다: ${category.displayName}")
+        }
+
+        return when (category.chatGroupPolicy) {
+            GroupPolicy.RANDOM -> recommendRandom(chatRoomId, category)
+            GroupPolicy.A_THEN_B -> recommendWithGroupPriority(chatRoomId, category)
+            GroupPolicy.NONE -> throw IllegalStateException("채팅방용 카테고리에 NONE 정책은 허용되지 않습니다.")
+        }
+    }
+
+    /**
+     * A그룹 우선 → B그룹 순서로 추천
+     */
+    private fun recommendWithGroupPriority(
+        chatRoomId: Long,
+        category: QuestionCategory
+    ): QuestionRecommendationResult {
+        // 1. A그룹에서 미사용 질문 조회
+        val groupAQuestions = questionJpaRepository
+            .findUnusedQuestionsByChatRoomAndCategoryAndGroup(chatRoomId, category, QuestionGroup.A)
+
+        if (groupAQuestions.isNotEmpty()) {
+            return QuestionRecommendationResult.Success(groupAQuestions.random())
+        }
+
+        // 2. A그룹 소진 시 B그룹에서 조회
+        val groupBQuestions = questionJpaRepository
+            .findUnusedQuestionsByChatRoomAndCategoryAndGroup(chatRoomId, category, QuestionGroup.B)
+
+        if (groupBQuestions.isNotEmpty()) {
+            return QuestionRecommendationResult.Success(groupBQuestions.random())
+        }
+
+        // 3. 모두 소진
+        return QuestionRecommendationResult.Exhausted
+    }
+
+    /**
+     * 그룹 구분 없이 랜덤 추천
+     */
+    private fun recommendRandom(
+        chatRoomId: Long,
+        category: QuestionCategory
+    ): QuestionRecommendationResult {
+        val questions = questionJpaRepository
+            .findUnusedQuestionsByChatRoomAndCategory(chatRoomId, category)
+
+        return if (questions.isNotEmpty()) {
+            QuestionRecommendationResult.Success(questions.random())
+        } else {
+            QuestionRecommendationResult.Exhausted
+        }
+    }
     
     /**
      * 질문을 사용된 것으로 표시
@@ -99,7 +169,22 @@ class QuestionService(
         val categoryEnum = if (category.isNullOrBlank()) null else QuestionCategory.valueOf(category)
         return questionJpaRepository.findAllWithFilter(keyword, categoryEnum, isActive, pageable)
     }
-    
+
+    /**
+     * 필터 조건으로 질문 목록 조회 (그룹 포함)
+     */
+    fun findQuestionsWithFilterV2(
+        keyword: String?,
+        category: String?,
+        questionGroup: String?,
+        isActive: Boolean?,
+        pageable: Pageable
+    ): Page<Question> {
+        val categoryEnum = if (category.isNullOrBlank()) null else QuestionCategory.valueOf(category)
+        val groupEnum = if (questionGroup.isNullOrBlank()) null else QuestionGroup.valueOf(questionGroup)
+        return questionJpaRepository.findAllWithFilterV2(keyword, categoryEnum, groupEnum, isActive, pageable)
+    }
+
     /**
      * 새 질문 생성
      */
@@ -118,7 +203,28 @@ class QuestionService(
         )
         return questionJpaRepository.save(question)
     }
-    
+
+    /**
+     * 새 질문 생성 (그룹 포함)
+     */
+    @Transactional
+    fun createQuestionV2(
+        content: String,
+        category: QuestionCategory,
+        questionGroup: QuestionGroup,
+        description: String?,
+        isActive: Boolean
+    ): Question {
+        val question = Question(
+            content = content,
+            category = category,
+            questionGroup = questionGroup,
+            description = description,
+            isActive = isActive
+        )
+        return questionJpaRepository.save(question)
+    }
+
     /**
      * 질문 수정
      */
@@ -131,12 +237,35 @@ class QuestionService(
         isActive: Boolean
     ): Question {
         val question = findQuestionById(questionId)
-        
+
         question.updateContent(content)
         question.updateCategory(category)
         question.updateDescription(description)
         question.updateIsActive(isActive)
-        
+
+        return questionJpaRepository.save(question)
+    }
+
+    /**
+     * 질문 수정 (그룹 포함)
+     */
+    @Transactional
+    fun updateQuestionV2(
+        questionId: Long,
+        content: String,
+        category: QuestionCategory,
+        questionGroup: QuestionGroup,
+        description: String?,
+        isActive: Boolean
+    ): Question {
+        val question = findQuestionById(questionId)
+
+        question.updateContent(content)
+        question.updateCategory(category)
+        question.updateQuestionGroup(questionGroup)
+        question.updateDescription(description)
+        question.updateIsActive(isActive)
+
         return questionJpaRepository.save(question)
     }
     

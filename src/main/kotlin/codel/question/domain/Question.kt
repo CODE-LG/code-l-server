@@ -7,19 +7,23 @@ import jakarta.persistence.*
 class Question(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-    
+
     @Column(nullable = false, length = 500)
     var content: String,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 100)
     var category: QuestionCategory,
-    
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    var questionGroup: QuestionGroup = QuestionGroup.RANDOM,
+
     @Column(nullable = false)
     var isActive: Boolean = true,
-    
+
     @Column(nullable = true, length = 1000)
-    var description: String? = null  // 질문 설명
+    var description: String? = null
 ) : BaseTimeEntity() {
     
     fun getIdOrThrow(): Long = id ?: throw IllegalStateException("질문이 존재하지 않습니다.")
@@ -35,7 +39,11 @@ class Question(
     fun updateCategory(newCategory: QuestionCategory) {
         this.category = newCategory
     }
-    
+
+    fun updateQuestionGroup(newQuestionGroup: QuestionGroup) {
+        this.questionGroup = newQuestionGroup
+    }
+
     fun updateDescription(newDescription: String?) {
         this.description = newDescription
     }

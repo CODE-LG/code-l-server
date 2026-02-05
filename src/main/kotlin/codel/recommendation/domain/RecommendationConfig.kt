@@ -49,7 +49,27 @@ class RecommendationConfig(
      */
     val allowDuplicate: Boolean
         get() = configService.getAllowDuplicate()
-    
+
+    /**
+     * 우선 추천 최대 나이 차이 (0~N살)
+     * 이 범위 내의 후보가 우선 추천됨
+     */
+    val agePreferredMaxDiff: Int
+        get() = configService.getAgePreferredMaxDiff()
+
+    /**
+     * 컷오프 기준 나이 차이
+     * 이 값 이상의 나이 차이는 기본적으로 추천에서 제외
+     */
+    val ageCutoffDiff: Int
+        get() = configService.getAgeCutoffDiff()
+
+    /**
+     * 후보 부족 시 컷오프 대상 허용 여부
+     */
+    val ageAllowCutoffWhenInsufficient: Boolean
+        get() = configService.getAgeAllowCutoffWhenInsufficient()
+
     companion object {
         
         /**
