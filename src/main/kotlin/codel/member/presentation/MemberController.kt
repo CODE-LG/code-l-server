@@ -15,6 +15,7 @@ import codel.notification.domain.NotificationType
 import org.springframework.data.domain.Page
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import codel.config.RedisMessageRelay
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDateTime
@@ -25,7 +26,7 @@ class MemberController(
     private val memberService: MemberService,
     private val authService: AuthService,
     private val asyncNotificationService: IAsyncNotificationService,
-    private val messagingTemplate: org.springframework.messaging.simp.SimpMessagingTemplate,
+    private val redisMessageRelay: RedisMessageRelay,
 ) : MemberControllerSwagger {
     @PostMapping("/v1/member/login")
     override fun loginMember(
@@ -101,13 +102,13 @@ class MemberController(
 
         // 2. WebSocket으로 채팅방 종료 알림 발송
         chatNotifications.forEach { notification ->
-            messagingTemplate.convertAndSend(
+            redisMessageRelay.publish(
                 "/sub/v1/chatroom/member/${notification.partner.id}",
                 notification.partnerChatRoomResponse
             )
 
             // 채팅방 구독자들에게 시스템 메시지 전송
-            messagingTemplate.convertAndSend(
+            redisMessageRelay.publish(
                 "/sub/v1/chatroom/${notification.partnerChatRoomResponse.chatRoomId}",
                 notification.chatResponse
             )

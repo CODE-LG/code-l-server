@@ -11,16 +11,16 @@ import codel.signal.presentation.response.ReceivedSignalMemberResponse
 import codel.signal.presentation.response.SignalMemberResponse
 import codel.signal.presentation.response.SignalResponse
 import codel.signal.presentation.swagger.SignalControllerSwagger
+import codel.config.RedisMessageRelay
 import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
-import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/v1/signals")
 class SignalController(
     private val signalService: SignalService,
-    private val messagingTemplate: SimpMessagingTemplate,
+    private val redisMessageRelay: RedisMessageRelay,
 ) : SignalControllerSwagger {
     @PostMapping
     override fun sendSignal(
@@ -70,13 +70,13 @@ class SignalController(
         val result = signalService.acceptSignal(me, id)
         
         // 시그널 발송자(partner)에게 전송
-        messagingTemplate.convertAndSend(
+        redisMessageRelay.publish(
             "/sub/v1/chatroom/member/${result.partner.id}",
             result.partnerChatRoomResponse,
         )
 
         // 시그널 수신자(me)에게 전송
-        messagingTemplate.convertAndSend(
+        redisMessageRelay.publish(
             "/sub/v1/chatroom/member/${me.id}",
             result.approverChatRoomResponse,
         )

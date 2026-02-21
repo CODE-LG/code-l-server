@@ -14,20 +14,20 @@ import codel.chat.presentation.response.QuestionSendResult
 import codel.chat.presentation.response.SavedChatDto
 import codel.chat.presentation.swagger.ChatControllerSwagger
 import codel.config.Loggable
+import codel.config.RedisMessageRelay
 import codel.config.argumentresolver.LoginMember
 import codel.member.domain.Member
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.ResponseEntity
-import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
 
 @Controller
 class ChatController(
     private val chatService: ChatService,
-    private val messagingTemplate: SimpMessagingTemplate,
+    private val redisMessageRelay: RedisMessageRelay,
     private val strategyResolver: QuestionRecommendStrategyResolver
 ) : ChatControllerSwagger, Loggable {
     @GetMapping("/v1/chatrooms")
@@ -114,24 +114,24 @@ class ChatController(
     }
 
     private fun sendQuestionWebSocketMessages(chatRoomId: Long, requester: Member, result: QuestionSendResult) {
-        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", result.chatResponse)
-        messagingTemplate.convertAndSend(
+        redisMessageRelay.publish("/sub/v1/chatroom/$chatRoomId", result.chatResponse)
+        redisMessageRelay.publish(
             "/sub/v1/chatroom/member/${requester.getIdOrThrow()}",
             result.requesterChatRoomResponse
         )
-        messagingTemplate.convertAndSend(
+        redisMessageRelay.publish(
             "/sub/v1/chatroom/member/${result.partner.getIdOrThrow()}",
             result.partnerChatRoomResponse
         )
     }
 
     private fun sendQuestionWebSocketMessages(chatRoomId: Long, requester: Member, chat: SavedChatDto) {
-        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", chat.chatResponse)
-        messagingTemplate.convertAndSend(
+        redisMessageRelay.publish("/sub/v1/chatroom/$chatRoomId", chat.chatResponse)
+        redisMessageRelay.publish(
             "/sub/v1/chatroom/member/${requester.getIdOrThrow()}",
             chat.requesterChatRoomResponse
         )
-        messagingTemplate.convertAndSend(
+        redisMessageRelay.publish(
             "/sub/v1/chatroom/member/${chat.partner.getIdOrThrow()}",
             chat.partnerChatRoomResponse
         )
@@ -149,19 +149,19 @@ class ChatController(
         val responseDto = chatService.saveChat(chatRoomId, requester, chatSendRequest)
 
         // 상대방에게는 읽지 않은 수가 증가된 채팅방 정보 전송
-        messagingTemplate.convertAndSend(
+        redisMessageRelay.publish(
             "/sub/v1/chatroom/member/${responseDto.partner.id}",
             responseDto.partnerChatRoomResponse,
         )
 
         // 발송자에게는 본인 기준 채팅방 정보 전송
-        messagingTemplate.convertAndSend(
+        redisMessageRelay.publish(
             "/sub/v1/chatroom/member/${requester.id}",
             responseDto.requesterChatRoomResponse,
         )
 
         // 채팅방 구독자들에게 실시간 메시지 전송
-        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", responseDto.chatResponse)
+        redisMessageRelay.publish("/sub/v1/chatroom/$chatRoomId", responseDto.chatResponse)
         return ResponseEntity.ok(responseDto.chatResponse)
     }
 
@@ -173,7 +173,7 @@ class ChatController(
         val requesterChatRoomResponse = chatService.leaveChatRoom(chatRoomId, requester)
 
         // 본인에게 채팅방 삭제 이벤트 전송
-        messagingTemplate.convertAndSend(
+        redisMessageRelay.publish(
             "/sub/v1/chatroom/member/${requester.id}",
             requesterChatRoomResponse.copy(eventType = ChatRoomEventType.REMOVED),
         )
@@ -189,19 +189,19 @@ class ChatController(
         val responseDto = chatService.closeConversation(chatRoomId, requester)
 
         // 상대방에게는 읽지 않은 수가 증가된 채팅방 정보 전송
-        messagingTemplate.convertAndSend(
+        redisMessageRelay.publish(
             "/sub/v1/chatroom/member/${responseDto.partner.id}",
             responseDto.partnerChatRoomResponse,
         )
 
         // 발송자에게는 본인 기준 채팅방 정보 전송
-        messagingTemplate.convertAndSend(
+        redisMessageRelay.publish(
             "/sub/v1/chatroom/member/${requester.id}",
             responseDto.requesterChatRoomResponse,
         )
 
         // 채팅방 구독자들에게 실시간 메시지 전송
-        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", responseDto.chatResponse)
+        redisMessageRelay.publish("/sub/v1/chatroom/$chatRoomId", responseDto.chatResponse)
         return ResponseEntity.ok().build()
     }
 }

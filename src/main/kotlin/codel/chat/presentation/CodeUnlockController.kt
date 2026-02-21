@@ -4,11 +4,11 @@ import codel.chat.business.ChatService
 import codel.chat.business.CodeUnlockService
 import codel.chat.presentation.response.UnlockRequestResponse
 import codel.chat.presentation.swagger.CodeUnlockControllerSwagger
+import codel.config.RedisMessageRelay
 import codel.config.argumentresolver.LoginMember
 import codel.member.business.MemberService
 import codel.member.domain.Member
 import org.springframework.http.ResponseEntity
-import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -16,7 +16,7 @@ class CodeUnlockController(
     private val codeUnlockService: CodeUnlockService,
     private val chatService: ChatService,
     private val memberService : MemberService,
-    private val messagingTemplate: SimpMessagingTemplate
+    private val redisMessageRelay: RedisMessageRelay
 ) : CodeUnlockControllerSwagger{
 
     /**
@@ -36,16 +36,16 @@ class CodeUnlockController(
         
         // 실시간 알림 전송
         // 1. 채팅방 실시간 메시지 전송
-        messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", chatRoomAndChatResponse.chatResponse)
+        redisMessageRelay.publish("/sub/v1/chatroom/$chatRoomId", chatRoomAndChatResponse.chatResponse)
         
         // 2. 발송자에게는 본인용 채팅방 응답 전송
-        messagingTemplate.convertAndSend(
+        redisMessageRelay.publish(
             "/sub/v1/chatroom/member/${requester.id}",
             chatRoomAndChatResponse.requesterChatRoomResponse,
         )
         
         // 3. 상대방에게는 읽지 않은 수가 증가된 채팅방 응답 전송
-        messagingTemplate.convertAndSend(
+        redisMessageRelay.publish(
             "/sub/v1/chatroom/member/${chatRoomAndChatResponse.partner.getIdOrThrow()}",
             chatRoomAndChatResponse.partnerChatRoomResponse,
         )
@@ -113,17 +113,17 @@ class CodeUnlockController(
         
         if (recentChat != null) {
             // 1. 채팅방 실시간 메시지 전송
-            messagingTemplate.convertAndSend("/sub/v1/chatroom/$chatRoomId", 
+            redisMessageRelay.publish("/sub/v1/chatroom/$chatRoomId", 
                 chatService.buildChatResponse(processor, recentChat))
             
             // 2. 처리자(승인/거절한 사람)에게 채팅방 업데이트 전송
-            messagingTemplate.convertAndSend(
+            redisMessageRelay.publish(
                 "/sub/v1/chatroom/member/${processor.getIdOrThrow()}",
                 chatService.buildChatRoomResponse(chatRoom, processor, requester)
             )
             
             // 3. 요청자에게 채팅방 업데이트 전송
-            messagingTemplate.convertAndSend(
+            redisMessageRelay.publish(
                 "/sub/v1/chatroom/member/${requester.getIdOrThrow()}",
                 chatService.buildChatRoomResponse(chatRoom, requester, processor)
             )
