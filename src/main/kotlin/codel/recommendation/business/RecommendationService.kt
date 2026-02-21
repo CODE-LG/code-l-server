@@ -7,12 +7,14 @@ import codel.recommendation.domain.RecommendationConfig
 import codel.recommendation.domain.RecommendationType
 import codel.member.business.MemberService
 import codel.member.presentation.response.FullProfileResponse
+import org.redisson.api.RedissonClient
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.concurrent.TimeUnit
 
 /**
  * 통합 추천 서비스
@@ -22,39 +24,27 @@ import java.time.LocalTime
  * - 사용자 상황에 맞는 최적의 추천 제공
  * - 기존 MemberService와의 연동점 역할
  * - 추천 시스템 전체 상태 모니터링
- * 
+ *
  * 동시성 제어:
- * - synchronized + TransactionTemplate 조합으로 중복 추천 완벽 차단
- * - synchronized 블록 내에서 트랜잭션 커밋까지 완료 보장
+ * - Redisson 분산 락 + TransactionTemplate 조합으로 다중 서버 환경에서 중복 추천 차단
+ * - 분산 락 보유 중에 트랜잭션 커밋까지 완료 보장
  */
 @Service
 class RecommendationService(
     private val dailyCodeMatchingService: DailyCodeMatchingService,
     private val codeTimeService: CodeTimeService,
     private val config: RecommendationConfig,
-    private val transactionTemplate: TransactionTemplate
+    private val transactionTemplate: TransactionTemplate,
+    private val redissonClient: RedissonClient
 ) : Loggable {
 
     /**
-     * 사용자별 락 객체를 관리하는 맵
-     * 
-     * 동시성 제어:
-     * - 같은 사용자의 getDailyCodeMatching + getCodeTime 동시 요청 시 중복 추천 방지
-     * - 사용자별로 독립적인 락 사용 → 다른 사용자에게 영향 없음
-     * 
-     * 메모리:
-     * - 락 객체 1개 = 16 bytes
-     * - 100만 사용자 = 24MB (무시 가능)
-     * - GC가 필요 시 자동 처리
-     */
-    private val userLocks = java.util.concurrent.ConcurrentHashMap<Long, Any>()
-
-    /**
      * 오늘의 코드매칭만 조회합니다.
-     * 
+     *
      * 동시성 제어:
-     * - synchronized 블록 내에서 트랜잭션 실행 및 커밋
-     * - 락 해제 시점에 이미 DB 저장 완료 → 중복 추천 완벽 차단
+     * - Redisson 분산 락으로 다중 서버 환경에서도 사용자별 중복 추천 방지
+     * - 락 보유 중 트랜잭션 실행 및 커밋 → 락 해제 시점에 이미 DB 저장 완료
+     * - leaseTime 10초: 고정 TTL로 스레드 행(hang) 시 무한 잠김 방지
      *
      * @param user 추천을 받을 사용자
      * @return 오늘의 코드매칭 결과
@@ -62,30 +52,32 @@ class RecommendationService(
     fun getDailyCodeMatching(user: Member): List<Member> {
         val userId = user.getIdOrThrow()
         log.info { "오늘의 코드매칭 요청 - userId: $userId" }
-        
-        val lock = userLocks.computeIfAbsent(userId) { Any() }
-        
-        return synchronized(lock) {
-            log.info { "락 획득 성공, 트랜잭션 시작 - userId: $userId" }
-            
-            // synchronized 블록 안에서 트랜잭션 실행 및 커밋
-            val result = transactionTemplate.execute { 
+
+        val lock = redissonClient.getLock("recommendation:daily:$userId")
+        lock.lock(10, TimeUnit.SECONDS)
+        try {
+            log.info { "분산 락 획득 성공, 트랜잭션 시작 - userId: $userId" }
+
+            val result = transactionTemplate.execute {
                 dailyCodeMatchingService.getDailyCodeMatching(user)
             } ?: emptyList()
-            
+
             log.info { "트랜잭션 커밋 완료, 추천 ${result.size}명 - userId: $userId, members: ${result.map { it.getIdOrThrow() }}" }
-            result
-        }.also {
-            log.info { "락 해제 - userId: $userId" }
+            return result
+        } finally {
+            if (lock.isHeldByCurrentThread) {
+                lock.unlock()
+            }
+            log.info { "분산 락 해제 - userId: $userId" }
         }
     }
 
     /**
      * 코드타임만 조회합니다.
-     * 
+     *
      * 동시성 제어:
-     * - synchronized 블록 내에서 트랜잭션 실행 및 커밋
-     * - getDailyCodeMatching과 동일한 락 사용 → 두 API 간 중복 방지
+     * - Redisson 분산 락으로 다중 서버 환경에서도 사용자별 중복 추천 방지
+     * - leaseTime 10초: 고정 TTL로 스레드 행(hang) 시 무한 잠김 방지
      *
      * @param user 추천을 받을 사용자
      * @return 코드타임 결과 (DTO로 변환 완료)
@@ -93,26 +85,28 @@ class RecommendationService(
     fun getCodeTime(user: Member, page: Int, size: Int): Page<codel.member.presentation.response.FullProfileResponse> {
         val userId = user.getIdOrThrow()
         log.info { "코드타임 요청 - userId: $userId" }
-        
-        val lock = userLocks.computeIfAbsent(userId) { Any() }
-        
-        return synchronized(lock) {
-            log.info { "락 획득 성공, 트랜잭션 시작 - userId: $userId" }
-            
-            // synchronized 블록 안에서 트랜잭션 실행 및 DTO 변환까지 완료
+
+        val lock = redissonClient.getLock("recommendation:codetime:$userId")
+        lock.lock(10, TimeUnit.SECONDS)
+        try {
+            log.info { "분산 락 획득 성공, 트랜잭션 시작 - userId: $userId" }
+
             val result = transactionTemplate.execute {
                 val memberPage = codeTimeService.getCodeTimeRecommendation(user, page, size)
-                
-                // 트랜잭션 내에서 DTO 변환 → Lazy Loading 문제 해결
+
+                // 트랜잭션 내에서 DTO 변환 -> Lazy Loading 문제 해결
                 memberPage.map { memberEntity ->
                     FullProfileResponse.createOpen(memberEntity)
                 }
             } ?: PageImpl(emptyList())
-            
+
             log.info { "트랜잭션 커밋 완료, 추천 ${result.content.size}명 - userId: $userId" }
-            result
-        }.also {
-            log.info { "락 해제 - userId: $userId" }
+            return result
+        } finally {
+            if (lock.isHeldByCurrentThread) {
+                lock.unlock()
+            }
+            log.info { "분산 락 해제 - userId: $userId" }
         }
     }
 
