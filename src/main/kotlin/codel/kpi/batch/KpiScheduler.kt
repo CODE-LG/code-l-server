@@ -3,6 +3,7 @@ package codel.kpi.batch
 import codel.common.util.DateTimeFormatter
 import codel.config.Loggable
 import codel.kpi.business.KpiBatchService
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
@@ -23,6 +24,7 @@ class KpiScheduler(
      * 과거 데이터는 Admin API(/v1/admin/kpi/aggregate)로 수동 집계 가능
      */
     @Scheduled(cron = "0 0 1 * * *", zone = "Asia/Seoul")
+    @SchedulerLock(name = "kpi_daily_aggregation", lockAtLeastFor = "PT5M", lockAtMostFor = "PT30M")
     fun runDailyKpiAggregation() {
         log.info { "========== KPI 자동 집계 시작 ==========" }
 
