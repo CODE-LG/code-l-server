@@ -65,6 +65,19 @@ dependencies {
 
     // web socket
     implementation("org.springframework.boot:spring-boot-starter-websocket")
+
+    // redis
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
+    // redisson (분산 락)
+    implementation("org.redisson:redisson-spring-boot-starter:3.27.2")
+
+    // shedlock (스케줄러 중복 실행 방지)
+    implementation("net.javacrumbs.shedlock:shedlock-spring:5.12.0")
+    implementation("net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.12.0")
+
+    // caffeine cache (메시지 중복 방지)
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 }
 
 kotlin {
