@@ -5,6 +5,7 @@ import codel.member.domain.MemberRepository
 import codel.member.domain.MemberStatus
 import codel.notification.domain.Notification
 import codel.notification.domain.NotificationType
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -23,6 +24,7 @@ class MatchingNotificationScheduler(
      * cron: 초 분 시 일 월 요일
      */
     @Scheduled(cron = "0 0 10 * * *", zone = "Asia/Seoul")
+    @SchedulerLock(name = "notification_morning", lockAtLeastFor = "PT5M", lockAtMostFor = "PT30M")
     @Transactional(readOnly = true)
     fun sendMorningMatchingNotification() {
         log.info { "🌅 오전 10시 매칭 알림 전송 시작" }
@@ -33,6 +35,7 @@ class MatchingNotificationScheduler(
      * 매일 오후 10시에 실행
      */
     @Scheduled(cron = "0 0 22 * * *", zone = "Asia/Seoul")
+    @SchedulerLock(name = "notification_evening", lockAtLeastFor = "PT5M", lockAtMostFor = "PT30M")
     @Transactional(readOnly = true)
     fun sendEveningMatchingNotification() {
         log.info { "🌙 오후 10시 매칭 알림 전송 시작" }
